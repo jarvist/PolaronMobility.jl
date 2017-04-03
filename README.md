@@ -9,17 +9,18 @@ Hellwarth's recent computationally convenient statement of the problem.
 Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for
 a single electron interacting with a phonon cloud of non-interacting (harmonic)
 phonons.
-The electron-phonon interaction is parametrised by an `alpha` parameter, which
-can be constructed from dielectric constants of a material, and
-a characteristic frequency of the dielectric response. 
+The electron-phonon interaction is particularly simple, just considering
+a dipole interaction. 
+This is folded into a dimensionless `alpha` parameter, practically constructed
+from dielectric constants of a material, and a characteristic frequency of the
+dielectric response. 
 (In a simple covalent semiconductor system, this is the frequency of the
 linear-optical mode, the only infrared active one.) 
-The Feynman model is a beautiful solution of the most simple quantum field
-problem (that specified in the Frohlich Hamiltonian, of an independent electron
-interacting with a dress of stimulated phonons), where the quantum field
-variable is integrated out by the path-integral approach to quantum mechanics,
-to leave an electron interacting via a spring constant with an effective mass
-- a single particle problem. 
+The Feynman model is a beautiful solution of this most simple quantum field
+problem where the quantum field variable of the phonon field is integrated out
+by the path-integral approach to quantum mechanics, to leave an electron
+interacting via a spring constant with an effective mass---a single particle
+problem. 
 
 These Julia codes take Hellwarth's presentation of Osaka's variational
 formulation of the Feynman solution,
