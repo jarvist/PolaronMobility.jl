@@ -1,10 +1,19 @@
 # PolaronMobility-FeynmanKadanoffOsakaHellwarth
 
-Polaron mobility based on Feynman's path-integral solution to the Frohlich
-Hamiltonian, Kadanoff's phonon-emission correction to the FHIP mobility,
-Osaka's variational model for solving the Feynman model, and Hellwarth's recent
-computationally convenient statement of the problem.
+These codes calculate the temperature-dependent polaron mobility for
+a material. 
+They solve the Feynman model, with Kadanoff's phonon-emission correction to the
+FHIP mobility, Osaka's variational model for solving the Feynman model, and
+Hellwarth's recent computationally convenient statement of the problem.
 
+Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for
+a single electron interacting with a phonon cloud of non-interacting (harmonic)
+phonons.
+The electron-phonon interaction is parametrised by an `alpha` parameter, which
+can be constructed from dielectric constants of a material, and
+a characteristic frequency of the dielectric response. 
+(In a simple covalent semiconductor system, this is the frequency of the
+linear-optical mode, the only infrared active one.) 
 The Feynman model is a beautiful solution of the most simple quantum field
 problem (that specified in the Frohlich Hamiltonian, of an independent electron
 interacting with a dress of stimulated phonons), where the quantum field
@@ -12,8 +21,9 @@ variable is integrated out by the path-integral approach to quantum mechanics,
 to leave an electron interacting via a spring constant with an effective mass
 - a single particle problem. 
 
-These Julia codes take [Hellwarth1999] statement of the variation problem,
-optimise the k and w parameters for these finite-temperature free energies,
+These Julia codes take Hellwarth's presentation of Osaka's variational
+formulation of the Feynman solution,
+optimise the `k` and `w` parameters for these finite-temperature free energies,
 give a FHIP mobility, or a (corrected for phonon emission) Kadanoff mobility,
 and provide alternative restatements of v and w as the mass of the phonon-drag,
 and the spring constant.
