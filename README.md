@@ -2,9 +2,18 @@
 
 These codes calculate the temperature-dependent polaron mobility for
 a material. 
-They solve the Feynman model, with Kadanoff's phonon-emission correction to the
-FHIP mobility, Osaka's variational model for solving the Feynman model, and
-Hellwarth's recent computationally convenient statement of the problem.
+
+They solve Osaka's variational method for solving the Feynman model. 
+For each temperature, the total free energy of the Feynman coupled
+phonon-electron system is minimised by optimising coefficients which control
+the spring-coupling coefficient and effective-mass for the phonon cloud. 
+
+We then calculate the polaron mobility, with both the original low-temperature
+FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] (Boltzmann equation
+motivated) phonon-emission correction to the FHIP, and Hellwarth's
+[Hellwarth1999] method of returning to an earlier (non low-temperature) result
+in Feynman1962, then directly calculating the contour integral for the polaron
+self-energy with numerical integration.
 
 Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for
 a single electron interacting with a phonon cloud of non-interacting (harmonic)
@@ -22,19 +31,21 @@ by the path-integral approach to quantum mechanics, to leave an electron
 interacting via a spring constant with an effective mass---a single particle
 problem. 
 
-These Julia codes take Hellwarth's presentation of Osaka's variational
-formulation of the Feynman solution,
-optimise the `k` and `w` parameters for these finite-temperature free energies,
-give a FHIP mobility, or a (corrected for phonon emission) Kadanoff mobility,
-and provide alternative restatements of v and w as the mass of the phonon-drag,
-and the spring constant.
+These Julia codes use Hellwarth's [Hellwarth1999] presentation of Osaka's variational
+free-energies for the Feynman model. 
+We optimise the `v` and `w` parameters for these finite-temperature free energies. 
+These can be alternatively restated the mass 'M' and spring-constant 'k' of the
+coupled phonon-electron Feynman model. 
 
-They are applied to the case of hybrid halide perovskites, where in combination
-they provide a model of (polaron) mobility without any free parameters. [No
-arbitrary relaxation time is needed or used. The scattering processes are
+Here we apply these methods to the case of hybrid halide perovskites. 
+The method provides the temperature dependent polaron-mobility without any free parameters. 
+No arbitrary relaxation time is needed or used. The scattering processes are
 treated directly, by including an effective electron-phonon coupling in the
 specification of the Frohlich 'alpha' parameter, and then all other features
-come from solving the model. ]
+come from solving the model. 
+The original Feynman model is correct to all orders in alpha, and the Hellwarth
+direct contour-integration of the general Feynman mobility statement is
+suitable for high temperature.
 
 It was necessary to return to these (rather old!) papers and resolve the
 models, as hybrid halide perovskites are soft materials with low energy
@@ -42,6 +53,14 @@ phonons. Therefore the effective temperature in terms of a reduced
 thermodynamic beta (Beta=hbar omega / (k_Boltzmann * Temperature) ) is much
 smaller than previously considered. 
 
+A finaly note that in [Hellwarth1999], there is a mistake in the formula for 'b',
+which is also present in their prior PRL [Biaggio1997]. 
+It is correct in [Feynman1962], where there is no factor of b on the right-hand
+side. 
+It doesn't matter too much, as setting it to zero makes ~0.1% difference in the
+eventual mobility. 
+However, since we're integrating numerically anyway, we may as well calculate
+it explicitly.
 
 ## Bibliography
 
