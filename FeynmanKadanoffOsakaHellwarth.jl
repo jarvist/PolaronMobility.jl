@@ -216,12 +216,14 @@ default(size=(800,600))
 plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
 
 savefig("mass.png")
+savefig("mass.eps")
 
 #####
 ## Spring Constants vs. Temperature plot
 plot(Ts,ks,label="Polaron spring-constant",marker=2, xlab="Temperature (K)",ylab="Spring-const (some internal unit)",)
 
 savefig("spring.png")
+savefig("spring.eps")
 
 #####
 ## Variation Energy vs. Temperature plots
@@ -231,6 +233,7 @@ plot!(Ts,Cs,label="C",marker=2)
 plot!(Ts,Fs,label="F",marker=2)
 
 savefig("variational.png")
+savefig("variational.eps")
 
 #####
 ## Calculated mobility comparison plot
@@ -239,6 +242,7 @@ plot!(Ts,FHIPμs,label="FHIP",marker=2)
 plot!(Ts,Hμs,label="Hellwarth1999",marker=2)
 
 savefig("mobility-calculated.png")
+savefig("mobility-calculated.eps")
 
 #####
 ## Expt. data to compare against
@@ -286,5 +290,7 @@ plot!(Ts,Kμs,label="Kadanoff Polaron mobility",marker=2)
 plot!(Ts,Hμs,label="Hellwarth1999 Polaron mobility",marker=2)
 
 savefig("mobility-calculated-experimental.png")
+savefig("mobility-calculated-experimental.eps")
+
 
 println("That's me!")
