@@ -1,6 +1,8 @@
 # FeynmanKadanoffOsakaHellwarth.jl
 # Codes by Jarvist Moore Frost, 2017
 # Calculate Polaron Mobility - by a Osaka/Hellwarth variational solution to the Feynman model
+# If you run this, it should construct the model, solve for varying temperature, then produce plots as .pngs in the local directory.
+# These codes were developed with Julia 0.5.0, and requires the Optim and Plots packages.
 
 # Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
@@ -21,6 +23,9 @@ function feynmanalpha(ε_Inf,ε_S,freq,m_eff)
     return (α)
 end
 
+" Copy and pasted out of a Jupyter notebook; this calculates 'alpha' parameters
+for various materials, as a comparison to the literature used when figuring out
+the oft-quoted units. "
 function checkalpha()
 	println(" Alpha-parameter, Cross check vs. literature values.\n")
 	println("\t NaCl Frohlich paper α=",feynmanalpha(2.3, 5.6, (4.9E13/(2*pi)), 1.0)) 
