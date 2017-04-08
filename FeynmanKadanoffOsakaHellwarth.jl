@@ -1,7 +1,8 @@
-# Hellwarth 1999 PRB - Part IV; T-dep of the Feynman variation parameter
-# A Friday afternoon of hacking to try and implement the T-dep electron-phonon coupling from the above PRB
-# Which was unusually successful! And more or less reproduced Table III
+# FeynmanKadanoffOsakaHellwarth.jl
+# Codes by Jarvist Moore Frost, 2017
+# Calculate Polaron Mobility - by a Osaka/Hellwarth variational solution to the Feynman model
 
+# Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
 const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2 
 const me=MassElectron = 9.10938188e-31;                          # kg
@@ -65,13 +66,16 @@ freq=2.25E12 # 2.25 THz
 #####
 # Set up equations for the polaron free energy, which we will variationally improve upon
 
+# Hellwarth 1999 PRB - Part IV; T-dep of the Feynman variation parameter
+# Originally a Friday afternoon of hacking to try and implement the T-dep electron-phonon coupling from the above PRB
+# Which was unusually successful! And more or less reproduced Table III
+
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 using QuadGK
 
 # Equation numbers follow above Hellwarth 1999 PRB
 # 62b
 A(v,w,β)=3/β*( log(v/w) - 1/2*log(2*π*β) - log(sinh(v*β/2)/sinh(w*β/2)))
-
 # 62d
 Y(x,v,β)=1/(1-exp(-v*β))*(1+exp(-v*β)-exp(-v*x)-exp(v*(x-β)))
 # 62c integrand
@@ -85,18 +89,18 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 
 # Can now evaluate, e.g.
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
-# BUT - this is just the objective function! Not the optimised parameters.
+# BUT - this is just the objective function! (The temperature-dependent free-energy.) Not the optimised parameters.
 # Also there's a scary numeric integration (quadgk) buried within...
 
 #####
-# Pull it all together - using the powerful Julia Optim package to optimise the variational parameters
+# OK, let's use the powerful Julia Optim package to optimise the variational parameters
 using Optim
 
+# Initial v,w to use
 initial=[7.1,6.5]
 # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
 lower=[0.1,0.1]
 upper=[100.0,100.0]
-
 
 # Empty arrays for storing data 
 Ts=[]
@@ -162,10 +166,11 @@ for T in 10:10:400
     # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
     # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
     R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-    #b=R*βred/sinh(b*βred*v/2) # this self-references b! what the hell?
-    # Oops - it's a typo from Feynman1962!
+    #b=R*βred/sinh(b*βred*v/2) # This self-references b! What on Earth?
+    # OK! I now understand that there is a typo in Hellwarth1999 and
+    # Biaggio1997. They've introduced a spurious b on the R.H.S. compared to
+    # the original, Feynman1962...
     b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
-    #b=0 # Hellwarth1999/Baggio1997 "Setting b=0 makes less than 0.1% error"
     a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
     k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
     K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
@@ -176,9 +181,9 @@ for T in 10:10:400
     @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
     append!(Hμs,μ*100^2)
     
-    #Hellwarth1999 b=0... 'Setting b=0 makes less than 0.1% error'
+    #Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
     R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-    b=0 # Hellwarth1999/Baggio1997 "Setting b=0 makes less than 0.1% error"
+    b=0 
     a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
     k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
     K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
@@ -203,27 +208,28 @@ default(size=(800,600))
 
 #####
 ## Mass vs. Temperature plot
-plot(Ts,Ms,label="Mass",marker=2,xlab="Temperature (K)",ylab="Mass of Phonon cloud (electron masses)",ylim=(0,1.2))
+plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
 
 savefig("mass.png")
 
 #####
 ## Spring Constants vs. Temperature plot
-plot(Ts,ks,label="Spring Consts",marker=2, xlab="Temperature (K)",ylab="Some internal spring const",)
+plot(Ts,ks,label="Polaron spring-constant",marker=2, xlab="Temperature (K)",ylab="Spring-const (some internal unit)",)
 
 savefig("spring.png")
 
 #####
 ## Variation Energy vs. Temperature plots
-plot(Ts,As,label="A",marker=2, xlab="Temperature (K)",ylab="Energy ?")
+plot(Ts,As,label="A",marker=2, xlab="Temperature (K)",ylab="Free-Energy")
 plot!(Ts,Bs,label="B",marker=2)
 plot!(Ts,Cs,label="C",marker=2)
+plot!(Ts,Fs,label="F",marker=2)
 
 savefig("variational.png")
 
 #####
 ## Calculated mobility comparison plot
-plot(Ts,Kμs,label="Kadanoff Polaron mobility",marker=2,xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",ylims=(0,1000))
+plot(Ts,Kμs,label="Kadanoff",marker=2,xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",ylims=(0,1000))
 plot!(Ts,FHIPμs,label="FHIP",marker=2)
 plot!(Ts,Hμs,label="Hellwarth1999",marker=2)
 
@@ -270,6 +276,7 @@ plot(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",
 xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",marker=2, ylims=(0,400) )
 plot!(Saidaminov[:,1],Saidaminov[:,2],label="Saidaminov JV Single Crystal", marker=6)
 plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", marker=6)
+
 plot!(Ts,Kμs,label="Kadanoff Polaron mobility",marker=2)
 plot!(Ts,Hμs,label="Hellwarth1999 Polaron mobility",marker=2)
 
