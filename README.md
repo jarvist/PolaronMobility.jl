@@ -2,11 +2,16 @@
 
 These codes calculate the temperature-dependent polaron mobility for
 a material. 
+Currently the system is parametrised for methyl-ammonium lead-halide Perovskite. 
+
+The inputs are the dielectric constants, a characteristic phonon frequency, and the bare-electron band effective-mass.
 
 They solve Osaka's variational method for solving the Feynman model. 
 For each temperature, the total free energy of the Feynman coupled
 phonon-electron system is minimised by optimising coefficients which control
 the spring-coupling coefficient and effective-mass for the phonon cloud. 
+
+![MAPI Polaron mobility, plotted vs expt data](mobility-calculated-experimental.png)
 
 We then calculate the polaron mobility, with both the original low-temperature
 FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] (Boltzmann equation
@@ -62,16 +67,32 @@ eventual mobility.
 However, since we're integrating numerically anyway, we may as well calculate
 it explicitly.
 
+## Research outputs
+
+Polaron mobilities, three different ways
+![Polaron mobilities, three different ways](mobility-calculated.png)
+
+Effective mass of phonon cloud
+![Effective mass of phonon cloud](mass.png)
+
+Spring constant for coupling to phonon cloud
+![Spring constant for coupling to phonon cloud](spring.png)
+
+Variational (temperature-dependent free-energy) parameters for the coupled system
+![Variational (temperature-dependent free-energy) parameters for the coupled system](variational.png)
+
+May your phonons drag in a manner truly sublime.
+
 ## Bibliography
 
-A bibliography in vague order of utility; read the first ones first!
+A bibliography in vague order of utility; I recommend reading the first ones first!
 
-Feynman also describes his Polaron solution in more detail in both 'Statistical
+Feynman also describes his Polaron model in more detail in both 'Statistical
 Mechanics' (Feynman1972) and 'Quantum Mechanics and Path Integrals'
-(FeynmanHibbs1965). Note that the differing presentations of Feynman do not agree perfectly!
+(FeynmanHibbs1965). Note that the differing presentations of Feynman do not always agree in detail.
 
 J.T. Devreese's "Fröhlich Polarons. Lecture course including detailed
-theoretical derivations" notes on the ArXiv is a very good place to start with general introductions.
+theoretical derivations" (6th edition, 2016) notes on the ArXiv is a very good place to start & to get an overview of the area.
 https://arxiv.org/abs/1611.06122
 
 
