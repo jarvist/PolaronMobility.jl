@@ -192,7 +192,7 @@ for T in 10:10:400
     #myv=sqrt(k*(1+M)/M) # cross-check maths between different papers
     #@printf("\nv: %f myv: %f\n",v,myv)
 
-    # (Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration
+    # Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration --> Gamma0
     Gamma0=2*α * Nbar * (M+1)^(1/2) * exp(-M/v)
     Gamma0*=ω  #* (ω *hbar) # Kadanoff 1963 uses hbar=omega=mb=1 units
         # Factor of omega to get it as a rate relative to phonon frequency
@@ -261,6 +261,12 @@ plot(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperat
 savefig("tau.png")
 savefig("tau.eps")
 
+## Mass + relaxation time vs. Temperature plot
+plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
+plot!(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+
+savefig("mass-tau.png")
+savefig("mass-tau.eps")
 
 #####
 ## Spring Constants vs. Temperature plot
