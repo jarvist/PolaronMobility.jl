@@ -144,17 +144,17 @@ for T in 10:10:400
     
     append!(ks,k)
     append!(Ms,M)
-    
+   
     # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
-    @printf("\n Polaron Es: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
+    @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
     append!(As,A(v,w,βred))
     append!(Bs,B(v,w,βred,α))
     append!(Cs,C(v,w,βred))
     append!(Fs,F(v,w,βred,α))
     
 
-
-    # FHIP - low-T mobility as got in Feynman1962
+    # FHIP 
+    #    - low-T mobility, final result of Feynman1962
     # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
     # I believe here β is in SI (expanded) units
     μ=(w/v)^3 * (3*q)/(4*mb*ħ*ω^2*α*β) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
@@ -162,12 +162,36 @@ for T in 10:10:400
     append!(Ts,T)
     append!(FHIPμs,μ*100^2)
     
-    #[1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mob
+
+    # Kadanoff
+    #     - low-T mobility, constructed around Boltzmann equation. 
+    #     - Adds factor of 3/(2*beta) c.f. FHIP, correcting phonon emission behaviour
+    # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mob
     μ=(w/v)^3 * (q)/(2*mb*ω*α) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
     @printf("\n\tμ(Kadanoff)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
 
     append!(Kμs,μ*100^2)
-    
+
+    ######
+    # OK, now deep-diving into Kadanoff1963 itself to extract Boltzmann equation components
+    # Particularly right-hand-side of page 1367
+    #
+    # From 1963 Kadanoff, (9), define eqm. number of phonons (just from T and phonon omega)
+    Nbar=(exp(βred) - 1)^-1
+    @printf("\n\t Eqm. Phonon. pop. Nbar: %f",Nbar)
+
+    #myv=sqrt(k*(1+M)/M) # cross-check maths between different papers
+    #@printf("\nv: %f myv: %f\n",v,myv)
+
+    # (Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration
+    Gamma0=2*α * Nbar * (M+1)^(1/2) * exp(-M/v)
+    Gamma0*=ω  # # Kadanoff 1963 uses hbar=omega=mb=1 units
+    μ=q/( (M+1) * Gamma0 ) #(25) Kadanoff 1963
+    μ=μ * (1)/(ω*hbar*mb) # Units to make mobility S.I.
+    @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
+    @printf("\n\tGamma0 = %g Tau=1/Gamma0 = %g",
+        Gamma0, 1/Gamma0) 
+
     # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
     # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
     R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
@@ -196,7 +220,8 @@ for T in 10:10:400
     #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
     RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
     μ=RHS^-1 * (q)/(ω*mb)
-    @printf("\n\tμ(Hellwarth1999,b=0)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
+    @printf("\n\tμ(Hellwarth1999,b=0)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
+    @printf("\n\tError due to b=0; %f",(100^2*μ-Hμs[length(Hμs)])/(100^2*μ))
     #append!(Hμs,μ*100^2)
     
     
