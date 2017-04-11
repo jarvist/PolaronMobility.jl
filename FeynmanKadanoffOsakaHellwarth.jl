@@ -108,6 +108,7 @@ lower=[0.1,0.1]
 upper=[100.0,100.0]
 
 # Empty arrays for storing data 
+# Surely some better way of doing this ф_ф 
 Ts=[]
 Kμs=[]
 Hμs=[]
@@ -118,6 +119,7 @@ As=[]
 Bs=[]
 Cs=[]
 Fs=[]
+Taus=[]
 
 # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
 for T in 10:10:400
@@ -178,20 +180,28 @@ for T in 10:10:400
     #
     # From 1963 Kadanoff, (9), define eqm. number of phonons (just from T and phonon omega)
     Nbar=(exp(βred) - 1)^-1
-    @printf("\n\t Eqm. Phonon. pop. Nbar: %f",Nbar)
+    @printf("\n\t Eqm. Phonon. pop. Nbar: %f ",Nbar)
+    @printf("\n\texp(Bred): %f exp(-Bred): %f exp(Bred)-1: %f",exp(βred),exp(-βred),exp(βred)-1)
+    Nbar=exp(-βred) 
+    #Note - this is only way to get Kadanoff1963 to be self-consistent with
+    #FHIP, and later statements (Devreese) of the Kadanoff mobility. 
+    #It suggests that Kadanoff used the wrong identy for Nbar in 23(b) for the
+    #Gamma0 function, and should have used a version -1 to account for phonon
+    #statistics
 
     #myv=sqrt(k*(1+M)/M) # cross-check maths between different papers
     #@printf("\nv: %f myv: %f\n",v,myv)
 
     # (Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration
     Gamma0=2*α * Nbar * (M+1)^(1/2) * exp(-M/v)
-    Gamma0*=ω  /(ω *hbar) # Kadanoff 1963 uses hbar=omega=mb=1 units
+    Gamma0*=ω  #* (ω *hbar) # Kadanoff 1963 uses hbar=omega=mb=1 units
         # Factor of omega to get it as a rate relative to phonon frequency
         # Factor of omega*hbar to get it as a rate per energy window
     μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
     @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
-    @printf("\n\tGamma0 = %g Tau=1/Gamma0 = %g",
-        Gamma0, 1/Gamma0) 
+    @printf("\n\tGamma0 = %g rad/s = %g /s Tau=1/Gamma0 = %g = %f ps",
+        Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
+    append!(Taus, 2*pi*1E12/Gamma0)
 
     # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
     # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
@@ -243,6 +253,14 @@ plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="P
 
 savefig("mass.png")
 savefig("mass.eps")
+
+#####
+## Relaxationtime vs. Temperature plot
+plot(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+
+savefig("tau.png")
+savefig("tau.eps")
+
 
 #####
 ## Spring Constants vs. Temperature plot
