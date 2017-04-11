@@ -185,9 +185,10 @@ for T in 10:10:400
 
     # (Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration
     Gamma0=2*α * Nbar * (M+1)^(1/2) * exp(-M/v)
-    Gamma0*=ω  # # Kadanoff 1963 uses hbar=omega=mb=1 units
-    μ=q/( (M+1) * Gamma0 ) #(25) Kadanoff 1963
-    μ=μ * (1)/(ω*hbar*mb) # Units to make mobility S.I.
+    Gamma0*=ω  /(ω *hbar) # Kadanoff 1963 uses hbar=omega=mb=1 units
+        # Factor of omega to get it as a rate relative to phonon frequency
+        # Factor of omega*hbar to get it as a rate per energy window
+    μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
     @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
     @printf("\n\tGamma0 = %g Tau=1/Gamma0 = %g",
         Gamma0, 1/Gamma0) 
