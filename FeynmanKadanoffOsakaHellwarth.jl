@@ -55,11 +55,17 @@ effectivemass=0.12 # the bare-electron band effective-mass.
 mb=effectivemass*MassElectron 
 
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-# PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 ε_Inf=4.5
 ε_S=24.1
-
 freq=2.25E12 # 2.25 THz
+
+# PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
+# CsPbI3: 3.82, 8.27, 2.83 THz (highest freq mode in cubic) 
+#    ^-- v. quick Kmesh=3x3x3 PBESol Calc, JMF 2017-04-12. Files: jarvist@titanium:~/phonopy-work/2017-03-Scott-Distortions/1000-Dielectric/3x3x3-kmesh/
+ε_Inf=3.82
+ε_S=8.27
+freq=2.83E12 # 2.25 THz
+
 ω = (2*pi)*freq # angular-frequency
 
 α=feynmanalpha(ε_Inf, ε_S,  freq,    effectivemass)
@@ -78,6 +84,7 @@ freq=2.25E12 # 2.25 THz
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 using QuadGK
 
+# Define Osaka's free-energies (Hellwarth1999 version) as Julia functions
 # Equation numbers follow above Hellwarth 1999 PRB
 # 62b
 A(v,w,β)=3/β*( log(v/w) - 1/2*log(2*π*β) - log(sinh(v*β/2)/sinh(w*β/2)))
