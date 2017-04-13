@@ -143,7 +143,16 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
         
         append!(ks,k)
         append!(Ms,M)
-       
+      
+
+        # Schultz1959 - rather nicely he actually specifies everything down into units!
+        # just before (2.4) in Shultz1959
+        mu=((v^2-w^2)/v^2)
+        # (2.4)
+        rf=sqrt(3/(2*mu*v))
+        # (2.4) SI scaling inferred from units in (2.5a) and Table II
+        @printf("\n Schultz: rf= %g (int units) = %g m [SI]",rf,rf*sqrt(2*me*ω ) )
+
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
         @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
         @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
@@ -321,7 +330,7 @@ Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus = polaronmobility
 #    ^-- v. quick Kmesh=3x3x3 PBESol Calc, JMF 2017-04-12. Files: jarvist@titanium:~/phonopy-work/2017-03-Scott-Distortions/1000-Dielectric/3x3x3-kmesh/
 # Horribly non-converged! Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
-#polaronmobility("CsPbI3-electron",     6.1,12.0, 2.57E12, 0.12)
+polaronmobility("CsPbI3-electron",     6.1,6.1+12.0, 2.57E12, 0.12)
 
 
 
