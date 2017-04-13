@@ -122,7 +122,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
     for T in 10:10:400
         β=1/(kB*T)
         βred=ħ*ω*β
-        @printf("T: %f β: %.2g βred: %.2g\t",T,β,βred)
+        @printf("T: %f β: %.2g βred: %.2g ħω  = %.2g meV\t",T,β,βred, 1000.0*ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
         res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = BFGS, optimizer_o=Optim.Options(autodiff=true))
         minimum=Optim.minimizer(res)
@@ -131,7 +131,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
         v=minimum[1]
         w=minimum[2]
             
-        @printf(" v= %.2f w= %.2f\t",v,w)
+        @printf("\n VariationalParams v= %.2f w= %.2f\t",v,w)
             
         # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
         # See Page 1007, just after equation (18)
@@ -146,6 +146,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
        
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
         @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
+        @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
         append!(As,A(v,w,βred))
         append!(Bs,B(v,w,βred,α))
         append!(Cs,C(v,w,βred))
@@ -240,6 +241,17 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
     end
 
     println("OK - everything calculated and stored. Now plotting..")
+
+    f=open("$fileprefix.dat","w")
+    @printf(f,"# %s \n# Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus\n",fileprefix)
+    for i in 1:length(Ts)
+        @printf(f,"%d %g %g %g %g %g %g %g %g %g %g \n",
+        Ts[i], Kμs[i], Hμs[i], FHIPμs[i], 
+        ks[i], Ms[i], As[i], Bs[i], Cs[i], Fs[i], 
+        Taus[i])
+    end
+    close(f)
+
 
     #####
     ## Mass vs. Temperature plot
