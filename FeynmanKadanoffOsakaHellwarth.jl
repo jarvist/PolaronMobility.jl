@@ -86,210 +86,210 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 #####
 # OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
 function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
-@printf("Calculating polaron mobility for %s ...\n",fileprefix)
+    @printf("Calculating polaron mobility for %s ...\n",fileprefix)
 
-# Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
-mb=effectivemass*MassElectron 
-ω = (2*pi)*freq # angular-frequency
-    
-α=feynmanalpha(ε_Inf, ε_S,  freq,    effectivemass)
-#α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me
-
-@printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )
-@printf("Derived params in SI: ω =%g mb=%g \n",ω ,mb)
-
-# Initial v,w to use
-initial=[7.1,6.5]
-# Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
-lower=[0.1,0.1]
-upper=[100.0,100.0]
-
-# Empty arrays for storing data 
-# Surely some better way of doing this ф_ф 
-Ts=[]
-Kμs=[]
-Hμs=[]
-FHIPμs=[]
-ks=[]
-Ms=[]
-As=[]
-Bs=[]
-Cs=[]
-Fs=[]
-Taus=[]
-
-# We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
-for T in 10:10:400
-    β=1/(kB*T)
-    βred=ħ*ω*β
-    @printf("T: %f β: %.2g βred: %.2g\t",T,β,βred)
-    myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
-    res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = BFGS, optimizer_o=Optim.Options(autodiff=true))
-    minimum=Optim.minimizer(res)
-    #show(Optim.converged(res)) # All came out as 'true'
-    
-    v=minimum[1]
-    w=minimum[2]
+    # Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
+    mb=effectivemass*MassElectron 
+    ω = (2*pi)*freq # angular-frequency
         
-    @printf(" v= %.2f w= %.2f\t",v,w)
+    α=feynmanalpha(ε_Inf, ε_S,  freq,    effectivemass)
+    #α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me
+
+    @printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )
+    @printf("Derived params in SI: ω =%g mb=%g \n",ω ,mb)
+
+    # Initial v,w to use
+    initial=[7.1,6.5]
+    # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
+    lower=[0.1,0.1]
+    upper=[100.0,100.0]
+
+    # Empty arrays for storing data 
+    # Surely some better way of doing this ф_ф 
+    Ts=[]
+    Kμs=[]
+    Hμs=[]
+    FHIPμs=[]
+    ks=[]
+    Ms=[]
+    As=[]
+    Bs=[]
+    Cs=[]
+    Fs=[]
+    Taus=[]
+
+    # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
+    for T in 10:10:400
+        β=1/(kB*T)
+        βred=ħ*ω*β
+        @printf("T: %f β: %.2g βred: %.2g\t",T,β,βred)
+        myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
+        res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = BFGS, optimizer_o=Optim.Options(autodiff=true))
+        minimum=Optim.minimizer(res)
+        #show(Optim.converged(res)) # All came out as 'true'
         
-    # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
-    # See Page 1007, just after equation (18)
-    # Units of M appear to be 'electron masses'
-    # Unsure of units for k, spring coupling constant
-    k=(v^2-w^2)
-    M=(v^2-w^2)/w^2
-    @printf(" M=%f k=%f\t",M,k)
-    
-    append!(ks,k)
-    append!(Ms,M)
-   
-    # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
-    @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
-    append!(As,A(v,w,βred))
-    append!(Bs,B(v,w,βred,α))
-    append!(Cs,C(v,w,βred))
-    append!(Fs,F(v,w,βred,α))
-    
+        v=minimum[1]
+        w=minimum[2]
+            
+        @printf(" v= %.2f w= %.2f\t",v,w)
+            
+        # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
+        # See Page 1007, just after equation (18)
+        # Units of M appear to be 'electron masses'
+        # Unsure of units for k, spring coupling constant
+        k=(v^2-w^2)
+        M=(v^2-w^2)/w^2
+        @printf(" M=%f k=%f\t",M,k)
+        
+        append!(ks,k)
+        append!(Ms,M)
+       
+        # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
+        @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
+        append!(As,A(v,w,βred))
+        append!(Bs,B(v,w,βred,α))
+        append!(Cs,C(v,w,βred))
+        append!(Fs,F(v,w,βred,α))
+        
 
-    # FHIP 
-    #    - low-T mobility, final result of Feynman1962
-    # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
-    # I believe here β is in SI (expanded) units
-    μ=(w/v)^3 * (3*q)/(4*mb*ħ*ω^2*α*β) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
-    @printf("\n\tμ(FHIP)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
-    append!(Ts,T)
-    append!(FHIPμs,μ*100^2)
-    
+        # FHIP 
+        #    - low-T mobility, final result of Feynman1962
+        # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
+        # I believe here β is in SI (expanded) units
+        μ=(w/v)^3 * (3*q)/(4*mb*ħ*ω^2*α*β) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
+        @printf("\n\tμ(FHIP)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
+        append!(Ts,T)
+        append!(FHIPμs,μ*100^2)
+        
 
-    # Kadanoff
-    #     - low-T mobility, constructed around Boltzmann equation. 
-    #     - Adds factor of 3/(2*beta) c.f. FHIP, correcting phonon emission behaviour
-    # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mob
-    μ=(w/v)^3 * (q)/(2*mb*ω*α) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
-    @printf("\n\tμ(Kadanoff)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
+        # Kadanoff
+        #     - low-T mobility, constructed around Boltzmann equation. 
+        #     - Adds factor of 3/(2*beta) c.f. FHIP, correcting phonon emission behaviour
+        # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mob
+        μ=(w/v)^3 * (q)/(2*mb*ω*α) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
+        @printf("\n\tμ(Kadanoff)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
 
-    append!(Kμs,μ*100^2)
+        append!(Kμs,μ*100^2)
 
-    ######
-    # OK, now deep-diving into Kadanoff1963 itself to extract Boltzmann equation components
-    # Particularly right-hand-side of page 1367
-    #
-    # From 1963 Kadanoff, (9), define eqm. number of phonons (just from T and phonon omega)
-    Nbar=(exp(βred) - 1)^-1
-    @printf("\n\t Eqm. Phonon. pop. Nbar: %f ",Nbar)
-    @printf("\n\texp(Bred): %f exp(-Bred): %f exp(Bred)-1: %f",exp(βred),exp(-βred),exp(βred)-1)
-    Nbar=exp(-βred) 
-    #Note - this is only way to get Kadanoff1963 to be self-consistent with
-    #FHIP, and later statements (Devreese) of the Kadanoff mobility. 
-    #It suggests that Kadanoff used the wrong identy for Nbar in 23(b) for the
-    #Gamma0 function, and should have used a version -1 to account for phonon
-    #statistics
+        ######
+        # OK, now deep-diving into Kadanoff1963 itself to extract Boltzmann equation components
+        # Particularly right-hand-side of page 1367
+        #
+        # From 1963 Kadanoff, (9), define eqm. number of phonons (just from T and phonon omega)
+        Nbar=(exp(βred) - 1)^-1
+        @printf("\n\t Eqm. Phonon. pop. Nbar: %f ",Nbar)
+        @printf("\n\texp(Bred): %f exp(-Bred): %f exp(Bred)-1: %f",exp(βred),exp(-βred),exp(βred)-1)
+        Nbar=exp(-βred) 
+        #Note - this is only way to get Kadanoff1963 to be self-consistent with
+        #FHIP, and later statements (Devreese) of the Kadanoff mobility. 
+        #It suggests that Kadanoff used the wrong identy for Nbar in 23(b) for the
+        #Gamma0 function, and should have used a version -1 to account for phonon
+        #statistics
 
-    #myv=sqrt(k*(1+M)/M) # cross-check maths between different papers
-    #@printf("\nv: %f myv: %f\n",v,myv)
+        #myv=sqrt(k*(1+M)/M) # cross-check maths between different papers
+        #@printf("\nv: %f myv: %f\n",v,myv)
 
-    # Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration --> Gamma0
-    Gamma0=2*α * Nbar * (M+1)^(1/2) * exp(-M/v)
-    Gamma0*=ω  #* (ω *hbar) # Kadanoff 1963 uses hbar=omega=mb=1 units
-        # Factor of omega to get it as a rate relative to phonon frequency
-        # Factor of omega*hbar to get it as a rate per energy window
-    μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
-    @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
-    @printf("\n\tGamma0 = %g rad/s = %g /s Tau=1/Gamma0 = %g = %f ps",
-        Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
-    append!(Taus, 2*pi*1E12/Gamma0)
+        # Between 23 and 24 in Kadanoff 1963, for small momenta skip intergration --> Gamma0
+        Gamma0=2*α * Nbar * (M+1)^(1/2) * exp(-M/v)
+        Gamma0*=ω  #* (ω *hbar) # Kadanoff 1963 uses hbar=omega=mb=1 units
+            # Factor of omega to get it as a rate relative to phonon frequency
+            # Factor of omega*hbar to get it as a rate per energy window
+        μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
+        @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
+        @printf("\n\tGamma0 = %g rad/s = %g /s Tau=1/Gamma0 = %g = %f ps",
+            Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
+        append!(Taus, 2*pi*1E12/Gamma0)
 
-    # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
-    # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
-    R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-    #b=R*βred/sinh(b*βred*v/2) # This self-references b! What on Earth?
-    # OK! I now understand that there is a typo in Hellwarth1999 and
-    # Biaggio1997. They've introduced a spurious b on the R.H.S. compared to
-    # the original, Feynman1962...
-    b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
-    a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
-    k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
-    K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
-    
-    #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
-    RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
-    μ=RHS^-1 * (q)/(ω*mb)
-    @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
-    append!(Hμs,μ*100^2)
-    
-    #Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
-    R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-    b=0 
-    a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
-    k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
-    K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
+        # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
+        # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
+        R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
+        #b=R*βred/sinh(b*βred*v/2) # This self-references b! What on Earth?
+        # OK! I now understand that there is a typo in Hellwarth1999 and
+        # Biaggio1997. They've introduced a spurious b on the R.H.S. compared to
+        # the original, Feynman1962...
+        b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
+        a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
+        k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
+        K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
+        
+        #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
+        RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
+        μ=RHS^-1 * (q)/(ω*mb)
+        @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
+        append!(Hμs,μ*100^2)
+        
+        #Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
+        R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
+        b=0 
+        a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
+        k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
+        K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
 
-    #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
-    RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
-    μ=RHS^-1 * (q)/(ω*mb)
-    @printf("\n\tμ(Hellwarth1999,b=0)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
-    @printf("\n\tError due to b=0; %f",(100^2*μ-Hμs[length(Hμs)])/(100^2*μ))
-    #append!(Hμs,μ*100^2)
-    
-    
-    @printf("\n\n")
-    
-    # Recycle previous variation results (v,w) as next guess
-    initial=[v,w] # Caution! Might cause weird sticking in local minima
-end
+        #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
+        RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
+        μ=RHS^-1 * (q)/(ω*mb)
+        @printf("\n\tμ(Hellwarth1999,b=0)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
+        @printf("\n\tError due to b=0; %f",(100^2*μ-Hμs[length(Hμs)])/(100^2*μ))
+        #append!(Hμs,μ*100^2)
+        
+        
+        @printf("\n\n")
+        
+        # Recycle previous variation results (v,w) as next guess
+        initial=[v,w] # Caution! Might cause weird sticking in local minima
+    end
 
-println("OK - everything calculated and stored. Now plotting..")
+    println("OK - everything calculated and stored. Now plotting..")
 
-#####
-## Mass vs. Temperature plot
-plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
+    #####
+    ## Mass vs. Temperature plot
+    plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
 
-savefig("$fileprefix-mass.png")
-savefig("$fileprefix-mass.eps")
+    savefig("$fileprefix-mass.png")
+    savefig("$fileprefix-mass.eps")
 
-#####
-## Relaxationtime vs. Temperature plot
-plot(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+    #####
+    ## Relaxationtime vs. Temperature plot
+    plot(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
-savefig("$fileprefix-tau.png")
-savefig("$fileprefix-tau.eps")
+    savefig("$fileprefix-tau.png")
+    savefig("$fileprefix-tau.eps")
 
-## Mass + relaxation time vs. Temperature plot
-plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
-plot!(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+    ## Mass + relaxation time vs. Temperature plot
+    plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
+    plot!(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
-savefig("$fileprefix-mass-tau.png")
-savefig("$fileprefix-mass-tau.eps")
+    savefig("$fileprefix-mass-tau.png")
+    savefig("$fileprefix-mass-tau.eps")
 
-#####
-## Spring Constants vs. Temperature plot
-plot(Ts,ks,label="Polaron spring-constant",marker=2, xlab="Temperature (K)",ylab="Spring-const (some internal unit)",)
+    #####
+    ## Spring Constants vs. Temperature plot
+    plot(Ts,ks,label="Polaron spring-constant",marker=2, xlab="Temperature (K)",ylab="Spring-const (some internal unit)",)
 
-savefig("$fileprefix-spring.png")
-savefig("$fileprefix-spring.eps")
+    savefig("$fileprefix-spring.png")
+    savefig("$fileprefix-spring.eps")
 
-#####
-## Variation Energy vs. Temperature plots
-plot(Ts,As,label="A",marker=2, xlab="Temperature (K)",ylab="Free-Energy")
-plot!(Ts,Bs,label="B",marker=2)
-plot!(Ts,Cs,label="C",marker=2)
-plot!(Ts,Fs,label="F",marker=2)
+    #####
+    ## Variation Energy vs. Temperature plots
+    plot(Ts,As,label="A",marker=2, xlab="Temperature (K)",ylab="Free-Energy")
+    plot!(Ts,Bs,label="B",marker=2)
+    plot!(Ts,Cs,label="C",marker=2)
+    plot!(Ts,Fs,label="F",marker=2)
 
-savefig("$fileprefix-variational.png")
-savefig("$fileprefix-variational.eps")
+    savefig("$fileprefix-variational.png")
+    savefig("$fileprefix-variational.eps")
 
-#####
-## Calculated mobility comparison plot
-plot(Ts,Kμs,label="Kadanoff",marker=2,xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",ylims=(0,1000))
-plot!(Ts,FHIPμs,label="FHIP",marker=2)
-plot!(Ts,Hμs,label="Hellwarth1999",marker=2)
+    #####
+    ## Calculated mobility comparison plot
+    plot(Ts,Kμs,label="Kadanoff",marker=2,xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",ylims=(0,1000))
+    plot!(Ts,FHIPμs,label="FHIP",marker=2)
+    plot!(Ts,Hμs,label="Hellwarth1999",marker=2)
 
-savefig("$fileprefix-mobility-calculated.png")
-savefig("$fileprefix-mobility-calculated.eps")
+    savefig("$fileprefix-mobility-calculated.png")
+    savefig("$fileprefix-mobility-calculated.eps")
 
 
-return(Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus)
+    return(Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus)
 end
 
 #####
