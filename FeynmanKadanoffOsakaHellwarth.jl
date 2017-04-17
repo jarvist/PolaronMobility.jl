@@ -9,7 +9,7 @@
 using QuadGK
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-default(size=(800,600)) # For the .png file output
+#default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
 
@@ -264,47 +264,49 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
 
     #####
     ## Mass vs. Temperature plot
-    plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
+    plot(Ts,Ms,label="Phonon effective-mass",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Phonon effective-mass",ylim=(0,1.2))
 
     savefig("$fileprefix-mass.png")
     savefig("$fileprefix-mass.eps")
 
     #####
     ## Relaxationtime vs. Temperature plot
-    plot(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+    plot(Ts,Taus,label="Kadanoff relaxation time (ps)",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
     savefig("$fileprefix-tau.png")
     savefig("$fileprefix-tau.eps")
 
     ## Mass + relaxation time vs. Temperature plot
-    plot(Ts,Ms,label="Phonon effective-mass",marker=2,xlab="Temperature (K)",ylab="Phonon effective-mass (units bare-electron effective-masses)",ylim=(0,1.2))
-    plot!(Ts,Taus,label="Boltzmann eqn. relaxation time (ps)",marker=2,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+    plot(Ts,Ms,label="Phonon effective-mass (m\$_b\$)",markersize=3,marker=:rect,
+        xlab="Temperature (K)",ylab="Effective-mass / relaxation time",ylim=(0,1.2))
+    plot!(Ts,Taus,label="Kadanoff relaxation time (ps)",markersize=3,marker=:diamond,
+        xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
     savefig("$fileprefix-mass-tau.png")
     savefig("$fileprefix-mass-tau.eps")
 
     #####
     ## Spring Constants vs. Temperature plot
-    plot(Ts,ks,label="Polaron spring-constant",marker=2, xlab="Temperature (K)",ylab="Spring-const (some internal unit)",)
+    plot(Ts,ks,label="Polaron spring-constant",markersize=3, marker=:uptriangle, xlab="Temperature (K)",ylab="Spring-constant",)
 
     savefig("$fileprefix-spring.png")
     savefig("$fileprefix-spring.eps")
 
     #####
     ## Variation Energy vs. Temperature plots
-    plot(Ts,As,label="A",marker=2, xlab="Temperature (K)",ylab="Free-Energy")
-    plot!(Ts,Bs,label="B",marker=2)
-    plot!(Ts,Cs,label="C",marker=2)
-    plot!(Ts,Fs,label="F",marker=2)
+    plot( Ts,As,label="A",markersize=3,marker=:downtriangle, xlab="Temperature (K)",ylab="Polaron free-energy")
+    plot!(Ts,Bs,label="B",markersize=3,marker=:diamond)
+    plot!(Ts,Cs,label="C",markersize=3,marker=:uptriangle)
+    plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
 
     savefig("$fileprefix-variational.png")
     savefig("$fileprefix-variational.eps")
 
     #####
     ## Calculated mobility comparison plot
-    plot(Ts,Kμs,label="Kadanoff",marker=2,xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",ylims=(0,1000))
-    plot!(Ts,FHIPμs,label="FHIP",marker=2)
-    plot!(Ts,Hμs,label="Hellwarth1999",marker=2)
+    plot(Ts,Kμs,label="Kadanoff",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)",ylims=(0,1000))
+    plot!(Ts,FHIPμs,label="FHIP",markersize=3,marker=:diamond)
+    plot!(Ts,Hμs,label="Hellwarth1999",markersize=3,marker=:uptriangle)
 
     savefig("$fileprefix-mobility-calculated.png")
     savefig("$fileprefix-mobility-calculated.eps")
@@ -371,16 +373,16 @@ Semonin =
 
 #####
 ## Calculated mobilities vs. expt
-plot(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",
-xlab="Temperature (K)",ylab="Mobility (cm^2/Vs)",marker=2, ylims=(0,400) )
-plot!(Saidaminov[:,1],Saidaminov[:,2],label="Saidaminov JV Single Crystal", marker=6)
-plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", marker=6)
+plot(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",marker=:hexagon,markersize=3,
+xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)", ylims=(0,400) )
+plot!(Saidaminov[:,1],Saidaminov[:,2],label="Saidaminov JV Single Crystal", markersize=6,marker=:utriangle)
+plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", markersize=6,marker=:hexagon)
 
 #plot!(Ts,eKμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,eHμs,label="(electrons) Hellwarth1999 Polaron mobility",marker=2)
+plot!(Ts,eHμs,label="(electrons) Hellwarth1999 Polaron mobility",markersize=3,marker=:diamond)
 
 #plot!(Ts,hKμs,label="(holes) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,hHμs,label="(holes) Hellwarth1999 Polaron mobility",marker=2)
+plot!(Ts,hHμs,label="(holes) Hellwarth1999 Polaron mobility",markersize=3,marker=:dtriangle)
 
 savefig("MAPI-eh-mobility-calculated-experimental.png")
 savefig("MAPI-eh-mobility-calculated-experimental.eps")
