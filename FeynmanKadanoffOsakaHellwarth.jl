@@ -424,6 +424,10 @@ plot!(Ts,hHμs,label="(holes) Hellwarth1999 Polaron mobility",markersize=3,marke
 savefig("MAPI-eh-mobility-calculated-experimental.png")
 savefig("MAPI-eh-mobility-calculated-experimental.eps")
 
+plot!(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:rect)
+savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
+savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
+
 
 println("That's me!")
 
