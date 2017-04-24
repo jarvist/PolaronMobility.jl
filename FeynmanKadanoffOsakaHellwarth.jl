@@ -98,6 +98,14 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
     @printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )
     @printf("Derived params in SI: ω =%g mb=%g \n",ω ,mb)
 
+    # Dump to log file
+    f=open("$fileprefix.dat","w")
+    @printf(f,"#Model parameters: ε_Inf=%f ε_S=%f freq=%g mb=%f \n",ε_Inf, ε_S, freq, effectivemass)
+    @printf(f,"#Params in SI: ω =%g mb=%g \n",ω ,mb)
+    @printf(f,"#Alpha parameter: α = %f  \n",α )
+    close(f)
+
+
     # Initial v,w to use
     initial=[7.1,6.5]
     # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
@@ -251,7 +259,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
 
     println("OK - everything calculated and stored. Now plotting..")
 
-    f=open("$fileprefix.dat","w")
+    f=open("$fileprefix.dat","a")
     @printf(f,"# %s \n# Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus\n",fileprefix)
     for i in 1:length(Ts)
         @printf(f,"%d %g %g %g %g %g %g %g %g %g %g \n",
@@ -333,6 +341,22 @@ Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus = polaronmobility
 # Horribly non-converged! Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
 polaronmobility("CsPbI3-electron",     6.1,6.1+12.0, 2.57E12, 0.12)
+
+cm1=2.997e10 # cm-1 to Herz
+
+# Rob's / Sendner's paper - values extracted form IR measures
+# https://doi.org/10.1039%2Fc6mh00275g
+Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 40*cm1, 0.104)
+Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3, 51*cm1, 0.117)
+Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 70*cm1, 0.2)
+
+plot(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
+plot!(Ts,MAPBr,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
+plot!(Ts,MAPCl,label="(Rob's values) MAPCl",markersize=2,marker=:diamond)
+savefig("Rob-comparison.png")
+savefig("Rob-comparison.eps")
+
+
 
 
 
