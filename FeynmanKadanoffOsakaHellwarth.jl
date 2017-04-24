@@ -125,11 +125,15 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
     Cs=[]
     Fs=[]
     Taus=[]
+    vs=[]
+    ws=[]
+    βreds=[]
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
     for T in 10:10:400
         β=1/(kB*T)
         βred=ħ*ω*β
+        append!(βreds,βred)
         @printf("T: %f β: %.2g βred: %.2g ħω  = %.2g meV\t",T,β,βred, 1000.0*ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
         res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = BFGS, optimizer_o=Optim.Options(autodiff=true))
@@ -151,7 +155,6 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
         
         append!(ks,k)
         append!(Ms,M)
-      
 
         # Schultz1959 - rather nicely he actually specifies everything down into units!
         # just before (2.4) in Shultz1959
@@ -255,15 +258,18 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
         
         # Recycle previous variation results (v,w) as next guess
         initial=[v,w] # Caution! Might cause weird sticking in local minima
+        append!(vs,v)
+        append!(ws,w)
     end
 
     println("OK - everything calculated and stored. Now plotting..")
 
     f=open("$fileprefix.dat","a")
-    @printf(f,"# %s \n# Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus\n",fileprefix)
+    @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus\n",fileprefix)
     for i in 1:length(Ts)
-        @printf(f,"%d %g %g %g %g %g %g %g %g %g %g \n",
-        Ts[i], Kμs[i], Hμs[i], FHIPμs[i], 
+        @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g \n",
+        Ts[i], βreds[i], Kμs[i], Hμs[i], FHIPμs[i], 
+        vs[i], ws[i],
         ks[i], Ms[i], As[i], Bs[i], Cs[i], Fs[i], 
         Taus[i])
     end
@@ -346,9 +352,16 @@ cm1=2.997e10 # cm-1 to Herz
 
 # Rob's / Sendner's paper - values extracted form IR measures
 # https://doi.org/10.1039%2Fc6mh00275g
-Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 40*cm1, 0.104)
-Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3, 51*cm1, 0.117)
-Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 70*cm1, 0.2)
+#Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 40*cm1, 0.104)
+#Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3, 51*cm1, 0.117)
+#Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 70*cm1, 0.2)
+
+# Private communication:
+# For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
+Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 112.9*cm1, 0.104)
+Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3,149.4*cm1, 0.117)
+Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 214.0*cm1, 0.2)
+
 
 plot(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
 plot!(Ts,MAPBr,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
