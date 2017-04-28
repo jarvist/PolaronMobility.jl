@@ -65,7 +65,7 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 
 #####
 # OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
-function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
+function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true)
     @printf("Calculating polaron mobility for %s ...\n",fileprefix)
 
     # Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
@@ -242,6 +242,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
         append!(ws,w)
     end
 
+    if figures 
     println("OK - everything calculated and stored. Now plotting..")
 
     f=open("$fileprefix.dat","a")
@@ -304,7 +305,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass)
 
     savefig("$fileprefix-mobility-calculated.png")
     savefig("$fileprefix-mobility-calculated.eps")
-
+    end
 
     return(Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus)
 end

@@ -51,6 +51,24 @@ checkalpha()
 #####
 # Call simulation
 
+# CsSnX3 X={Cl,Br,I}
+# L. Huang, W.Lambrecht - PRB 88, 165203 (2013)
+# Dielectric consts, from TABLE VII
+# Effective masses from TABLE VI, mh*
+const cm1=2.997e10 # cm-1 to Herz
+polaronmobility("CsSnCl3",  4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
+polaronmobility("CsSnBr3",  5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
+polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+
+# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus
+# CsSnBr3.dat:300 0.877382 511.513 356.358 874.499 8.13686 7.31511 12.6976 0.23729 -3.78992 2.15682 0.84436 0.788735 0.185396
+# CsSnCl3.dat:300 1.165048 212.034 147.36 272.993 6.50772 5.58522 11.1557 0.357614 -3.5556 2.42611 0.947833 0.181657 0.143969
+# CsSnI3.dat:300 0.728755 703.502 487.085 1448.02 9.64022 8.80508 15.4044 0.198691 -4.01438 2.18761 0.859401 0.967371 0.207864
+
+# So for CsSnSi3, a hole-mobility of 487(Hellwarth)-703(Kadanoff). Compares to expt. 400 (transport) -  585 (Hall effect). Ace!
+
+end
+
 #Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus
 #effectivemass=0.12 # the bare-electron band effective-mass. 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
