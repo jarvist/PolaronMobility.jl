@@ -68,27 +68,33 @@ Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus = polaronmobility
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
 polaronmobility("CsPbI3-electron",     6.1,6.1+12.0, 2.57E12, 0.12)
 
-cm1=2.997e10 # cm-1 to Herz
 
-# Rob's / Sendner's paper - values extracted form IR measures
-# https://doi.org/10.1039%2Fc6mh00275g
-#Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 40*cm1, 0.104)
-#Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3, 51*cm1, 0.117)
-#Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 70*cm1, 0.2)
+function SendnerCrosscheck()
+    cm1=2.997e10 # cm-1 to Herz
 
-# Private communication:
-# For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
-Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 112.9*cm1, 0.104)
-Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3,149.4*cm1, 0.117)
-Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 214.0*cm1, 0.2)
+    # Rob's / Sendner's paper - values extracted form IR measures
+    # https://doi.org/10.1039%2Fc6mh00275g
+    #Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 40*cm1, 0.104)
+    #Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3, 51*cm1, 0.117)
+    #Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 70*cm1, 0.2)
 
+    # Private communication. It is not well described in the paper but they
+    # used one the Hellwarth effective-mode method to reduce the observed IR
+    # oscillators down to a single mode. Rob provided these values by email (as
+    # below). The Effetive Masses and dielectric constants are from the paper.
+    # Combined, this reproduces their mobilities, and the internal w and
+    # v parameters (again, email from Rob).  
+    # For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
+    Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 112.9*cm1, 0.104)
+    Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3,149.4*cm1, 0.117)
+    Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 214.0*cm1, 0.2)
 
-plot(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
-plot!(Ts,MAPBr,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
-plot!(Ts,MAPCl,label="(Rob's values) MAPCl",markersize=2,marker=:diamond)
-savefig("Rob-comparison.png")
-savefig("Rob-comparison.eps")
-
+    plot(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
+    plot!(Ts,MAPBr,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
+    plot!(Ts,MAPCl,label="(Rob's values) MAPCl",markersize=2,marker=:diamond)
+    savefig("Rob-comparison.png")
+    savefig("Rob-comparison.eps")
+end
 
 
 
