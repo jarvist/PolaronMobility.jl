@@ -16,6 +16,8 @@ using FeynmanKadanoffOsakaHellwarth
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
+default(grid=false) # No silly dotted grid lines
+default(size=(400,300))
 #default(size=(800,600)) # For the .png file output
 
 # Physical constants
@@ -56,9 +58,9 @@ checkalpha()
 # Dielectric consts, from TABLE VII
 # Effective masses from TABLE VI, mh*
 const cm1=2.997e10 # cm-1 to Herz
-polaronmobility("CsSnCl3",  4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
-polaronmobility("CsSnBr3",  5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
-polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+#polaronmobility("CsSnCl3",  4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
+#polaronmobility("CsSnBr3",  5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
+#polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
 
 # Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus
 # CsSnBr3.dat:300 0.877382 511.513 356.358 874.499 8.13686 7.31511 12.6976 0.23729 -3.78992 2.15682 0.84436 0.788735 0.185396
@@ -66,8 +68,6 @@ polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1
 # CsSnI3.dat:300 0.728755 703.502 487.085 1448.02 9.64022 8.80508 15.4044 0.198691 -4.01438 2.18761 0.859401 0.967371 0.207864
 
 # So for CsSnSi3, a hole-mobility of 487(Hellwarth)-703(Kadanoff). Compares to expt. 400 (transport) -  585 (Hall effect). Ace!
-
-end
 
 #Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus
 #effectivemass=0.12 # the bare-electron band effective-mass. 
@@ -114,8 +114,7 @@ function SendnerCrosscheck()
     savefig("Rob-comparison.eps")
 end
 
-
-
+#SendnerCrosscheck()
 
 #####
 ## Expt. data to compare against
@@ -156,14 +155,17 @@ Semonin =
 ## Calculated mobilities vs. expt
 plot(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",marker=:hexagon,markersize=3,
 xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)", ylims=(0,400) )
-plot!(Saidaminov[:,1],Saidaminov[:,2],label="Saidaminov JV Single Crystal", markersize=6,marker=:utriangle)
-plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", markersize=6,marker=:hexagon)
+plot!(Saidaminov[:,1],Saidaminov[:,2],label="",markersize=6,marker=:utriangle)
+plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
+#plot!(Saidaminov[:,1],Saidaminov[:,2],label="Saidaminov JV Single Crystal", markersize=6,marker=:utriangle)
+#plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", markersize=6,marker=:hexagon)
+
 
 #plot!(Ts,eKμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,eHμs,label="(electrons) Hellwarth1999 Polaron mobility",markersize=3,marker=:diamond)
+plot!(Ts,eHμs,label="Calculated (electron) mobility",markersize=3,marker=:diamond)
 
 #plot!(Ts,hKμs,label="(holes) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,hHμs,label="(holes) Hellwarth1999 Polaron mobility",markersize=3,marker=:dtriangle)
+plot!(Ts,hHμs,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
 
 savefig("MAPI-eh-mobility-calculated-experimental.png")
 savefig("MAPI-eh-mobility-calculated-experimental.eps")

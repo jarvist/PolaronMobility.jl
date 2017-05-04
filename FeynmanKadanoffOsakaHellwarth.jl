@@ -292,7 +292,9 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
     plot( Ts,As,label="A",markersize=3,marker=:downtriangle, xlab="Temperature (K)",ylab="Polaron free-energy")
     plot!(Ts,Bs,label="B",markersize=3,marker=:diamond)
     plot!(Ts,Cs,label="C",markersize=3,marker=:uptriangle)
-    plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
+    plot!(Ts,Fs,label="F",markersize=3,marker=:rect)
+    #plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
+
 
     savefig("$fileprefix-variational.png")
     savefig("$fileprefix-variational.eps")
