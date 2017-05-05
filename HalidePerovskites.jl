@@ -17,8 +17,9 @@ using FeynmanKadanoffOsakaHellwarth
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
 default(grid=false) # No silly dotted grid lines
-default(size=(400,300))
-#default(size=(800,600)) # For the .png file output
+default(size=(400,300)) # A good small size for two-column EPS output
+
+#default(size=(800,600)) # Nice size for small-ish PNGs for slides
 
 # Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
