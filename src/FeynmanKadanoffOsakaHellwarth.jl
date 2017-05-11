@@ -9,13 +9,13 @@ export feynmanalpha, polaronmobility
 
 ##### load in library routines... #####
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
-using QuadGK
+import QuadGK.quadgk
+
 # Plot figures with Plots, which defaults to Pyplot backend
-using Plots
+#using Plots
 #default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
-
 
 # Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
@@ -242,11 +242,10 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
         append!(ws,w)
     end
 
-    if figures 
-    println("OK - everything calculated and stored. Now plotting..")
-
+    println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","a")
     @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus\n",fileprefix)
+    @printf(f,"#  1    2     3    4     5     6   7    8  9   10  11  12  13  14\n") # columns for GNUPLOT etc.
     for i in 1:length(Ts)
         @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g \n",
         Ts[i], βreds[i], Kμs[i], Hμs[i], FHIPμs[i], 
@@ -255,6 +254,9 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
         Taus[i])
     end
     close(f)
+
+    if figures # only if asked to plot... 
+    println("OK - everything calculated and stored. Now plotting..")
 
 
     #####
