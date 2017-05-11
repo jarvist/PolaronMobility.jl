@@ -58,7 +58,7 @@ MAPI= [
 MAPI_low=MAPI[19:33,:] # Just inorganic components, everything below 10THz; modes 3-18
 
 
-# Hellwarth Table II - BiSiO frequencies
+# Hellwarth et al. PRB 1999 Table II - BiSiO frequencies and activities
 HellwarthII = [
     106.23 8.86
     160.51 9.50
@@ -73,24 +73,35 @@ HellwarthII = [
     834.53 89.36
 ]
 
+println("Attempting to reproduce Hellwarth et al.'s data.")
+println("\nB scheme: (athermal)")
 HellwarthBScheme(HellwarthII)
-println(" should agree with values given in Hellwarth(60) W_e=196.9 cm^-1 and Hellwarth(61) Ω_e=500 cm^-1")
+println("    ... should agree with values given in Hellwarth(60) W_e=196.9 cm^-1 and Hellwarth(61) Ω_e=500 cm^-1")
+
+println("\nA Scheme: (thermal)")
+HellwarthAScheme(HellwarthII)
+
+const THzInCM1=0.02998
+println("\nA Scheme, converting first to THz:")
+omegathz=HellwarthAScheme( [HellwarthII[:,1].*THzInCM1 HellwarthII[:,2]] ) # convert data to Thz
+@printf("Converted back %f cm^-1\n",omegathz/THzInCM1)
+println("    ... should agree with values given in Hellwarth\n TableII: H50sum= 91.34 cm^-1, \n W_e=196.9 cm^-1 and Hellwarth(53) Ω_e=504 cm^-1")
+
+
+println("\n\nMAPI: BScheme (athermal)")
 println("\t MAPI: (all values)")
 HellwarthBScheme(MAPI)
-println("\t MAPI: (low-frequency, non molecular IR)")
+println("\t MAPI: (low-frequency, non molecular IR, only)")
 HellwarthBScheme(MAPI_low)
 
-
-HellwarthAScheme(HellwarthII)
-HellwarthAScheme( [HellwarthII[:,1].*0.02998 HellwarthII[:,2]] ) # convert data to Thz
-println(" should agree with values given in Hellwarth\n TableII: H50sum= 91.34 cm^-1, \n W_e=196.9 cm^-1 and Hellwarth(53) Ω_e=504 cm^-1")
-
+println("\nMAPI: AScheme (thermal)")
 println("\t MAPI: (all values)")
 HellwarthAScheme(MAPI)
 println("\t MAPI: (low-frequency, non molecular IR)")
 HellwarthAScheme(MAPI_low)
 
 
+println("\n Test summation of Lorentz oscillators to get to static dielectric constant from i.r. modes.")
 # Integrate through Lorentz oscillators to get dielectric fn
 # Should give 'extra' contribution from these modes, extrapolated to zero omega
 function integrate_dielectric(LO,V0)
