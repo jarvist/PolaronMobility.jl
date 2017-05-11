@@ -9,7 +9,7 @@
 # Jarvist Moore Frost
 # (Submitted on 18 Apr 2017 [v1])
 
-push!(LOAD_PATH,"./") # load module from local directory
+push!(LOAD_PATH,"../src/") # load module from local directory
 
 using FeynmanKadanoffOsakaHellwarth
 
