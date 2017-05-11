@@ -6,6 +6,7 @@
 
 module FeynmanKadanoffOsakaHellwarth
 export feynmanalpha, polaronmobility
+export HellwarthBScheme, HellwarthAScheme
 
 ##### load in library routines... #####
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
@@ -26,6 +27,13 @@ const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
 # via Feynman 1955
 #   http://dx.doi.org/10.1103/PhysRev.97.660
+"""
+feynmanalpha(ε_Inf,ε_S,freq,m_eff)
+
+    Calculates the Frohlich alpha parameter, for a given dielectric constant,
+    frequency (f) of phonon in Hertz, and effective mass (in units of the
+    bare electron mass).
+"""
 function feynmanalpha(ε_Inf,ε_S,freq,m_eff)
     ω=freq*2*pi #frequency to angular velocity
     # Note to self - you've introduced the 4*pi factor into the dielectric constant; 
@@ -35,6 +43,72 @@ function feynmanalpha(ε_Inf,ε_S,freq,m_eff)
     α=0.5* (1/ε_Inf - 1/ε_S)/(4*pi*ε_0) * (q^2/(hbar*ω)) * (2*me*m_eff*ω/hbar)^0.5
     return (α)
 end
+
+#####
+# Hellwarth multiple phonon branch reduction
+
+# Most simple scheme
+# Hellwarth (58), assuming further typo on LHS, actually should be W_e
+"""
+	HellwarthBScheme(LO)
+
+	Multiple phonon mode reduction to a single effective frequency.
+	Hellwarth et al. 1999 PRB, 'B scheme'.
+	Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
+"""
+function HellwarthBScheme(LO)
+    println("Hellwarth B Scheme... (athermal)")
+    H58 = sum( (LO[:,2].^2)./ LO[:,1].^2 )
+    println("Hellwarth (58) summation: ",H58)
+
+    H59 = sum( LO[:,2].^2 ) # sum of total ir activity squarred
+    println("Hellwarth (59) summation (total ir activity ^2): ", H59)
+    println("Hellwarth (59) W_e (total ir activity ): ", sqrt(H59))
+
+    omega = sqrt(H59 / H58)
+    println("Hellwarth (61) Omega (freq): ",omega)
+
+	return(omega)
+end
+
+# More complex scheme, involving thermodynamic Beta
+# Hellwarth(50), RHS
+"""
+	HellwarthAScheme(LO,T=295)
+
+	Multiple phonon mode reduction to a single effective frequency. 
+	Temperature dependent, defaults to T=295 K.
+	UNTESTED AND UNCERTAIN CODE.
+
+	Follows Hellwarth et al. 1999 PRB, Eqn 50 RHS.
+"""
+function HellwarthAScheme(LO,T=295)
+    println("Hellwarth A scheme...T=$T K")
+    β=LO[:,1].*2*pi*1E12*ħ/(kB*T) #assuming units of THz
+    H50 = sum( ((LO[:,2].^2).*coth.(β))./LO[:,1] )
+    println("Hellwarth (50) summation: ",H50)
+
+    H51= sum( LO[:,2].^2 ) # sum of total ir activity squarred
+    println("Hellwarth (51) summation (total ir activity ^2): ", H51)
+    println("Hellwarth (51) W_e (total ir activity ): ", sqrt(H51))
+
+    # OK; so this is deriving Omega / coth(Beta/2)
+    omegacoth=H51/H50
+    println("omegacoth: ",omegacoth)
+
+    # Very primitive manner to decouple Omega from both sides of the eqn.
+	# Should really rewrite as a bisection (at least!)
+    for freq in 0.1:0.1:20
+        pseudo_omega=omegacoth*coth(freq * 2*pi*1E12*ħ/(2*kB*T))
+        if freq>pseudo_omega
+            println("freq: $freq pseudo-omega: $pseudo_omega")
+            break
+        end
+    end
+	return(freq)
+end
+
+
 
 #####
 # Set up equations for the polaron free energy, which we will variationally improve upon

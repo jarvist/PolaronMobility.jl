@@ -1,3 +1,9 @@
+# HellwarthEffectiveFrequency.jl 
+#   - use Hellwarth et al. 1999 PRB method to reduce multiple phonon modes to a single effective frequency
+
+push!(LOAD_PATH,"../src/") # load module from local directory
+using FeynmanKadanoffOsakaHellwarth
+
 # ((freq THz)) ((IR Activity / e^2 amu^-1))
 # These data from MAPbI3-Cubic_PeakTable.csv
 # https://github.com/WMD-group/Phonons/tree/master/2015_MAPbI3/SimulatedSpectra
@@ -67,69 +73,22 @@ HellwarthII = [
     834.53 89.36
 ]
 
-# Most simple scheme
-# Hellwarth (58), assuming further typo on LHS, actually should be W_e
-function HellwarthBscheme(LO)
-    println("Hellwarth B Scheme... (athermal)") 
-    H58 = sum( (LO[:,2].^2)./ LO[:,1].^2 )
-    println("Hellwarth (58) summation: ",H58)
-
-    H59 = sum( LO[:,2].^2 ) # sum of total ir activity squarred
-    println("Hellwarth (59) summation (total ir activity ^2): ", H59)
-    println("Hellwarth (59) W_e (total ir activity ): ", sqrt(H59))
-
-
-    omega = sqrt(H59 / H58)
-    println("Hellwarth (61) Omega (freq): ",omega)
-end
-
-HellwarthBscheme(HellwarthII)
+HellwarthBScheme(HellwarthII)
 println(" should agree with values given in Hellwarth(60) W_e=196.9 cm^-1 and Hellwarth(61) Ω_e=500 cm^-1")
 println("\t MAPI: (all values)")
-HellwarthBscheme(MAPI)
+HellwarthBScheme(MAPI)
 println("\t MAPI: (low-frequency, non molecular IR)")
-HellwarthBscheme(MAPI_low)
+HellwarthBScheme(MAPI_low)
 
 
-# More complex scheme, involving thermodynamic Beta
-# Hellwarth(50), RHS
-const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
-const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2 
-const me=MassElectron = 9.10938188e-31;                          # kg
-const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2 
-
-function HellwarthAscheme(LO,T=295)
-    println("Hellwarth A scheme...T=$T K") 
-    β=LO[:,1].*2*pi*1E12*ħ/(kB*T) #assuming units of THz
-    H50 = sum( ((LO[:,2].^2).*coth.(β))./LO[:,1] )
-    println("Hellwarth (50) summation: ",H50)
-
-    H51= sum( LO[:,2].^2 ) # sum of total ir activity squarred
-    println("Hellwarth (51) summation (total ir activity ^2): ", H51)
-    println("Hellwarth (51) W_e (total ir activity ): ", sqrt(H51))
-
-    # OK; so this is deriving Omega / coth(Beta/2)
-    omegacoth=H51/H50
-    println("omegacoth: ",omegacoth)
-
-    # NOT FINISHED - need to somehow decouple Omega from both sides of the eqn. 
-    for freq in 0.1:0.1:20
-        pseudo_omega=omegacoth*coth(freq * 2*pi*1E12*ħ/(2*kB*T))
-        if freq>pseudo_omega
-            println("freq: $freq pseudo-omega: $pseudo_omega")
-            break
-        end
-    end
-end
-
-HellwarthAscheme(HellwarthII)
-HellwarthAscheme( [HellwarthII[:,1].*0.02998 HellwarthII[:,2]] ) # convert data to Thz
+HellwarthAScheme(HellwarthII)
+HellwarthAScheme( [HellwarthII[:,1].*0.02998 HellwarthII[:,2]] ) # convert data to Thz
 println(" should agree with values given in Hellwarth\n TableII: H50sum= 91.34 cm^-1, \n W_e=196.9 cm^-1 and Hellwarth(53) Ω_e=504 cm^-1")
 
 println("\t MAPI: (all values)")
-HellwarthAscheme(MAPI)
+HellwarthAScheme(MAPI)
 println("\t MAPI: (low-frequency, non molecular IR)")
-HellwarthAscheme(MAPI_low)
+HellwarthAScheme(MAPI_low)
 
 
 # Integrate through Lorentz oscillators to get dielectric fn
@@ -139,12 +98,13 @@ function integrate_dielectric(LO,V0)
     summate*4*π/V0
 end
 
-Å=1E-10 # angstrom in metres
-r=6.29Å # Sensible cubic cell size
-V0=(r)^3
+const Å=1E-10 # angstrom in metres
+const r=6.29Å # Sensible cubic cell size
+const V0=(r)^3
 println("volume: $V0")
 const amu=1.66054e-27
 const ε0=8.854187817E-12
+const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2 
 
 MAPI_SI = [ MAPI[:,1].*10^12*2*π MAPI[:,2]./(q^2/amu) ]
 
