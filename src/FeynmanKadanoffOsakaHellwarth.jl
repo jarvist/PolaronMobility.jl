@@ -13,7 +13,7 @@ export HellwarthBScheme, HellwarthAScheme
 import QuadGK.quadgk
 
 # Plot figures with Plots, which defaults to Pyplot backend
-#using Plots
+using Plots
 #default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
@@ -96,6 +96,7 @@ function HellwarthAScheme(LO,T=295)
     omegacoth=H51/H50
     println("omegacoth: ",omegacoth)
 
+    freq=0.0 #required for Julia 0.5 so it realises variable still required for return.
     # Very primitive manner to decouple Omega from both sides of the eqn.
 	# Should really rewrite as a bisection (at least!)
     for freq in 0.1:0.1:20
