@@ -183,15 +183,17 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
     vs=[]
     ws=[]
     βreds=[]
+    rfsis=[]
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
-    for T in 10:10:400
+    for T in 10:10:4000
         β=1/(kB*T)
         βred=ħ*ω*β
         append!(βreds,βred)
         @printf("T: %f β: %.2g βred: %.2g ħω  = %.2g meV\t",T,β,βred, 1000.0*ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
-        res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = BFGS, optimizer_o=Optim.Options(autodiff=true))
+        res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); 
+                optimizer=BFGS, optimizer_o=(Optim.Options(autodiff=true)))
         minimum=Optim.minimizer(res)
         #show(Optim.converged(res)) # All came out as 'true'
         
@@ -217,7 +219,9 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
         # (2.4)
         rf=sqrt(3/(2*mu*v))
         # (2.4) SI scaling inferred from units in (2.5a) and Table II
-        @printf("\n Schultz: rf= %g (int units) = %g m [SI]",rf,rf*sqrt(2*me*ω ) )
+        rfsi=rf*sqrt(2*me*ω )
+        @printf("\n Schultz: rf= %g (int units) = %g m [SI]",rf,rfsi )
+        append!(rfsis,rfsi)
 
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
         @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
@@ -319,20 +323,19 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
 
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","a")
-    @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus\n",fileprefix)
-    @printf(f,"#  1    2     3    4     5     6   7    8  9   10  11  12  13  14\n") # columns for GNUPLOT etc.
+    @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis\n",fileprefix)
+    @printf(f,"#  1    2     3    4     5     6   7    8  9   10  11  12  13  14 15\n") # columns for GNUPLOT etc.
     for i in 1:length(Ts)
-        @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g \n",
+        @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g %g \n",
         Ts[i], βreds[i], Kμs[i], Hμs[i], FHIPμs[i], 
         vs[i], ws[i],
         ks[i], Ms[i], As[i], Bs[i], Cs[i], Fs[i], 
-        Taus[i])
+        Taus[i], rfsis[i])
     end
     close(f)
 
     if figures # only if asked to plot... 
     println("OK - everything calculated and stored. Now plotting..")
-
 
     #####
     ## Mass vs. Temperature plot
@@ -372,9 +375,14 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
     plot!(Ts,Fs,label="F",markersize=3,marker=:rect)
     #plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
 
-
     savefig("$fileprefix-variational.png")
     savefig("$fileprefix-variational.eps")
+
+    #####
+    ## Polaron radius vs. Temperature
+    plot(Ts,rfsis.*10^10,label="Schultz Feynman radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)")
+    savefig("$fileprefix-radius.png")
+    savefig("$fileprefix-radius.eps")
 
     #####
     ## Calculated mobility comparison plot
@@ -386,7 +394,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
     savefig("$fileprefix-mobility-calculated.eps")
     end
 
-    return(Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus)
+    return(Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus,rfsis)
 end
 
 end

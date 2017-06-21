@@ -74,8 +74,8 @@ const cm1=2.997e10 # cm-1 to Herz
 #effectivemass=0.12 # the bare-electron band effective-mass. 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-Ts,eKμs, eHμs, eFHIPμs, eks, eMs, eAs, eBs, eCs, eFs, eTaus = polaronmobility("MAPI-electron", 4.5, 24.1, 2.25E12, 0.12)
-Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus = polaronmobility("MAPI-hole",     4.5, 24.1, 2.25E12, 0.15)
+Ts,eKμs, eHμs, eFHIPμs, eks, eMs, eAs, eBs, eCs, eFs, eTaus, erfsis = polaronmobility("MAPI-electron", 4.5, 24.1, 2.25E12, 0.12)
+Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus, hrfsis = polaronmobility("MAPI-hole",     4.5, 24.1, 2.25E12, 0.15)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 #polaronmobility("PCBM",     4.0, 5.0, 2.25E12, 1.00)
@@ -89,7 +89,7 @@ polaronmobility("CsPbI3-electron",     6.1,6.1+12.0, 2.57E12, 0.12)
 
 
 function SendnerCrosscheck()
-    cm1=2.997e10 # cm-1 to Herz
+    const cm1=2.997e10 # cm-1 to Herz
 
     # Rob's / Sendner's paper - values extracted form IR measures
     # https://doi.org/10.1039%2Fc6mh00275g
@@ -177,6 +177,4 @@ savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
 
 
 println("That's me!")
-
-
 
