@@ -14,6 +14,7 @@ import QuadGK.quadgk
 
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
+#gr()
 #default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
@@ -140,7 +141,7 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 
 #####
 # OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
-function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true)
+function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true)
     @printf("Calculating polaron mobility for %s ...\n",fileprefix)
 
     # Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
@@ -186,7 +187,7 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
     rfsis=[]
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
-    for T in 10:10:4000
+    for T in Trange #10:10:4000
         β=1/(kB*T)
         βred=ħ*ω*β
         append!(βreds,βred)
@@ -200,28 +201,62 @@ function polaronmobility(fileprefix,ε_Inf, ε_S,  freq,    effectivemass; figur
         v=minimum[1]
         w=minimum[2]
             
-        @printf("\n VariationalParams v= %.2f w= %.2f\t",v,w)
-            
+        @printf("\n VariationalParams v= %.2f = %.2g Hz \t w= %.2f = %.2g Hz\t",v,v*ω /(2*pi),w,w*ω /(2*pi))
+        
         # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
         # See Page 1007, just after equation (18)
         # Units of M appear to be 'electron masses'
         # Unsure of units for k, spring coupling constant
         k=(v^2-w^2)
         M=(v^2-w^2)/w^2
-        @printf(" M=%f k=%f\t",M,k)
-        
         append!(ks,k)
         append!(Ms,M)
 
+        @printf(" M=%f k=%f\t",M,k)
+        
+		# (46) in Feynman1955
+		meSmallAlpha(α )=α /6 + 0.025*α ^2
+		# (47) In Feynman1955
+		meLargeAlpha(α )=16*α ^4 / (81*π ^4)
+		#meLargeAlpha(α )=202*(α /10)^4
+		println("\n Feynman1955(46,47): meSmallAlpha(α)=",meSmallAlpha(α)," meLargeAlpha(α)=",meLargeAlpha(α))
+
+        @printf("\n Feynman1962: Large alpha, v/w = %.2f  =~approx~= alpha^2 = %.2f ",v/w,α ^2)
+
         # Schultz1959 - rather nicely he actually specifies everything down into units!
-        # just before (2.4) in Shultz1959
+        # just before (2.4) in Schultz1959
         mu=((v^2-w^2)/v^2)
         # (2.4)
         rf=sqrt(3/(2*mu*v))
         # (2.4) SI scaling inferred from units in (2.5a) and Table II
         rfsi=rf*sqrt(2*me*ω )
-        @printf("\n Schultz: rf= %g (int units) = %g m [SI]",rf,rfsi )
+        @printf("\n Schultz1959(2.4): rf= %g (int units) = %g m [SI]",rf,rfsi )
         append!(rfsis,rfsi)
+
+		rf=(3/(0.44*α ))^0.5
+        rfsi=rf*sqrt(2*me*ω )
+        @printf("\n Schultz1959(2.5a), Feynman alpha->0 expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
+		rf=3*(pi/2)^0.5 * α 
+        rfsi=rf*sqrt(2*me*ω )
+        @printf("\n Schultz1959(2.5a), Feynman alpha>-Inf expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
+        
+        # Schultz1959 - Between (5.7) and (5.8) - resonance of Feynman SHM system
+        phononfreq=sqrt(k/M)
+        @printf("\n Schultz1959 (5.7-5.8) fixed-e: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+            phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
+ 
+        phononfreq=sqrt(k/mu) # reduced mass
+        @printf("\n Schultz1959: (5.7-5.8) reducd mass: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+            phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
+        
+        @printf("\n Schultz1959: electronfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+            sqrt(k/1),sqrt(k/1)*ω /(2*pi), sqrt(k/1)*hbar*ω *1000/q)
+        @printf("\n Schultz1959: combinedfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+            sqrt(k/(1+M)),sqrt(k/(1+M))*ω /(2*pi), sqrt(k/(1+M))*hbar*ω *1000/q)
+
+        # Devreese1972: 10.1103/PhysRevB.5.2367
+        # p.2371, RHS.
+        @printf("\n Devreese1972: (Large Alpha) Franck-Condon frequency = %.2f", 4*α ^2/(9*pi))
 
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
         @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))

@@ -74,8 +74,10 @@ const cm1=2.997e10 # cm-1 to Herz
 #effectivemass=0.12 # the bare-electron band effective-mass. 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-Ts,eKμs, eHμs, eFHIPμs, eks, eMs, eAs, eBs, eCs, eFs, eTaus, erfsis = polaronmobility("MAPI-electron", 4.5, 24.1, 2.25E12, 0.12)
-Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus, hrfsis = polaronmobility("MAPI-hole",     4.5, 24.1, 2.25E12, 0.15)
+Ts,eKμs, eHμs, eFHIPμs, eks, eMs, eAs, eBs, eCs, eFs, eTaus, erfsis = 
+    polaronmobility("MAPI-electron", 10:10:400, 4.5, 24.1, 2.25E12, 0.12)
+Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus, hrfsis = 
+    polaronmobility("MAPI-hole",     10:10:400, 4.5, 24.1, 2.25E12, 0.15)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 #polaronmobility("PCBM",     4.0, 5.0, 2.25E12, 1.00)
@@ -85,7 +87,7 @@ Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus, hrfsis = polaron
 # Horribly non-converged! 
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
-polaronmobility("CsPbI3-electron",     6.1,6.1+12.0, 2.57E12, 0.12)
+polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
 
 
 function SendnerCrosscheck()
@@ -104,9 +106,9 @@ function SendnerCrosscheck()
     # Combined, this reproduces their mobilities, and the internal w and
     # v parameters (again, email from Rob).  
     # For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
-    Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 112.9*cm1, 0.104)
-    Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3,149.4*cm1, 0.117)
-    Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 214.0*cm1, 0.2)
+    Ts,a,MAPI=polaronmobility("Rob-MAPI", 10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
+    Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
+    Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
 
     plot(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
     plot!(Ts,MAPBr,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
