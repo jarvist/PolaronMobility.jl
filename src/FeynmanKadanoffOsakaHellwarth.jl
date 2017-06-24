@@ -139,6 +139,27 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 # BUT - this is just the objective function! (The temperature-dependent free-energy.) Not the optimised parameters.
 # Also there's a scary numeric integration (quadgk) buried within...
 
+# Struct to store data
+struct Polaron
+    T
+    Kμ
+    Hμ
+    FHIPμ
+    k
+    M
+    A
+    B
+    C
+    F
+    Tau
+    v
+    w
+    βred
+    rfsi
+end
+Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
+
+
 #####
 # OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
 function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
@@ -171,27 +192,13 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 
     # Empty arrays for storing data 
     # Surely some better way of doing this ф_ф 
-    Ts=[]
-    Kμs=[]
-    Hμs=[]
-    FHIPμs=[]
-    ks=[]
-    Ms=[]
-    As=[]
-    Bs=[]
-    Cs=[]
-    Fs=[]
-    Taus=[]
-    vs=[]
-    ws=[]
-    βreds=[]
-    rfsis=[]
+    p=Polaron()
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
     for T in Trange #10:10:4000
         β=1/(kB*T)
         βred=ħ*ω*β
-        append!(βreds,βred)
+        append!(p.βred,βred)
         @printf("T: %f β: %.2g βred: %.2g ħω  = %.2g meV\t",T,β,βred, 1000.0*ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
         # OK; this was as working on Julia 0.5; before the great Optim update
@@ -218,8 +225,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         # Unsure of units for k, spring coupling constant
         k=(v^2-w^2)
         M=(v^2-w^2)/w^2
-        append!(ks,k)
-        append!(Ms,M)
+        append!(p.k,k)
+        append!(p.M,M)
 
         @printf(" M=%f k=%f\t",M,k)
         
@@ -240,7 +247,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         # (2.4) SI scaling inferred from units in (2.5a) and Table II
         rfsi=rf*sqrt(2*me*ω )
         @printf("\n Schultz1959(2.4): rf= %g (int units) = %g m [SI]",rf,rfsi )
-        append!(rfsis,rfsi)
+        append!(p.rfsi,rfsi)
 
 		rf=(3/(0.44*α ))^0.5
         rfsi=rf*sqrt(2*me*ω )
@@ -270,10 +277,10 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
         @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
         @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
-        append!(As,A(v,w,βred))
-        append!(Bs,B(v,w,βred,α))
-        append!(Cs,C(v,w,βred))
-        append!(Fs,F(v,w,βred,α))
+        append!(p.A,A(v,w,βred))
+        append!(p.B,B(v,w,βred,α))
+        append!(p.C,C(v,w,βred))
+        append!(p.F,F(v,w,βred,α))
         
 
         # FHIP 
@@ -282,8 +289,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         # I believe here β is in SI (expanded) units
         μ=(w/v)^3 * (3*q)/(4*mb*ħ*ω^2*α*β) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
         @printf("\n\tμ(FHIP)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
-        append!(Ts,T)
-        append!(FHIPμs,μ*100^2)
+        append!(p.T,T)
+        append!(p.FHIPμ,μ*100^2)
         
 
         # Kadanoff
@@ -293,7 +300,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         μ=(w/v)^3 * (q)/(2*mb*ω*α) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
         @printf("\n\tμ(Kadanoff)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
 
-        append!(Kμs,μ*100^2)
+        append!(p.Kμ,μ*100^2)
 
         ######
         # OK, now deep-diving into Kadanoff1963 itself to extract Boltzmann equation components
@@ -322,7 +329,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
         @printf("\n\tGamma0 = %g rad/s = %g /s Tau=1/Gamma0 = %g = %f ps",
             Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
-        append!(Taus, 2*pi*1E12/Gamma0)
+        append!(p.Tau, 2*pi*1E12/Gamma0) # Boosted into ps ?
 
         # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
         # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
@@ -340,7 +347,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
         μ=RHS^-1 * (q)/(ω*mb)
         @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
-        append!(Hμs,μ*100^2)
+        append!(p.Hμ,μ*100^2)
         
         #Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
@@ -353,7 +360,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
         μ=RHS^-1 * (q)/(ω*mb)
         @printf("\n\tμ(Hellwarth1999,b=0)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
-        @printf("\n\tError due to b=0; %f",(100^2*μ-Hμs[length(Hμs)])/(100^2*μ))
+        @printf("\n\tError due to b=0; %f",(100^2*μ-p.Hμ[length(p.Hμ)])/(100^2*μ))
         #append!(Hμs,μ*100^2)
         
         
@@ -361,20 +368,20 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         
         # Recycle previous variation results (v,w) as next guess
         initial=[v,w] # Caution! Might cause weird sticking in local minima
-        append!(vs,v)
-        append!(ws,w)
+        append!(p.v,v)
+        append!(p.w,w)
     end
 
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","a")
     @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis\n",fileprefix)
     @printf(f,"#  1    2     3    4     5     6   7    8  9   10  11  12  13  14 15\n") # columns for GNUPLOT etc.
-    for i in 1:length(Ts)
+    for i in 1:length(p.T)
         @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g %g \n",
-        Ts[i], βreds[i], Kμs[i], Hμs[i], FHIPμs[i], 
-        vs[i], ws[i],
-        ks[i], Ms[i], As[i], Bs[i], Cs[i], Fs[i], 
-        Taus[i], rfsis[i])
+        p.T[i], p.βred[i], p.Kμ[i], p.Hμ[i], p.FHIPμ[i], 
+        p.v[i], p.w[i],
+        p.k[i], p.M[i], p.A[i], p.B[i], p.C[i], p.F[i], 
+        p.Tau[i], p.rfsi[i])
     end
     close(f)
 
@@ -383,22 +390,22 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 
     #####
     ## Mass vs. Temperature plot
-    plot(Ts,Ms,label="Phonon effective-mass",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Phonon effective-mass",ylim=(0,1.2))
+    plot(p.T,p.M,label="Phonon effective-mass",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Phonon effective-mass",ylim=(0,1.2))
 
     savefig("$fileprefix-mass.png")
     savefig("$fileprefix-mass.eps")
 
     #####
     ## Relaxationtime vs. Temperature plot
-    plot(Ts,Taus,label="Kadanoff relaxation time (ps)",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
+    plot(p.T,p.Tau,label="Kadanoff relaxation time (ps)",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
     savefig("$fileprefix-tau.png")
     savefig("$fileprefix-tau.eps")
 
     ## Mass + relaxation time vs. Temperature plot
-    plot(Ts,Ms,label="Phonon effective-mass (m\$_b\$)",markersize=3,marker=:rect,
+    plot(p.T,p.M,label="Phonon effective-mass (m\$_b\$)",markersize=3,marker=:rect,
         xlab="Temperature (K)",ylab="Effective-mass / relaxation time",ylim=(0,1.2))
-    plot!(Ts,Taus,label="Kadanoff relaxation time (ps)",markersize=3,marker=:diamond,
+    plot!(p.T,p.Tau,label="Kadanoff relaxation time (ps)",markersize=3,marker=:diamond,
         xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
     savefig("$fileprefix-mass-tau.png")
@@ -406,17 +413,17 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 
     #####
     ## Spring Constants vs. Temperature plot
-    plot(Ts,ks,label="Polaron spring-constant",markersize=3, marker=:uptriangle, xlab="Temperature (K)",ylab="Spring-constant",)
+    plot(p.T,p.k,label="Polaron spring-constant",markersize=3, marker=:uptriangle, xlab="Temperature (K)",ylab="Spring-constant",)
 
     savefig("$fileprefix-spring.png")
     savefig("$fileprefix-spring.eps")
 
     #####
     ## Variation Energy vs. Temperature plots
-    plot( Ts,As,label="A",markersize=3,marker=:downtriangle, xlab="Temperature (K)",ylab="Polaron free-energy")
-    plot!(Ts,Bs,label="B",markersize=3,marker=:diamond)
-    plot!(Ts,Cs,label="C",markersize=3,marker=:uptriangle)
-    plot!(Ts,Fs,label="F",markersize=3,marker=:rect)
+    plot( p.T,p.A,label="A",markersize=3,marker=:downtriangle, xlab="Temperature (K)",ylab="Polaron free-energy")
+    plot!(p.T,p.B,label="B",markersize=3,marker=:diamond)
+    plot!(p.T,p.C,label="C",markersize=3,marker=:uptriangle)
+    plot!(p.T,p.F,label="F",markersize=3,marker=:rect)
     #plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
 
     savefig("$fileprefix-variational.png")
@@ -424,21 +431,21 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 
     #####
     ## Polaron radius vs. Temperature
-    plot(Ts,rfsis.*10^10,label="Schultz Feynman radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)")
+    plot(p.T,p.rfsi.*10^10,label="Schultz Feynman radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)")
     savefig("$fileprefix-radius.png")
     savefig("$fileprefix-radius.eps")
 
     #####
     ## Calculated mobility comparison plot
-    plot(Ts,Kμs,label="Kadanoff",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)",ylims=(0,1000))
-    plot!(Ts,FHIPμs,label="FHIP",markersize=3,marker=:diamond)
-    plot!(Ts,Hμs,label="Hellwarth1999",markersize=3,marker=:uptriangle)
+    plot(p.T,p.Kμ,label="Kadanoff",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)",ylims=(0,1000))
+    plot!(p.T,p.FHIPμ,label="FHIP",markersize=3,marker=:diamond)
+    plot!(p.T,p.Hμ,label="Hellwarth1999",markersize=3,marker=:uptriangle)
 
     savefig("$fileprefix-mobility-calculated.png")
     savefig("$fileprefix-mobility-calculated.eps")
     end
 
-    return(Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus,rfsis)
+    return(p)
 end
 
 end
