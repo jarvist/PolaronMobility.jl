@@ -14,7 +14,7 @@ import QuadGK.quadgk
 
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-#gr()
+pyplot()
 #default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
@@ -141,7 +141,8 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 
 #####
 # OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
-function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true)
+function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
+    println("Polaron mobility called for $fileprefix with Trange $Trange ...")
     @printf("Calculating polaron mobility for %s ...\n",fileprefix)
 
     # Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
@@ -193,10 +194,18 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         append!(βreds,βred)
         @printf("T: %f β: %.2g βred: %.2g ħω  = %.2g meV\t",T,β,βred, 1000.0*ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
+        # OK; this was as working on Julia 0.5; before the great Optim update
+        # For Julia 0.6; pin the Optim package to this old interface: Pkg.pin("Optim",v"0.7.8")
         res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); 
                 optimizer=BFGS, optimizer_o=(Optim.Options(autodiff=true)))
+
+
         minimum=Optim.minimizer(res)
-        #show(Optim.converged(res)) # All came out as 'true'
+        print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
+        if verbose
+            println()
+            show(res)
+        end
         
         v=minimum[1]
         w=minimum[2]
