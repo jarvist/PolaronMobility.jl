@@ -5,7 +5,7 @@
 # These codes were developed with Julia 0.5.0, and requires the Optim and Plots packages.
 
 module FeynmanKadanoffOsakaHellwarth
-export feynmanalpha, polaronmobility
+export feynmanalpha, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 
 ##### load in library routines... #####
@@ -372,6 +372,10 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         append!(p.w,w)
     end
 
+    return(p)
+end
+
+function savepolaron(fileprefix, p::Polaron) 
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","a")
     @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis\n",fileprefix)
@@ -384,9 +388,10 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         p.Tau[i], p.rfsi[i])
     end
     close(f)
+end
 
-    if figures # only if asked to plot... 
-    println("OK - everything calculated and stored. Now plotting..")
+function plotpolaron(fileprefix, p::Polaron)  
+    println("Plotting polaron to $fileprefix...")
 
     #####
     ## Mass vs. Temperature plot
@@ -443,9 +448,6 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 
     savefig("$fileprefix-mobility-calculated.png")
     savefig("$fileprefix-mobility-calculated.eps")
-    end
-
-    return(p)
 end
 
 end
