@@ -83,21 +83,42 @@ Variational (temperature-dependent free-energy) parameters for the coupled syste
 
 May your phonons drag in a manner truly sublime.
 
+## Notes
+
+26th June 2017: The code works (and appears to be faster) with the new stable
+version of Julia (0.6). However, it still depends on the 0.7.x interface of
+`Optim`. Therefore, if you want to use these codes with Julia 0.6 or beyond,
+for now you have to pin your Optim package to this old(er) interface.
+
+```
+Pkg.pin("Optim",v"0.7.8")
+```
+
 ## Bibliography
 
 A bibliography in vague order of utility; I recommend reading the first ones first!
 
 Feynman also describes his Polaron model in more detail in both 'Statistical
 Mechanics' (Feynman1972) and 'Quantum Mechanics and Path Integrals'
-(FeynmanHibbs1965). Note that the differing presentations of Feynman do not always agree in detail.
+(FeynmanHibbs1965). Note that the differing presentations of Feynman do not always agree in detail. 
+
+Schulman's 'Techniques and applications of path integration' has a 10-page
+chapter on the Polaron problem. It tries to unify the Feynman prescriptions.
 
 J.T. Devreese's "Fröhlich Polarons. Lecture course including detailed
-theoretical derivations" (6th edition, 2016) notes on the ArXiv is a very good place to start & to get an overview of the area.
+theoretical derivations" (6th edition, 2016) notes on the ArXiv is a very good
+place to start & to get an overview of the area.
 https://arxiv.org/abs/1611.06122
 
 
 ```
 
+% This introduces two prescriptions for reducing a multi-mode polar lattice to
+% a single ~mean-field~ response.
+% It contains a modern version of the Osaka finite temperature free-energies
+% for use in a variational solution of the Feynman temperature problem. 
+% It also includes how to (numerically) do the contour integration to get the
+% DC-response of the polaron developed in Feynman1962.
 @article{Hellwarth1999,
   doi = {10.1103/physrevb.60.299},
   url = {https://doi.org/10.1103%2Fphysrevb.60.299},
@@ -112,6 +133,9 @@ https://arxiv.org/abs/1611.06122
   journal = {Physical Review B}
 }
 
+% Boltzmann / relaxation time approximation solution of mobility in the Feynman
+% polaron problem. 
+% We extract a relaxation time (+ offer this method of mobility).
 @article{Kadanoff1963,
   doi = {10.1103/physrev.130.1364},
   url = {https://doi.org/10.1103%2Fphysrev.130.1364},
@@ -126,6 +150,8 @@ https://arxiv.org/abs/1611.06122
   journal = {Physical Review}
 }
 
+% A long and very useful article developing response theories for the polaron.
+% Mainly known for the FHIP mobility, which is low-temperature only.
 @article{Feynman1962,
   doi = {10.1103/physrev.127.1004},
   url = {https://doi.org/10.1103%2Fphysrev.127.1004},
@@ -140,7 +166,11 @@ https://arxiv.org/abs/1611.06122
   journal = {Physical Review}
 }
 
-
+% The original development of Feynman's solution to the polaron problem. 
+% Zero temperature approximate variational solutions developed (in limits w->0,
+% or w=v).
+% Perturbative theories of phonon-drag effective-mass renormalisation given.
+% (i.e. where the 'me=1+alpha/6' & etc. limits are from. )
 @article{Feynman1955,
   doi = {10.1103/physrev.97.660},
   url = {https://doi.org/10.1103%2Fphysrev.97.660},
@@ -155,6 +185,13 @@ https://arxiv.org/abs/1611.06122
   journal = {Physical Review}
 }
 
+% Schultz seemed to spend his PhD solving the Feynman polaron problem with
+% a digital computer. 
+% Lots of characterisation of the polaron state, and the introduction of an
+% effective polaron size, from considering the variance of the Gaussian
+% wavefunction. 
+% Some work towards polaron mobility, but not as developed as in Feynman et al. 1962.
+% Schultz provides units for some of the quantities - which is useful!
 @article{Schultz1959,
   doi = {10.1103/physrev.116.526},
   url = {https://doi.org/10.1103%2Fphysrev.116.526},
@@ -169,6 +206,7 @@ https://arxiv.org/abs/1611.06122
   journal = {Physical Review}
 }
 
+% Free-energies of the finite interacting Polaron system.
 @article{Osaka1961,
   doi = {10.1143/ptp.25.517},
   url = {https://doi.org/10.1143%2Fptp.25.517},
@@ -183,6 +221,7 @@ https://arxiv.org/abs/1611.06122
   journal = {Progress of Theoretical Physics}
 }
 
+% Original statement of the Polaron problem + Frohlich Hamiltonian.
 @article{Frohlich1952,
   doi = {10.1098/rspa.1952.0212},
   url = {https://doi.org/10.1098%2Frspa.1952.0212},
