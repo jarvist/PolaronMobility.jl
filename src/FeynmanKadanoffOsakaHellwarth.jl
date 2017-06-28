@@ -14,7 +14,7 @@ import QuadGK.quadgk
 
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-pyplot()
+#pyplot()
 #default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
@@ -235,9 +235,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 		# (47) In Feynman1955
 		meLargeAlpha(α )=16*α ^4 / (81*π ^4)
 		#meLargeAlpha(α )=202*(α /10)^4
-		println("\n Feynman1955(46,47): meSmallAlpha(α)=",meSmallAlpha(α)," meLargeAlpha(α)=",meLargeAlpha(α))
-
-        @printf("\n Feynman1962: Large alpha, v/w = %.2f  =~approx~= alpha^2 = %.2f ",v/w,α ^2)
+		@printf("\n Feynman1955(46,47): meSmallAlpha(α)= %.3f meLargeAlpha(α)= %.3f",meSmallAlpha(α),meLargeAlpha(α))
+        @printf("\n Feynman1962: Approximate ~ Large alpha limit, v/w = %.2f  =~approx~= alpha^2 = %.2f ",v/w,α ^2)
 
         # Schultz1959 - rather nicely he actually specifies everything down into units!
         # just before (2.4) in Schultz1959
@@ -251,18 +250,18 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 
 		rf=(3/(0.44*α ))^0.5
         rfsi=rf*sqrt(2*me*ω )
-        @printf("\n Schultz1959(2.5a), Feynman alpha->0 expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
+        @printf("\n Schultz1959(2.5a): Feynman alpha->0 expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
 		rf=3*(pi/2)^0.5 * α 
         rfsi=rf*sqrt(2*me*ω )
-        @printf("\n Schultz1959(2.5a), Feynman alpha>-Inf expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
+        @printf("\n Schultz1959(2.5a): Feynman alpha>-Inf expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
         
         # Schultz1959 - Between (5.7) and (5.8) - resonance of Feynman SHM system
         phononfreq=sqrt(k/M)
-        @printf("\n Schultz1959 (5.7-5.8) fixed-e: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+        @printf("\n Schultz1959(5.7-5.8): fixed-e: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
  
         phononfreq=sqrt(k/mu) # reduced mass
-        @printf("\n Schultz1959: (5.7-5.8) reducd mass: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+        @printf("\n Schultz1959(5.7-5.8): reducd mass: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
         
         @printf("\n Schultz1959: electronfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
@@ -298,7 +297,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         #     - Adds factor of 3/(2*beta) c.f. FHIP, correcting phonon emission behaviour
         # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mob
         μ=(w/v)^3 * (q)/(2*mb*ω*α) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
-        @printf("\n\tμ(Kadanoff)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
+        @printf("\n\tμ(Kadanoff,via Devreese2016)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
 
         append!(p.Kμ,μ*100^2)
 
@@ -313,9 +312,9 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         Nbar=exp(-βred) 
         #Note - this is only way to get Kadanoff1963 to be self-consistent with
         #FHIP, and later statements (Devreese) of the Kadanoff mobility. 
-        #It suggests that Kadanoff used the wrong identy for Nbar in 23(b) for the
-        #Gamma0 function, and should have used a version -1 to account for phonon
-        #statistics
+        #It suggests that Kadanoff used the wrong identy for Nbar in 23(b) for
+        #the Gamma0 function, and should have used a version with the -1 to
+        #account for Bose / phonon statistics
 
         #myv=sqrt(k*(1+M)/M) # cross-check maths between different papers
         #@printf("\nv: %f myv: %f\n",v,myv)
@@ -326,7 +325,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
             # Factor of omega to get it as a rate relative to phonon frequency
             # Factor of omega*hbar to get it as a rate per energy window
         μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
-        @printf("\n\tμ(Kadanoff [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
+        @printf("\n\tμ(Kadanoff1963 [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
         @printf("\n\tGamma0 = %g rad/s = %g /s Tau=1/Gamma0 = %g = %f ps",
             Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
         append!(p.Tau, 2*pi*1E12/Gamma0) # Boosted into ps ?
