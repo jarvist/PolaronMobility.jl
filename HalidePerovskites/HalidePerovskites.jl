@@ -16,9 +16,9 @@ using FeynmanKadanoffOsakaHellwarth
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-default(grid=false) # No silly dotted grid lines
-default(size=(400,300)) # A good small size for two-column EPS output
-
+gr() # GR backend to Plots
+#default(grid=false) # No silly dotted grid lines
+#default(size=(400,300)) # A good small size for two-column EPS output
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides
 
 # Physical constants
@@ -74,10 +74,8 @@ const cm1=2.997e10 # cm-1 to Herz
 #effectivemass=0.12 # the bare-electron band effective-mass. 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-Ts,eKμs, eHμs, eFHIPμs, eks, eMs, eAs, eBs, eCs, eFs, eTaus, erfsis = 
-    polaronmobility("MAPI-electron", 10:10:400, 4.5, 24.1, 2.25E12, 0.12)
-Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus, hrfsis = 
-    polaronmobility("MAPI-hole",     10:10:400, 4.5, 24.1, 2.25E12, 0.15)
+MAPIe=polaronmobility("MAPI-electron", 10:10:400, 4.5, 24.1, 2.25E12, 0.12)
+MAPIh=polaronmobility("MAPI-hole",     10:10:400, 4.5, 24.1, 2.25E12, 0.15)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 #polaronmobility("PCBM",     4.0, 5.0, 2.25E12, 1.00)
@@ -87,7 +85,7 @@ Ts,hKμs, hHμs, hFHIPμs, hks, hMs, hAs, hBs, hCs, hFs, hTaus, hrfsis =
 # Horribly non-converged! 
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
-polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
+CsPbI=polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
 
 
 function SendnerCrosscheck()
@@ -106,18 +104,18 @@ function SendnerCrosscheck()
     # Combined, this reproduces their mobilities, and the internal w and
     # v parameters (again, email from Rob).  
     # For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
-    Ts,a,MAPI=polaronmobility("Rob-MAPI", 10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
-    Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
-    Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
+    RobMAPI=polaronmobility("Rob-MAPI", 10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
+    RobMAPBr=polaronmobility("Rob-MAPBr", 10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
+    RobMAPCl=polaronmobility("Rob-MAPCl", 10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
 
-    plot(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
-    plot!(Ts,MAPBr,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
-    plot!(Ts,MAPCl,label="(Rob's values) MAPCl",markersize=2,marker=:diamond)
+    plot(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
+    plot!(RobMAPBr.T,RobMAPBr.Hμ,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
+    plot!(RobMAPCl.T,RobMAPCl.Hμ,label="(Rob's values) MAPCl",markersize=2,marker=:diamond)
     savefig("Rob-comparison.png")
-    savefig("Rob-comparison.eps")
+#    savefig("Rob-comparison.eps")
 end
 
-#SendnerCrosscheck()
+SendnerCrosscheck()
 
 #####
 ## Expt. data to compare against
@@ -164,18 +162,19 @@ plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
 #plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", markersize=6,marker=:hexagon)
 
 
-#plot!(Ts,eKμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,eHμs,label="Calculated (electron) mobility",markersize=3,marker=:diamond)
+#plot!(MAPIe.T,MAPIe.Kμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
+plot!(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:diamond)
 
-#plot!(Ts,hKμs,label="(holes) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,hHμs,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
+#plot!(MAPIh.T,MAPIh.Kμs,label="(holes) Kadanoff Polaron mobility",marker=2)
+plot!(MAPIh.T,MAPIh.Hμ,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
 
 savefig("MAPI-eh-mobility-calculated-experimental.png")
-savefig("MAPI-eh-mobility-calculated-experimental.eps")
+#savefig("MAPI-eh-mobility-calculated-experimental.eps")
+# EPS backend doesn't always seem to be available on Mac
 
-plot!(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:rect)
+plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
 savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
-savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
+#savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
 
 
 println("That's me!")
