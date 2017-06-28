@@ -48,15 +48,6 @@ MAPI= [
 #0.07575149723846182 2.778248540373041e-05
 ]
 
-# Change to SI, but not actually needed as units cancel everywhere
-
-#MAPI_SI = [ MAPI_orig[:,1].*10^12*2*π MAPI_orig[:,2].*1 ]
-
-# OK, black magic here - perhaps our units of oscillator strength are not what we need? maybe already effectively 'squared'?
-#MAPI = [ MAPI[:,1] MAPI[:,2].^0.5]
-
-MAPI_low=MAPI[19:33,:] # Just inorganic components, everything below 10THz; modes 3-18
-
 MAPbBr3 = [
 #v / THz IR Activity / e^2 amu^-1
 96.25494581101505 0.4856105419754306
@@ -137,6 +128,8 @@ MAPbCl3= [
 #0.05253089286287104 2.8730156133e-06
 ]
 
+MAPI_low=MAPI[19:33,:] # Just inorganic components, everything below 10THz; modes 3-18
+
 println("\n\nMAPI: BScheme (athermal)")
 println("\t MAPI: (all values)")
 HellwarthBScheme(MAPI)
@@ -149,9 +142,12 @@ HellwarthAScheme(MAPI)
 println("\t MAPI: (low-frequency, non molecular IR)")
 HellwarthAScheme(MAPI_low)
 
+println("\n\n> MAPI/MAPbBr3/MAPbCl3 - with simple B-scheme...")
 for LOs in [MAPI, MAPbBr3, MAPbCl3]
-   HellwarthBScheme(LOs)
-   HellwarthBScheme(LOs[19:33,:])
+    println("All modes...")
+    HellwarthBScheme(LOs)
+    println("Low frequency (cage modes only)...")
+    HellwarthBScheme(LOs[19:33,:])
 end
 
 println("\n Test summation of Lorentz oscillators to get to static dielectric constant from i.r. modes.")
@@ -171,6 +167,7 @@ const amu=1.66054e-27
 const ε0=8.854187817E-12
 const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2 
 
+# Change to SI; not actually needed as units cancel everywhere (?)
 MAPI_SI = [ MAPI[:,1].*10^12*2*π MAPI[:,2]./(q^2/amu) ]
 
 println(" MAPI: ",integrate_dielectric(MAPI,1.0))
