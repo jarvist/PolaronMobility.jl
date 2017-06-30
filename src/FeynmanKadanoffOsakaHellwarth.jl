@@ -217,8 +217,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         v=minimum[1]
         w=minimum[2]
             
-        @printf("\n VariationalParams v= %.2f = %.2g Hz \t w= %.2f = %.2g Hz\t",v,v*ω /(2*pi),w,w*ω /(2*pi))
-        
+        @printf("\n VariationalParams v= %.2f  w= %.2f",v,w)
+
         # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
         # See Page 1007, just after equation (18)
         # Units of M appear to be 'electron masses'
@@ -228,8 +228,10 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         append!(p.k,k)
         append!(p.M,M)
 
-        @printf(" M=%f k=%f\t",M,k)
-        
+        @printf("\t||\t M=%f k=%f\t",M,k)
+       
+        @printf("\n Polaron frequency (SI) v=  %.2g Hz \t w=  %.2g Hz\t",v*ω /(2*pi),w*ω /(2*pi))
+
 		# (46) in Feynman1955
 		meSmallAlpha(α )=α /6 + 0.025*α ^2
 		# (47) In Feynman1955
