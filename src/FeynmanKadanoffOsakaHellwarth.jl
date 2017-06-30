@@ -332,14 +332,19 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
             Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
         append!(p.Tau, 2*pi*1E12/Gamma0) # Boosted into ps ?
 
+
+        # Hellwarth1999 - directly do contour integration in Feynman1962, for finite temperature DC mobility
+
         # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
         # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
+        
         #b=R*βred/sinh(b*βred*v/2) # This self-references b! What on Earth?
         # OK! I now understand that there is a typo in Hellwarth1999 and
         # Biaggio1997. They've introduced a spurious b on the R.H.S. compared to
-        # the original, Feynman1962...
+        # the original, Feynman1962:
         b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
+
         a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
         k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
         K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
@@ -350,7 +355,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
         append!(p.Hμ,μ*100^2)
         
-        #Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
+        # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
+        # So let's test this
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
         b=0 
         a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
@@ -364,7 +370,24 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         @printf("\n\tError due to b=0; %f",(100^2*μ-p.Hμ[length(p.Hμ)])/(100^2*μ))
         #append!(Hμs,μ*100^2)
         
-        
+       
+        # Yeah, I know - totally inappropriate place to write this
+        # Impedance in (47a) from Feynman1962, directly solving freq dep without taking 
+        # Hellwarth1999 limit of v->0
+        @printf("Ain't no Imaginary Impedance like a Feynman 1962 ImX...")
+        # Feynman, I love you - but using Nu, v; Omega, w in the same paper + formulas, for similar objects?!
+        for nu=0:0.1:20
+            R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
+            b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
+            a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
+            k(u,a,b,v,nu) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u)*cos(nu*u) # integrand with cos(vu) term, as (47a) 
+            K=quadgk(u->k(u,a,b,v,nu),0,Inf)[1] # numerical quadrature integration of (2)
+            # Full 47a constructed here
+            ImX= 2*α/(3*sqrt(π)) * βred^(3/2) * (sinh(βred*nu/2))/sinh(βred/2) * (v^3/w^3) * K
+
+            @printf(" %.3f %g\n",nu,ImX)
+        end
+
         @printf("\n\n")
         
         # Recycle previous variation results (v,w) as next guess
