@@ -240,6 +240,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
 		@printf("\n Feynman1955(46,47): meSmallAlpha(α)= %.3f meLargeAlpha(α)= %.3f",meSmallAlpha(α),meLargeAlpha(α))
         @printf("\n Feynman1962: Approximate ~ Large alpha limit, v/w = %.2f  =~approx~= alpha^2 = %.2f ",v/w,α ^2)
 
+        # POLARON SIZE
+        @printf("\n POLARON SIZE (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )")
         # Schultz1959 - rather nicely he actually specifies everything down into units!
         # just before (2.4) in Schultz1959
         mu=((v^2-w^2)/v^2)
@@ -250,12 +252,15 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         @printf("\n Schultz1959(2.4): rf= %g (int units) = %g m [SI]",rf,rfsi )
         append!(p.rfsi,rfsi)
 
-		rf=(3/(0.44*α ))^0.5
-        rfsi=rf*sqrt(2*me*ω )
-        @printf("\n Schultz1959(2.5a): Feynman alpha->0 expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
-		rf=3*(pi/2)^0.5 * α 
-        rfsi=rf*sqrt(2*me*ω )
-        @printf("\n Schultz1959(2.5a): Feynman alpha>-Inf expansion: rf= %g (int units) = %g m [SI]",rf,rfsi )
+        scale=sqrt(2*mb*ω) # Note we're using mb; 
+        #band effective-mass in SI units (i.e. meff*melectron)
+		
+        rfa=(3/(0.44*α ))^0.5 # As given in Schultz1959(2.5a), but that 0.44 is actually 4/9
+        @printf("\n Schultz1959(2.5a) with 0.44: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
+        rfa=(3/((4/9)*α ))^0.5 # Rederived from Feynman1955, 8-8-2017; Yellow 2017.B Notebook pp.33-34	
+        @printf("\n Schultz1959(2.5a) with 4/9 re-derivation: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
+        rfb=3*(pi/2)^0.5 * α 
+        @printf("\n Schultz1959(2.5b): Feynman α→∞ expansion: rf= %g (int units) = %g m [SI]",rfb,scale*rfb )
         
         # Schultz1959 - Between (5.7) and (5.8) - resonance of Feynman SHM system
         phononfreq=sqrt(k/M)
