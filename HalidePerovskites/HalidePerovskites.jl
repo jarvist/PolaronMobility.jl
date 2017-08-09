@@ -16,8 +16,9 @@ using FeynmanKadanoffOsakaHellwarth
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
+#pyplot()
 gr() # GR backend to Plots
-#default(grid=false) # No silly dotted grid lines
+default(grid=false) # No silly dotted grid lines
 #default(size=(400,300)) # A good small size for two-column EPS output
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides
 
@@ -75,7 +76,9 @@ const cm1=2.997e10 # cm-1 to Herz
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 MAPIe=polaronmobility("MAPI-electron", 10:10:400, 4.5, 24.1, 2.25E12, 0.12)
+plotpolaron("MAPI-electron", MAPIe)
 MAPIh=polaronmobility("MAPI-hole",     10:10:400, 4.5, 24.1, 2.25E12, 0.15)
+plotpolaron("MAPI-hole", MAPIh)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 #polaronmobility("PCBM",     4.0, 5.0, 2.25E12, 1.00)
@@ -86,7 +89,7 @@ MAPIh=polaronmobility("MAPI-hole",     10:10:400, 4.5, 24.1, 2.25E12, 0.15)
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
 CsPbI=polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
-
+plotpolaron("CsPbI3-electron",CsPbI)
 
 function SendnerCrosscheck()
     const cm1=2.997e10 # cm-1 to Herz
@@ -172,8 +175,8 @@ savefig("MAPI-eh-mobility-calculated-experimental.png")
 #savefig("MAPI-eh-mobility-calculated-experimental.eps")
 # EPS backend doesn't always seem to be available on Mac
 
-plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
-savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
+#plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
+#savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
 #savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
 
 

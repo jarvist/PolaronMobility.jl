@@ -16,7 +16,8 @@ using FeynmanKadanoffOsakaHellwarth
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-pyplot()
+#pyplot()
+gr()
 #default(grid=false) # No silly dotted grid lines
 #default(size=(400,300)) # A good small size for two-column EPS output
 #gr()
@@ -43,8 +44,8 @@ const cm1=2.997e10 # cm-1 to Herz
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 println("OK, solving Polaron problem...")
-MAPIe = polaronmobility("MAPI-electron", 10:50:310, 4.5, 24.1, 2.25E12, 0.12; verbose=true, figures=false)
-MAPIh = polaronmobility("MAPI-hole",     10:50:310, 4.5, 24.1, 2.25E12, 0.15; verbose=true, figures=false)
+MAPIe = polaronmobility("MAPI-electron", [300], 4.5, 24.1, 2.25E12, 0.12; verbose=true, figures=false)
+MAPIh = polaronmobility("MAPI-hole",     [300], 4.5, 24.1, 2.25E12, 0.15; verbose=true, figures=false)
 
 println("That's me!")
 

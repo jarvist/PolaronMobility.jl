@@ -205,8 +205,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         # For Julia 0.6; pin the Optim package to this old interface: Pkg.pin("Optim",v"0.7.8")
         res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); 
             optimizer=BFGS, 
-            optimizer_o=(Optim.Options(allow_f_increases=true, autodiff=true)))
-
+            optimizer_o=(Optim.Options(autodiff=true)))
+        # allow_f_increases=true,  - increases stability of algorith, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
 
         minimum=Optim.minimizer(res)
         print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
@@ -458,6 +458,14 @@ function plotpolaron(fileprefix, p::Polaron)
 
     savefig("$fileprefix-mass-tau.png")
     savefig("$fileprefix-mass-tau.eps")
+
+    ####
+    ## Variational parameters, v and w vs. Temperature plot
+    plot(p.T,p.v,label="v",markersize=3, marker=:rect, xlab="Temperature (K)",ylab="\hbar\omega")
+    plot!(p.T,p.w,label="w",markersize=3, marker=:diamond)
+
+    savefig("$fileprefix-vw.png")
+    savefig("$fileprefix-vw.eps")
 
     #####
     ## Spring Constants vs. Temperature plot
