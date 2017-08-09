@@ -190,12 +190,12 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
     lower=[0.1,0.1]
     upper=[100.0,100.0]
 
-    # Empty arrays for storing data 
-    # Surely some better way of doing this ф_ф 
+    # Empty struct for storing data 
+    # A slightly better way of doing this ф_ф ...
     p=Polaron()
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
-    for T in Trange #10:10:4000
+    for T in Trange 
         β=1/(kB*T)
         βred=ħ*ω*β
         append!(p.βred,βred)
@@ -204,7 +204,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         # OK; this was as working on Julia 0.5; before the great Optim update
         # For Julia 0.6; pin the Optim package to this old interface: Pkg.pin("Optim",v"0.7.8")
         res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); 
-                optimizer=BFGS, optimizer_o=(Optim.Options(autodiff=true)))
+            optimizer=BFGS, 
+            optimizer_o=(Optim.Options(allow_f_increases=true, autodiff=true)))
 
 
         minimum=Optim.minimizer(res)
