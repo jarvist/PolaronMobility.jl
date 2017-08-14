@@ -156,8 +156,9 @@ struct Polaron
     w
     βred
     rfsi
+    rfsmallalpha
 end
-Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
+Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
 
 
 #####
@@ -260,6 +261,8 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         @printf("\n Schultz1959(2.5a) with 0.44: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
         rfa=(3/((4/9)*α ))^0.5 # Rederived from Feynman1955, 8-8-2017; Yellow 2017.B Notebook pp.33-34	
         @printf("\n Schultz1959(2.5a) with 4/9 re-derivation: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
+        append!(p.rfsmallalpha,scale*rfa)
+
         rfb=3*(pi/2)^0.5 * α 
         @printf("\n Schultz1959(2.5b): Feynman α→∞ expansion: rf= %g (int units) = %g m [SI]",rfb,scale*rfb )
         
@@ -487,9 +490,11 @@ function plotpolaron(fileprefix, p::Polaron)
 
     #####
     ## Polaron radius vs. Temperature
-    plot(p.T,p.rfsi.*10^10,label="Schultz Feynman radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)")
+    plot(p.T,p.rfsi.*10^10, markersize=3,marker=:rect,
+        label="Polaron radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)",ylims=(0,Inf))
+    plot!(p.T,p.rfsmallalpha.*10^10,label="T=0 Schultz small alpha polaron radius")
     savefig("$fileprefix-radius.png")
-    savefig("$fileprefix-radius.eps")
+    savefig("$fileprefix-radius.pdf")
 
     #####
     ## Calculated mobility comparison plot
