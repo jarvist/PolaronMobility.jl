@@ -164,8 +164,7 @@ Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
 #####
 # OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
 function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
-    println("Polaron mobility called for $fileprefix with Trange $Trange ...")
-    @printf("Calculating polaron mobility for %s ...\n",fileprefix)
+    println("\n\nPolaron mobility called for $fileprefix with Trange $Trange ...")
 
     # Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
     mb=effectivemass*MassElectron 
@@ -200,7 +199,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         β=1/(kB*T)
         βred=ħ*ω*β
         append!(p.βred,βred)
-        @printf("T: %f β: %.2g βred: %.2g ħω  = %.2g meV\t",T,β,βred, 1000.0*ħ*ω  / q)
+        @printf("T: %f β: %.3g βred: %.3g ħω  = %.3g meV\t",T,β,βred, 1E3* ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
         # OK; this was as working on Julia 0.5; before the great Optim update
         # For Julia 0.6; pin the Optim package to this old interface: Pkg.pin("Optim",v"0.7.8")
@@ -251,33 +250,33 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         rf=sqrt(3/(2*mu*v))
         # (2.4) SI scaling inferred from units in (2.5a) and Table II
         rfsi=rf*sqrt(2*me*ω )
-        @printf("\n Schultz1959(2.4): rf= %g (int units) = %g m [SI]",rf,rfsi )
+        @printf("\n\t Schultz1959(2.4): rf= %g (int units) = %g m [SI]",rf,rfsi )
         append!(p.rfsi,rfsi)
 
         scale=sqrt(2*mb*ω) # Note we're using mb; 
         #band effective-mass in SI units (i.e. meff*melectron)
 		
         rfa=(3/(0.44*α ))^0.5 # As given in Schultz1959(2.5a), but that 0.44 is actually 4/9
-        @printf("\n Schultz1959(2.5a) with 0.44: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
+        @printf("\n\t Schultz1959(2.5a) with 0.44: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
         rfa=(3/((4/9)*α ))^0.5 # Rederived from Feynman1955, 8-8-2017; Yellow 2017.B Notebook pp.33-34	
-        @printf("\n Schultz1959(2.5a) with 4/9 re-derivation: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
+        @printf("\n\t Schultz1959(2.5a) with 4/9 re-derivation: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
         append!(p.rfsmallalpha,scale*rfa)
 
         rfb=3*(pi/2)^0.5 * α 
-        @printf("\n Schultz1959(2.5b): Feynman α→∞ expansion: rf= %g (int units) = %g m [SI]",rfb,scale*rfb )
+        @printf("\n\t Schultz1959(2.5b): Feynman α→∞ expansion: rf= %g (int units) = %g m [SI]",rfb,scale*rfb )
         
         # Schultz1959 - Between (5.7) and (5.8) - resonance of Feynman SHM system
         phononfreq=sqrt(k/M)
-        @printf("\n Schultz1959(5.7-5.8): fixed-e: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+        @printf("\n\t Schultz1959(5.7-5.8): fixed-e: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
  
         phononfreq=sqrt(k/mu) # reduced mass
-        @printf("\n Schultz1959(5.7-5.8): reducd mass: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+        @printf("\n\t Schultz1959(5.7-5.8): reducd mass: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
         
-        @printf("\n Schultz1959: electronfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+        @printf("\n\t Schultz1959: electronfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             sqrt(k/1),sqrt(k/1)*ω /(2*pi), sqrt(k/1)*hbar*ω *1000/q)
-        @printf("\n Schultz1959: combinedfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
+        @printf("\n\t Schultz1959: combinedfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             sqrt(k/(1+M)),sqrt(k/(1+M))*ω /(2*pi), sqrt(k/(1+M))*hbar*ω *1000/q)
 
         # Devreese1972: 10.1103/PhysRevB.5.2367
@@ -297,6 +296,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         #    - low-T mobility, final result of Feynman1962
         # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
         # I believe here β is in SI (expanded) units
+        @printf("\nPolaron Mobility theories:")
         μ=(w/v)^3 * (3*q)/(4*mb*ħ*ω^2*α*β) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
         @printf("\n\tμ(FHIP)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
         append!(p.T,T)
@@ -337,8 +337,10 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
             # Factor of omega*hbar to get it as a rate per energy window
         μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
         @printf("\n\tμ(Kadanoff1963 [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
-        @printf("\n\tGamma0 = %g rad/s = %g /s Tau=1/Gamma0 = %g = %f ps",
+        @printf("\n\tGamma0 = %g rad/s = %g /s \n\tTau=1/Gamma0 = %g = %f ps",
             Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
+        Eloss=hbar*ω * Gamma0/(2*pi) # Simply Energy * Rate
+        @printf("\n\tEnergy Loss = %g J/s = %g meV/ps",Eloss,Eloss * 1E3 / (q*1E12) ) 
         append!(p.Tau, 2*pi*1E12/Gamma0) # Boosted into ps ?
 
 
