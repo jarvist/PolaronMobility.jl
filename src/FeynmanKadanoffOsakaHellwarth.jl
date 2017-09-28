@@ -4,7 +4,6 @@
 # If you run this, it should construct the model, solve for varying temperature, then produce plots as .pngs in the local directory.
 # These codes were developed with Julia 0.5.0, and requires the Optim and Plots packages.
 
-module FeynmanKadanoffOsakaHellwarth
 export feynmanalpha, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 
@@ -201,11 +200,9 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         append!(p.βred,βred)
         @printf("T: %f β: %.3g βred: %.3g ħω  = %.3g meV\t",T,β,βred, 1E3* ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
-        # OK; this was as working on Julia 0.5; before the great Optim update
-        # For Julia 0.6; pin the Optim package to this old interface: Pkg.pin("Optim",v"0.7.8")
-        res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); 
-            optimizer=BFGS, 
-            optimizer_o=(Optim.Options(autodiff=true)))
+        # Now updated to use Optim > 0.7.8 (Julia 0.6 only version) 
+        res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); 
+            optimizer=BFGS)
         # allow_f_increases=true,  - increases stability of algorith, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
 
         minimum=Optim.minimizer(res)
@@ -438,22 +435,20 @@ function savepolaron(fileprefix, p::Polaron)
     close(f)
 end
 
-function plotpolaron(fileprefix, p::Polaron)  
+function plotpolaron(fileprefix, p::Polaron; extension="png")  
     println("Plotting polaron to $fileprefix...")
 
     #####
     ## Mass vs. Temperature plot
     plot(p.T,p.M,label="Phonon effective-mass",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Phonon effective-mass",ylim=(0,1.2))
 
-    savefig("$fileprefix-mass.png")
-    savefig("$fileprefix-mass.eps")
+    savefig("$fileprefix-mass.$extension")
 
     #####
     ## Relaxationtime vs. Temperature plot
     plot(p.T,p.Tau,label="Kadanoff relaxation time (ps)",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
-    savefig("$fileprefix-tau.png")
-    savefig("$fileprefix-tau.eps")
+    savefig("$fileprefix-tau.$extension")
 
     ## Mass + relaxation time vs. Temperature plot
     plot(p.T,p.M,label="Phonon effective-mass (m\$_b\$)",markersize=3,marker=:rect,
@@ -461,23 +456,20 @@ function plotpolaron(fileprefix, p::Polaron)
     plot!(p.T,p.Tau,label="Kadanoff relaxation time (ps)",markersize=3,marker=:diamond,
         xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
 
-    savefig("$fileprefix-mass-tau.png")
-    savefig("$fileprefix-mass-tau.eps")
+    savefig("$fileprefix-mass-tau.$extension")
 
     ####
     ## Variational parameters, v and w vs. Temperature plot
     plot(p.T,p.v,label="v",markersize=3, marker=:rect, xlab="Temperature (K)",ylab="\hbar\omega")
     plot!(p.T,p.w,label="w",markersize=3, marker=:diamond)
 
-    savefig("$fileprefix-vw.png")
-    savefig("$fileprefix-vw.eps")
+    savefig("$fileprefix-vw.$extension")
 
     #####
     ## Spring Constants vs. Temperature plot
     plot(p.T,p.k,label="Polaron spring-constant",markersize=3, marker=:uptriangle, xlab="Temperature (K)",ylab="Spring-constant",)
 
-    savefig("$fileprefix-spring.png")
-    savefig("$fileprefix-spring.eps")
+    savefig("$fileprefix-spring.$extension")
 
     #####
     ## Variation Energy vs. Temperature plots
@@ -487,16 +479,14 @@ function plotpolaron(fileprefix, p::Polaron)
     plot!(p.T,p.F,label="F",markersize=3,marker=:rect)
     #plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
 
-    savefig("$fileprefix-variational.png")
-    savefig("$fileprefix-variational.eps")
+    savefig("$fileprefix-variational.$extension")
 
     #####
     ## Polaron radius vs. Temperature
     plot(p.T,p.rfsi.*10^10, markersize=3,marker=:rect,
         label="Polaron radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)",ylims=(0,Inf))
     plot!(p.T,p.rfsmallalpha.*10^10,label="T=0 Schultz small alpha polaron radius")
-    savefig("$fileprefix-radius.png")
-    savefig("$fileprefix-radius.pdf")
+    savefig("$fileprefix-radius.$extension")
 
     #####
     ## Calculated mobility comparison plot
@@ -504,9 +494,6 @@ function plotpolaron(fileprefix, p::Polaron)
     plot!(p.T,p.FHIPμ,label="FHIP",markersize=3,marker=:diamond)
     plot!(p.T,p.Hμ,label="Hellwarth1999",markersize=3,marker=:uptriangle)
 
-    savefig("$fileprefix-mobility-calculated.png")
-    savefig("$fileprefix-mobility-calculated.eps")
-end
-
+    savefig("$fileprefix-mobility-calculated.$extension")
 end
 

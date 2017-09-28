@@ -4,20 +4,20 @@
 # These codes were developed with Julia 0.5.0, and requires the Optim and Plots packages.
 
 # This file, when run under Julia, should regenerate polaron data associated with Arxiv paper:
-# https://arxiv.org/SUBMIT-XXXX
+# https://arxiv.org/abs/1708.04158
 # Slow cooling of hot polarons in halide perovskite solar cells
 # Jarvist Moore Frost, Lucy D. Whalley and Aron Walsh
 # (Submitted on 14 Aug 2017 [v1])
 
 push!(LOAD_PATH,"../src/") # load module from local directory
 
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility 
 
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-#pyplot()
-gr() # GR backend to Plots
+pyplot()
+#gr() # GR backend to Plots
 default(grid=false) # No silly dotted grid lines
 default(size=(400,300)) # A good small size for two-column EPS output
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides

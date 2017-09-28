@@ -11,15 +11,14 @@
 
 push!(LOAD_PATH,"../src/") # load module from local directory
 
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility 
 
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-#pyplot()
-gr() # GR backend to Plots
 default(grid=false) # No silly dotted grid lines
-#default(size=(400,300)) # A good small size for two-column EPS output
+default(size=(400,300)) # A good small size for two-column EPS output
+
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides
 
 # Physical constants
@@ -74,6 +73,7 @@ const cm1=2.997e10 # cm-1 to Herz
 #Ts,Kμs, Hμs, FHIPμs, ks, Ms, As, Bs, Cs, Fs, Taus
 #effectivemass=0.12 # the bare-electron band effective-mass. 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
+# MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 MAPIe=polaronmobility("MAPI-electron", 10:10:400, 4.5, 24.1, 2.25E12, 0.12)
 plotpolaron("MAPI-electron", MAPIe)
@@ -166,19 +166,17 @@ plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
 
 
 #plot!(MAPIe.T,MAPIe.Kμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
-plot!(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:diamond)
-
-#plot!(MAPIh.T,MAPIh.Kμs,label="(holes) Kadanoff Polaron mobility",marker=2)
-plot!(MAPIh.T,MAPIh.Hμ,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
+plot!(Ts,hHμs,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
 
 savefig("MAPI-eh-mobility-calculated-experimental.png")
-#savefig("MAPI-eh-mobility-calculated-experimental.eps")
-# EPS backend doesn't always seem to be available on Mac
+savefig("MAPI-eh-mobility-calculated-experimental.eps")
 
-#plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
-#savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
-#savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
+plot!(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:rect)
+savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
+savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
 
 
 println("That's me!")
+
+
 

@@ -11,7 +11,7 @@
 
 push!(LOAD_PATH,"../src/") # load module from local directory
 
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility
 
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend

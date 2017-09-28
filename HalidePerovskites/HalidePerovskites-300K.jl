@@ -13,7 +13,7 @@ push!(LOAD_PATH,"../src/") # load module from local directory
 
 const T=300 # Standard temperature we will calculate for
 
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility 
 
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend

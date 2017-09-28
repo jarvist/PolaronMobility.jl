@@ -1,5 +1,5 @@
 module PolaronMobility
 
-# package code goes here
+include("FeynmanKadanoffOsakaHellwarth.jl")
 
 end # module
