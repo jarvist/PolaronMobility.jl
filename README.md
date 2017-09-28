@@ -1,5 +1,11 @@
 # PolaronMobility-FeynmanKadanoffOsakaHellwarth
 
+[![Build Status](https://travis-ci.org/jarvist/PolaronMobility.jl.svg?branch=master)](https://travis-ci.org/jarvist/PolaronMobility.jl)
+
+[![Coverage Status](https://coveralls.io/repos/jarvist/PolaronMobility.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/jarvist/PolaronMobility.jl?branch=master)
+
+[![codecov.io](http://codecov.io/github/jarvist/PolaronMobility.jl/coverage.svg?branch=master)](http://codecov.io/github/jarvist/PolaronMobility.jl?branch=master)
+
 These codes calculate the temperature-dependent polaron mobility for
 a material. 
 Currently the system is parametrised for methyl-ammonium lead-halide Perovskite. 
