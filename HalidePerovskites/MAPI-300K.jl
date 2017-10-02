@@ -47,5 +47,15 @@ println("OK, solving Polaron problem...")
 MAPIe = polaronmobility("MAPI-electron", [300], 4.5, 24.1, 2.25E12, 0.12; verbose=true, figures=false)
 MAPIh = polaronmobility("MAPI-hole",     [300], 4.5, 24.1, 2.25E12, 0.15; verbose=true, figures=false)
 
+
+s=ImX(0.5:0.5:40,MAPIe.v[1],MAPIe.w[1],MAPIe.βred[1], MAPIe.α[1],MAPIe.ω[1],MAPIe.mb[1])
+plot( s.nu,s.ImX,label="ImX",
+    markersize=3,marker=:downtriangle, xlab="nu (units Omega)",ylab="ImX")
+savefig("MAPIe-ImX.png")
+plot( s.nu,s.μ,label="mu",
+    markersize=3,marker=:uptriangle, xlab="nu (units Omega)",ylab="Mob")
+savefig("MAPIe-mu.png")
+
+
 println("That's me!")
 

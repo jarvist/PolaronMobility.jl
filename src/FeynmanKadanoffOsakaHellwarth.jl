@@ -6,6 +6,7 @@
 
 export feynmanalpha, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
+export ImX
 
 ##### load in library routines... #####
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
@@ -141,23 +142,33 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 # Struct to store data
 struct Polaron
     T
-    Kμ
+    
+    Kμ 
     Hμ
     FHIPμ
+
     k
     M
+    
     A
     B
     C
     F
+    
     Tau
+    
     v
     w
+    
     βred
     rfsi
     rfsmallalpha
+    
+    α
+    mb
+    ω
 end
-Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
+Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
 
 
 #####
@@ -192,6 +203,10 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
     # Empty struct for storing data 
     # A slightly better way of doing this ф_ф ...
     p=Polaron()
+    # populate data structure with prior knowledge
+    append!(p.α,α) # appending so as not to mess with type immutability
+    append!(p.mb,mb)
+    append!(p.ω,ω)
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
     for T in Trange 
@@ -389,20 +404,30 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
     return(p)
 end
 
+struct susceptibility
+    nu
+    ImX
+    μ
+end
+Susceptibility()=susceptibility([],[],[])
+
 """
-function ImX(v,w,βred,α,ω,mb)
+function ImX(nurange,v,w,βred,α,ω,mb)
  
 Impedance in (47a) from Feynman1962, directly solving freq dep without taking 
 Hellwarth1999 limit of v->0
 """
-function ImX(v,w,βred,α,ω,mb)
-        @printf("Ain't no Imaginary Impedance like a Feynman 1962 ImX...")
+function ImX(nurange,v,w,βred,α,ω,mb)
+        @printf("\nAin't no Imaginary Impedance like a Feynman 1962 ImX...\n")
+        println("ImX Call signature: v: $v w: $w βred: $βred α: $α ω: $ω mb: $mb")
     # Feynman, I love you - but using Nu, v; Omega, w in the same paper + formulas, for similar objects?!
-    for nu=0:0.5:20
+    s=Susceptibility()
+    for nu in nurange
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
         b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
         a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
         k(u,a,b,v,nu) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u)*cos(nu*u) # integrand with cos(vu) term, as (47a) 
+
         @printf("Numerical integration of Feynman1962(42a): nu=%.2f ",nu)
         @time n=quadgk(u->k(u,a,b,v,nu),0,Inf,maxevals=10^9,reltol=0.1) # numerical quadrature integration of (2)
         K=n[1]
@@ -415,9 +440,14 @@ function ImX(v,w,βred,α,ω,mb)
         μ=ImX^-1 * (q)/(ω*mb)
 
         @printf(" %.3f %g %g\n",nu,ImX,μ)
+
+        append!(s.nu,nu)
+        append!(s.ImX,ImX)
+        append!(s.μ,μ)
     end
 
     @printf("\n\n")
+    return(s)
 end
 
 function savepolaron(fileprefix, p::Polaron) 
