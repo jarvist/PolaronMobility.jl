@@ -470,7 +470,10 @@ function plotpolaron(fileprefix, p::Polaron; extension="png")
 
     #####
     ## Mass vs. Temperature plot
-    plot(p.T,p.M,label="Phonon effective-mass",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Phonon effective-mass",ylim=(0,1.2))
+    plot(p.T,p.M,label="Phonon effective-mass",
+         markersize=3,marker=:rect,
+         xlab="Temperature (K)",ylab="Phonon effective-mass",
+         ylim=(0,1.2))
 
     savefig("$fileprefix-mass.$extension")
 

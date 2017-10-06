@@ -16,6 +16,7 @@ using PolaronMobility
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
+pyplot()
 default(grid=false) # No silly dotted grid lines
 default(size=(400,300)) # A good small size for two-column EPS output
 
@@ -59,9 +60,12 @@ checkalpha()
 # Dielectric consts, from TABLE VII
 # Effective masses from TABLE VI, mh*
 const cm1=2.997e10 # cm-1 to Herz
-#polaronmobility("CsSnCl3",  4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
-#polaronmobility("CsSnBr3",  5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
-#polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+
+function CsSn()
+    polaronmobility("CsSnCl3",  4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
+    polaronmobility("CsSnBr3",  5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
+    polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+end
 
 # Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus
 # CsSnBr3.dat:300 0.877382 511.513 356.358 874.499 8.13686 7.31511 12.6976 0.23729 -3.78992 2.15682 0.84436 0.788735 0.185396
@@ -88,8 +92,10 @@ plotpolaron("MAPI-hole", MAPIh)
 # Horribly non-converged! 
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
-CsPbI=polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
-plotpolaron("CsPbI3-electron",CsPbI)
+function CsPbI()
+    CsPbI=polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
+    plotpolaron("CsPbI3-electron",CsPbI)
+end
 
 function SendnerCrosscheck()
     const cm1=2.997e10 # cm-1 to Herz
@@ -118,7 +124,7 @@ function SendnerCrosscheck()
 #    savefig("Rob-comparison.eps")
 end
 
-SendnerCrosscheck()
+#SendnerCrosscheck()
 
 #####
 ## Expt. data to compare against
@@ -166,12 +172,25 @@ plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
 
 
 #plot!(MAPIe.T,MAPIe.Kμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
-plot!(Ts,hHμs,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
+#plot!(Ts,hHμs,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
+
+plot!(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:dtriangle)
+plot!(MAPIh.T,MAPIh.Hμ,label="Calculated (hole) mobility",markersize=3,marker=:utriangle)
+
 
 savefig("MAPI-eh-mobility-calculated-experimental.png")
 savefig("MAPI-eh-mobility-calculated-experimental.eps")
 
-plot!(Ts,MAPI,label="(Rob's values) MAPI",markersize=2,marker=:rect)
+plot!(ylims=(),yscale=:log10)
+plot!(ylims=(),xscale=:log10) # on log-log axes; powerlaw becomes straight
+plot!(x->1e5*x^(-3/2),20:400,yscale=:log10)
+
+savefig("MAPI-eh-mobility-calculated-experimental-log10.png")
+savefig("MAPI-eh-mobility-calculated-experimental-log10.eps")
+
+
+
+plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
 savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
 savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
 
