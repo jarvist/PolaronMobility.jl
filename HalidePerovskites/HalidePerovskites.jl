@@ -79,9 +79,9 @@ end
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-MAPIe=polaronmobility("MAPI-electron", 10:10:400, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe=polaronmobility("MAPI-electron", 10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 plotpolaron("MAPI-electron", MAPIe)
-MAPIh=polaronmobility("MAPI-hole",     10:10:400, 4.5, 24.1, 2.25E12, 0.15)
+MAPIh=polaronmobility("MAPI-hole",     10:10:1000, 4.5, 24.1, 2.25E12, 0.15)
 plotpolaron("MAPI-hole", MAPIh)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
@@ -183,16 +183,67 @@ savefig("MAPI-eh-mobility-calculated-experimental.eps")
 
 plot!(ylims=(),yscale=:log10)
 plot!(ylims=(),xscale=:log10) # on log-log axes; powerlaw becomes straight
-plot!(x->1e5*x^(-3/2),20:400,yscale=:log10)
+plot!(x->1e5*x^(-3/2),20:1000,yscale=:log10)
 
 savefig("MAPI-eh-mobility-calculated-experimental-log10.png")
 savefig("MAPI-eh-mobility-calculated-experimental-log10.eps")
 
+# OK; fit some stuff.
+using LsqFit # Least squares fit, orig from Optim package.
 
+function fitPowerLaw()
+    model(x,p)=p[1]*x.^(p[2])
+    p0=[1.0,-3.0/2]
 
-plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
-savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
-savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
+    # Data we're fitting against
+    plot(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:dtriangle,ylims=(1,400))
+
+    # They're nasty 'Any' data types; force to Float64
+    T=convert(Array{Float64},MAPIe.T)
+    μ=convert(Array{Float64},MAPIe.Hμ)
+
+    # Ta da! Least squares fit.
+    fit=curve_fit(model,T,μ,p0)
+    p=fit.param
+    #plot!(T,model(T,p))
+
+    # Fit just from 100K onwards
+    fit=curve_fit(model,T[10:end],μ[10:end],p0)
+    p=fit.param
+    plot!(T[10:end],model(T[10:end],p), label="Calc [10:end] Powerlaw: $p")
+
+    # Fit all from 50K onwards - very dubious of quality of fit
+    #fit=curve_fit(model,T[5:end],μ[5:end],p0)
+    #p=fit.param
+    #plot!(T[5:end],model(T[5:end],p), label="Calc [5:end] Powerlaw: $p")
+
+    # TRMC Polycrystal data for comparison
+    plot!(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",marker=:hexagon,markersize=3,
+    xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)", ylims=(0,400) )
+
+    # Fit all data points except for spurious first one
+    MT=convert(Array{Float64},Milot[2:end,1])
+    Mu=convert(Array{Float64},Milot[2:end,2])
+    fit=curve_fit(model,MT,Mu,p)
+    p=fit.param
+    plot!(T[5:end], model(T[5:end],p), label="Milot Powerlaw Fit 2:end: $p")
+
+    # Fit only sensible data points > 120 K and up
+    MT=convert(Array{Float64},Milot[4:end,1])
+    Mu=convert(Array{Float64},Milot[4:end,2])
+    fit=curve_fit(model,MT,Mu,p)
+    p=fit.param
+    plot!(T[5:end], model(T[5:end],p), label="Milot Powerlaw Fit 4:end: $p")
+
+    savefig("MAPI-fits.png")
+    savefig("MAPI-fits.eps")
+end
+
+fitPowerLaw()
+
+#plot!(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:rect)
+#savefig("MAPI-eh-mobility-calculated-experimental-Rob.png")
+#savefig("MAPI-eh-mobility-calculated-experimental-Rob.eps")
 
 
 println("That's me!")
