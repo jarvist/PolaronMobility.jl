@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="None">
+  
+  <link rel="shortcut icon" href="./img/favicon.ico">
+  <title>Home - PolaronMobility.jl Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="./css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="./css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="./css/highlight.css">
+  <link href="./assets/Documenter.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Home";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = "/";
+  </script>
+  
+  <script src="./js/jquery-2.1.1.min.js"></script>
+  <script src="./js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="./js/highlight.pack.js"></script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="." class="icon icon-home"> PolaronMobility.jl Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href=".">Home</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#polaronmobilityjl-documentation">PolaronMobility.jl Documentation</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#introduction">Introduction</a></li>
+        
+            <li><a class="toctree-l3" href="#scientific-discussion">Scientific discussion</a></li>
+        
+            <li><a class="toctree-l3" href="#research-outputs">Research outputs</a></li>
+        
+            <li><a class="toctree-l3" href="#notes">Notes</a></li>
+        
+            <li><a class="toctree-l3" href="#bibliography">Bibliography</a></li>
+        
+            <li><a class="toctree-l3" href="#functions-provided">Functions provided</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">PolaronMobility.jl Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Home</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <p><a id='PolaronMobility.jl-Documentation-1'></a></p>
+<h1 id="polaronmobilityjl-documentation">PolaronMobility.jl Documentation</h1>
+<p><a id='Introduction-1'></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>These codes calculate the temperature-dependent polaron mobility for a material. We have parameters for various metal-halide Perovskite.</p>
+<p>It is perhaps easiest to read this documentation alongside the pre-print: <a href="https://arxiv.org/abs/1704.05404">ArXiv:1704.05404</a> .</p>
+<p>The scientific inputs are the dielectric constants, a characteristic phonon frequency, and the bare-electron band effective-mass.</p>
+<p>From this you can solve a temperature-dependent polaron model (variationally optimising temperature-dependent free-energies for the coupled electron-phonon system), and from this optimised parameters calculate derivative quantities such as the polaron mobility, and polaron features (effective masses, energy loss rates, oscillation etc.)</p>
+<p>May your phonons drag in a manner truly sublime.</p>
+<p><a id='Scientific-discussion-1'></a></p>
+<h2 id="scientific-discussion">Scientific discussion</h2>
+<p>These codes solve Osaka's variational method for solving the Feynman model. For each temperature, the total free energy of the Feynman coupled phonon-electron system is minimised by optimising coefficients which control the spring-coupling coefficient and effective-mass for the phonon cloud.</p>
+<p>The codes then calculate the polaron mobility, with both the original low-temperature FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] Boltzmann equation motivated phonon-emission correction to the FHIP, and Hellwarth's [Hellwarth1999] method of returning to an earlier (non low-temperature) result in Feynman1962, then directly calculating the contour integral for the polaron self-energy with numerical integration.</p>
+<p>Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for a single electron interacting with a phonon cloud of non-interacting (harmonic) phonons. The electron-phonon interaction is particularly simple, just considering a dipole interaction. This is folded into a dimensionless <code>alpha</code> parameter, practically constructed from dielectric constants of a material, and a characteristic frequency of the dielectric response. (In a simple covalent semiconductor system, this is the frequency of the linear-optical mode, the only infrared active one.) The Feynman model is a beautiful solution of this most simple quantum field problem where the quantum field variable of the phonon field is integrated out by the path-integral approach to quantum mechanics, to leave an electron interacting via a spring constant with an effective mass–-a single particle problem.</p>
+<p>These Julia codes use Hellwarth's [Hellwarth1999] presentation of Osaka's variational free-energies for the Feynman model. We optimise the <code>v</code> and <code>w</code> parameters for these finite-temperature free energies. These can be alternatively restated the mass 'M' and spring-constant 'k' of the coupled phonon-electron Feynman model.</p>
+<p>Here we apply these methods to the case of hybrid halide perovskites. The method provides the temperature dependent polaron-mobility without any free parameters. No arbitrary relaxation time is needed or used. The scattering processes are treated directly, by including an effective electron-phonon coupling in the specification of the Frohlich 'alpha' parameter, and then all other features come from solving the model. The original Feynman model is correct to all orders in alpha, and the Hellwarth direct contour-integration of the general Feynman mobility statement is suitable for high temperature.</p>
+<p>It was necessary to return to these (rather old!) papers and resolve the models, as hybrid halide perovskites are soft materials with low energy phonons. Therefore the effective temperature in terms of a reduced thermodynamic beta (Beta=hbar omega / (k_Boltzmann * Temperature) ) is much smaller than previously considered.</p>
+<p>A finaly note that in [Hellwarth1999], there is a mistake in the formula for 'b', which is also present in their prior PRL [Biaggio1997]. It is correct in [Feynman1962], where there is no factor of b on the right-hand side. It doesn't matter too much, as setting it to zero makes ~0.1% difference in the eventual mobility. However, since we're integrating numerically anyway, we may as well calculate it explicitly.</p>
+<p><a id='Research-outputs-1'></a></p>
+<h2 id="research-outputs">Research outputs</h2>
+<p>Polaron mobilities, three different ways <img alt="Polaron mobilities, three different ways" src="./mobility-calculated.png" /></p>
+<p>Effective mass of phonon cloud <img alt="Effective mass of phonon cloud" src="./mass.png" /></p>
+<p>Spring constant for coupling to phonon cloud <img alt="Spring constant for coupling to phonon cloud" src="./spring.png" /></p>
+<p>Variational (temperature-dependent free-energy) parameters for the coupled system <img alt="Variational (temperature-dependent free-energy) parameters for the coupled system" src="./variational.png" /></p>
+<p><a id='Notes-1'></a></p>
+<h2 id="notes">Notes</h2>
+<p>26th June 2017: The code works (and appears to be faster) with the new stable version of Julia (0.6). However, it still depends on the 0.7.x interface of <code>Optim</code>. Therefore, if you want to use these codes with Julia 0.6 or beyond, for now you have to pin your Optim package to this old(er) interface.</p>
+<pre><code>Pkg.pin(&quot;Optim&quot;,v&quot;0.7.8&quot;)
+</code></pre>
+
+<p><a id='Bibliography-1'></a></p>
+<h2 id="bibliography">Bibliography</h2>
+<p>A bibliography in vague order of utility; I recommend reading the first ones first!</p>
+<p>Feynman also describes his Polaron model in more detail in both 'Statistical Mechanics' (Feynman1972) and 'Quantum Mechanics and Path Integrals' (FeynmanHibbs1965). Note that the differing presentations of Feynman do not always agree in detail.</p>
+<p>Schulman's 'Techniques and applications of path integration' has a 10-page chapter on the Polaron problem. It tries to unify the Feynman prescriptions.</p>
+<p>J.T. Devreese's "Fröhlich Polarons. Lecture course including detailed theoretical derivations" (6th edition, 2016) notes on the ArXiv is a very good place to start &amp; to get an overview of the area. https://arxiv.org/abs/1611.06122</p>
+<pre><code>
+% This introduces two prescriptions for reducing a multi-mode polar lattice to
+% a single ~mean-field~ response.
+% It contains a modern version of the Osaka finite temperature free-energies
+% for use in a variational solution of the Feynman temperature problem.
+% It also includes how to (numerically) do the contour integration to get the
+% DC-response of the polaron developed in Feynman1962.
+@article{Hellwarth1999,
+  doi = {10.1103/physrevb.60.299},
+  url = {https://doi.org/10.1103%2Fphysrevb.60.299},
+  year  = {1999},
+  month = {jul},
+  publisher = {American Physical Society ({APS})},
+  volume = {60},
+  number = {1},
+  pages = {299--307},
+  author = {Robert W. Hellwarth and Ivan Biaggio},
+  title = {Mobility of an electron in a multimode polar lattice},
+  journal = {Physical Review B}
+}
+
+% Boltzmann / relaxation time approximation solution of mobility in the Feynman
+% polaron problem.
+% We extract a relaxation time (+ offer this method of mobility).
+@article{Kadanoff1963,
+  doi = {10.1103/physrev.130.1364},
+  url = {https://doi.org/10.1103%2Fphysrev.130.1364},
+  year  = {1963},
+  month = {may},
+  publisher = {American Physical Society ({APS})},
+  volume = {130},
+  number = {4},
+  pages = {1364--1369},
+  author = {Leo P. Kadanoff},
+  title = {Boltzmann Equation for Polarons},
+  journal = {Physical Review}
+}
+
+% A long and very useful article developing response theories for the polaron.
+% Mainly known for the FHIP mobility, which is low-temperature only.
+@article{Feynman1962,
+  doi = {10.1103/physrev.127.1004},
+  url = {https://doi.org/10.1103%2Fphysrev.127.1004},
+  year  = {1962},
+  month = {aug},
+  publisher = {American Physical Society ({APS})},
+  volume = {127},
+  number = {4},
+  pages = {1004--1017},
+  author = {R. P. Feynman and R. W. Hellwarth and C. K. Iddings and P. M. Platzman},
+  title = {Mobility of Slow Electrons in a Polar Crystal},
+  journal = {Physical Review}
+}
+
+% The original development of Feynman's solution to the polaron problem.
+% Zero temperature approximate variational solutions developed (in limits w-&gt;0,
+% or w=v).
+% Perturbative theories of phonon-drag effective-mass renormalisation given.
+% (i.e. where the 'me=1+alpha/6' &amp; etc. limits are from. )
+@article{Feynman1955,
+  doi = {10.1103/physrev.97.660},
+  url = {https://doi.org/10.1103%2Fphysrev.97.660},
+  year  = {1955},
+  month = {feb},
+  publisher = {American Physical Society ({APS})},
+  volume = {97},
+  number = {3},
+  pages = {660--665},
+  author = {R. P. Feynman},
+  title = {Slow Electrons in a Polar Crystal},
+  journal = {Physical Review}
+}
+
+% Schultz seemed to spend his PhD solving the Feynman polaron problem with
+% a digital computer.
+% Lots of characterisation of the polaron state, and the introduction of an
+% effective polaron size, from considering the variance of the Gaussian
+% wavefunction.
+% Some work towards polaron mobility, but not as developed as in Feynman et al. 1962.
+% Schultz provides units for some of the quantities - which is useful!
+@article{Schultz1959,
+  doi = {10.1103/physrev.116.526},
+  url = {https://doi.org/10.1103%2Fphysrev.116.526},
+  year  = {1959},
+  month = {nov},
+  publisher = {American Physical Society ({APS})},
+  volume = {116},
+  number = {3},
+  pages = {526--543},
+  author = {T. D. Schultz},
+  title = {Slow Electrons in Polar Crystals: Self-Energy,  Mass,  and Mobility},
+  journal = {Physical Review}
+}
+
+% Free-energies of the finite interacting Polaron system.
+@article{Osaka1961,
+  doi = {10.1143/ptp.25.517},
+  url = {https://doi.org/10.1143%2Fptp.25.517},
+  year  = {1961},
+  month = {apr},
+  publisher = {Oxford University Press ({OUP})},
+  volume = {25},
+  number = {4},
+  pages = {517--536},
+  author = {Yukio \=Osaka},
+  title = {Theory of Polaron Mobility},
+  journal = {Progress of Theoretical Physics}
+}
+
+% Original statement of the Polaron problem + Frohlich Hamiltonian.
+@article{Frohlich1952,
+  doi = {10.1098/rspa.1952.0212},
+  url = {https://doi.org/10.1098%2Frspa.1952.0212},
+  year  = {1952},
+  month = {dec},
+  publisher = {The Royal Society},
+  volume = {215},
+  number = {1122},
+  pages = {291--298},
+  author = {H. Frohlich},
+  title = {Interaction of Electrons with Lattice Vibrations},
+  journal = {Proceedings of the Royal Society A: Mathematical,  Physical and Engineering Sciences}
+}
+
+@article{Thornber1970,
+  doi = {10.1103/physrevb.1.4099},
+  url = {https://doi.org/10.1103%2Fphysrevb.1.4099},
+  year  = {1970},
+  month = {may},
+  publisher = {American Physical Society ({APS})},
+  volume = {1},
+  number = {10},
+  pages = {4099--4114},
+  author = {K. K. Thornber and Richard P. Feynman},
+  title = {Velocity Acquired by an Electron in a Finite Electric Field in a Polar Crystal},
+  journal = {Physical Review B}
+}
+
+</code></pre>
+
+<p><a id='Functions-provided-1'></a></p>
+<h2 id="functions-provided">Functions provided</h2>
+<p><a id='PolaronMobility.feynmanalpha-NTuple{4,Any}' href='#PolaronMobility.feynmanalpha-NTuple{4,Any}'>#</a>
+<strong><code>PolaronMobility.feynmanalpha</code></strong> &mdash; <em>Method</em>.</p>
+<p>feynmanalpha(ε_Inf,ε_S,freq,m_eff)</p>
+<pre><code>Calculates the Frohlich alpha parameter, for a given dielectric constant,
+frequency (f) of phonon in Hertz, and effective mass (in units of the
+bare electron mass).
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/e2dcab8fe2ce6e29350af350b09d49a17a6b3b16/src/FeynmanKadanoffOsakaHellwarth.jl#L32-L38' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.HellwarthBScheme-Tuple{Any}' href='#PolaronMobility.HellwarthBScheme-Tuple{Any}'>#</a>
+<strong><code>PolaronMobility.HellwarthBScheme</code></strong> &mdash; <em>Method</em>.</p>
+<pre><code>HellwarthBScheme(LO)
+
+Multiple phonon mode reduction to a single effective frequency.
+Hellwarth et al. 1999 PRB, 'B scheme'.
+Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/e2dcab8fe2ce6e29350af350b09d49a17a6b3b16/src/FeynmanKadanoffOsakaHellwarth.jl#L54-L60' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.HellwarthAScheme' href='#PolaronMobility.HellwarthAScheme'>#</a>
+<strong><code>PolaronMobility.HellwarthAScheme</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>HellwarthAScheme(LO,T=295)
+
+Multiple phonon mode reduction to a single effective frequency. 
+Temperature dependent, defaults to T=295 K.
+UNTESTED AND UNCERTAIN CODE.
+
+Follows Hellwarth et al. 1999 PRB, Eqn 50 RHS.
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/e2dcab8fe2ce6e29350af350b09d49a17a6b3b16/src/FeynmanKadanoffOsakaHellwarth.jl#L78-L86' class='documenter-source'>source</a><br></p>
+<pre><code>savepolaron(fileprefix, p::Polaron)
+</code></pre>
+
+<pre><code>plotpolaron(fileprefix, p::Polaron; extension=&quot;png&quot;)
+</code></pre>
+
+<p><a id='PolaronMobility.ImX-NTuple{7,Any}' href='#PolaronMobility.ImX-NTuple{7,Any}'>#</a>
+<strong><code>PolaronMobility.ImX</code></strong> &mdash; <em>Method</em>.</p>
+<p>function ImX(nurange,v,w,βred,α,ω,mb)</p>
+<p>Impedance in (47a) from Feynman1962, directly solving freq dep without taking  Hellwarth1999 limit of v-&gt;0</p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/e2dcab8fe2ce6e29350af350b09d49a17a6b3b16/src/FeynmanKadanoffOsakaHellwarth.jl#L415-L420' class='documenter-source'>source</a><br></p>
+<pre><code>polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+    
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+      
+    </span>
+</div>
+    <script src="./js/theme.js"></script>
+      <script src="./assets/mathjaxhelper.js"></script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 0.16.3
+Build Date UTC : 2017-10-16 16:07:30
+-->
