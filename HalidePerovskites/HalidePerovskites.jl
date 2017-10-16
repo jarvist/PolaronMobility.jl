@@ -235,8 +235,13 @@ function fitPowerLaw()
     p=fit.param
     plot!(T[5:end], model(T[5:end],p), label="Milot Powerlaw Fit 4:end: $p")
 
-    savefig("MAPI-fits.png")
-    savefig("MAPI-fits.eps")
+    savefig("MAPI-fit-lin.png")
+    savefig("MAPI-fit-lin.eps")
+
+    plot!(ylims=(1,), yscale=:log10)# log-log; power-law --> straight line
+    plot!(xlims=(1,), xscale=:log10)
+    savefig("MAPI-fit-log.png")
+    savefig("MAPI-fit-log.eps")
 end
 
 fitPowerLaw()
