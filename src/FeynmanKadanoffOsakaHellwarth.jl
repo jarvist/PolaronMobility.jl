@@ -4,6 +4,7 @@
 # If you run this, it should construct the model, solve for varying temperature, then produce plots as .pngs in the local directory.
 # These codes were developed with Julia 0.5.0, and requires the Optim and Plots packages.
 
+export Polaron # Type to hold the data
 export feynmanalpha, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export ImX
