@@ -1,0 +1,28 @@
+FILE="MAPI-electron"
+
+set terminal dumb # Just keep it all in the terminal + output files
+
+# Data from PolaronMobility.jl looks like this:
+# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus rfs
+#  1    2     3    4     5     6   7    8  9   10  11  12  13  14   15
+
+prefix=FILE."-mobility"
+
+set yrange [0:500] # cut-off divergence at T=0; don't care about these values.
+set xlabel "Temperature (K)"
+set ylabel "Mobility (cm^2V^{-1}s^{-1})"
+p FILE.'.dat' u 1:4 w lp title "Hellwarth mobility", '' u 1:3 w lp title "Kadanoff Mobility"
+
+load "gnuplot-render.gpt"
+
+prefix=FILE."-variational"
+
+set y2range [0:1]
+set y2label "Mass / Tau (reduced units)"
+set y2tics
+p FILE.'.dat' u 1:15 w lp title "Polaron radius", \
+ '' u 1:6 w lp axes x1y2 title "v (variational)", '' u 1:7 w lp axes x1y2 title "w (variational)", \
+ '' u 1:9 w lp axes x1y2 title "M (Effective mass)", '' u 1:14 w lp axes x1y2 title "Scattering Tau (ps)"
+
+load "gnuplot-render.gpt"
+
