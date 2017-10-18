@@ -402,6 +402,7 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
         append!(p.w,w)
     end
 
+    @printf("\n") # blank line at end of spiel.
     return(p)
 end
 

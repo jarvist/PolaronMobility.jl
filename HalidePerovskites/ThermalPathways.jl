@@ -16,8 +16,8 @@ using PolaronMobility
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
 using Plots
-pyplot()
-#gr() # GR backend to Plots
+pyplot() # PyPlot (matplotlib) backend, to Plots
+#gr() # GR backend, to Plots
 default(grid=false) # No silly dotted grid lines
 default(size=(400,300)) # A good small size for two-column EPS output
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides

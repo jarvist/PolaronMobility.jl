@@ -44,11 +44,13 @@ const cm1=2.997e10 # cm-1 to Herz
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 println("OK, solving Polaron problem...")
-MAPIe = polaronmobility("MAPI-electron", [300], 4.5, 24.1, 2.25E12, 0.12; verbose=true, figures=false)
-MAPIh = polaronmobility("MAPI-hole",     [300], 4.5, 24.1, 2.25E12, 0.15; verbose=true, figures=false)
+MAPIe = polaronmobility("MAPI-electron", [150,300], 4.5, 24.1, 2.25E12, 0.12; verbose=true, figures=false)
+MAPIh = polaronmobility("MAPI-hole",     [150,300], 4.5, 24.1, 2.25E12, 0.15; verbose=true, figures=false)
+
+MAPIe = polaronmobility("MAPI-electron", [150,300], 4.5, 24.1, 1.25E12, 0.12; verbose=true, figures=false)
 
 
-s=ImX(0.5:0.5:40,MAPIe.v[1],MAPIe.w[1],MAPIe.βred[1], MAPIe.α[1],MAPIe.ω[1],MAPIe.mb[1])
+s=ImX(0.1:0.1:6,MAPIe.v[2],MAPIe.w[2],MAPIe.βred[2], MAPIe.α[1],MAPIe.ω[1],MAPIe.mb[1])
 plot( s.nu,s.ImX,label="ImX",
     markersize=3,marker=:downtriangle, xlab="nu (units Omega)",ylab="ImX")
 savefig("MAPIe-ImX.png")

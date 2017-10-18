@@ -28,15 +28,16 @@
 # line styles
 # Edited by JMF to more reflect Janert's choice of point type below for
 # publication-ready figures. (Well, Physical Review at least!)
-set linetype 1 pt 1 lc rgb '#E41A1C' # red
-set linetype 2 pt 2 lc rgb '#377EB8' # blue
-set linetype 3 pt 6 lc rgb '#4DAF4A' # green
-set linetype 4 pt 4 lc rgb '#984EA3' # purple
-set linetype 5 pt 1 lc rgb '#FF7F00' # orange
-set linetype 6 pt 2 lc rgb '#FFFF33' # yellow
-set linetype 7 pt 6 lc rgb '#A65628' # brown
-set linetype 8 pt 4 lc rgb '#F781BF' # pink
+set linetype 1 pi -1 pt 1 lc rgb '#E41A1C' dt solid # red
+set linetype 2 pi -1 pt 6 lc rgb '#377EB8' dt solid # blue
+set linetype 3 pi -1 pt 2 lc rgb '#4DAF4A' dt solid # green
+set linetype 4 pi -1 pt 4 lc rgb '#984EA3' dt solid # purple
+set linetype 5 pi -1 pt 1 lc rgb '#FF7F00' dt solid # orange
+set linetype 6 pi -1 pt 6 lc rgb '#FFFF33' dt solid # yellow
+set linetype 7 pi -1 pt 2 lc rgb '#A65628' dt solid # brown
+set linetype 8 pi -1 pt 4 lc rgb '#F781BF' dt solid # pink
 #####
+set pointintervalbox 1.75
 
 ##### Gnuplotting xyborder.cfg
 #set style line 101 lc rgb '#808080' lt 1 lw 1
@@ -65,7 +66,9 @@ replot
 
 set terminal pdfcairo size 3in,2in enhanced font 'Helvetica,12'
 set output prefix.'-COLOUR.pdf'
-set pointsize 0.5
+
+unset key
+set pointsize 0.3
 
 replot
 
@@ -79,12 +82,12 @@ set output prefix.'-BW.pdf'
 # Via Janert's Gnuplot in Action 2nd Edition; style3.gp
 # Black and White traditional Physical-review ish.
 set linetype 1 pi -1 pt 1 lc black dt solid
-set linetype 2 pi -1 pt 2 lc black dt (8,6)
-set linetype 3 pi -1 pt 6 lc black dt (4,3)
+set linetype 2 pi -1 pt 6 lc black dt (8,6)
+set linetype 3 pi -1 pt 2 lc black dt (4,3)
 set linetype 4 pi -1 pt 4 lc black dt (3,6)
 set linetype 5 pi -1 pt 1 lc black dt (12,5,2,5,2,5)
-set linetype 6 pi -1 pt 2 lc black dt (16,8)
-set linetype 7 pi -1 pt 6 lc black dt (20,6,2,6)
+set linetype 6 pi -1 pt 6 lc black dt (16,8)
+set linetype 7 pi -1 pt 2 lc black dt (20,6,2,6)
 set linetype 8 pi -1 pt 4 lc black dt (30,10)
 set pointsize 0.3
 set pointintervalbox 1.75

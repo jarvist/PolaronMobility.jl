@@ -62,10 +62,18 @@ checkalpha()
 const cm1=2.997e10 # cm-1 to Herz
 
 function CsSn()
-    polaronmobility("CsSnCl3",  4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
-    polaronmobility("CsSnBr3",  5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
-    polaronmobility("CsSnI3",   6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+    CsSnCl3=polaronmobility("CsSnCl3",  10:10:1000, 4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
+    savepolaron("CsSnCl3",CsSnCl3)
+
+    CsSnBr3=polaronmobility("CsSnBr3",  10:10:1000, 5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
+    savepolaron("CsSnBr3",CsSnBr3)
+ 
+    CsSnI3=polaronmobility("CsSnI3",   10:10:1000, 6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+    savepolaron("CsSnI3",CsSnI3)
+ 
 end
+
+CsSn() # generate all that lovely tin data
 
 # Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus
 # CsSnBr3.dat:300 0.877382 511.513 356.358 874.499 8.13686 7.31511 12.6976 0.23729 -3.78992 2.15682 0.84436 0.788735 0.185396
@@ -81,8 +89,11 @@ end
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 MAPIe=polaronmobility("MAPI-electron", 10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 plotpolaron("MAPI-electron", MAPIe)
+savepolaron("MAPI-electron",MAPIe)
+
 MAPIh=polaronmobility("MAPI-hole",     10:10:1000, 4.5, 24.1, 2.25E12, 0.15)
 plotpolaron("MAPI-hole", MAPIh)
+savepolaron("MAPI-hole",MAPIh)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 #polaronmobility("PCBM",     4.0, 5.0, 2.25E12, 1.00)
@@ -93,9 +104,11 @@ plotpolaron("MAPI-hole", MAPIh)
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
 function CsPbI()
-    CsPbI=polaronmobility("CsPbI3-electron",     10:10:400, 6.1,6.1+12.0, 2.57E12, 0.12)
+    CsPbI=polaronmobility("CsPbI3-electron",     10:10:1000, 6.1,6.1+12.0, 2.57E12, 0.12)
     plotpolaron("CsPbI3-electron",CsPbI)
+    savepolaron("CsPbI3-electron",CsPbI)
 end
+CsPbI() # generate CsPbI3 data for later plotting
 
 function SendnerCrosscheck()
     const cm1=2.997e10 # cm-1 to Herz
@@ -111,11 +124,15 @@ function SendnerCrosscheck()
     # oscillators down to a single mode. Rob provided these values by email (as
     # below). The Effetive Masses and dielectric constants are from the paper.
     # Combined, this reproduces their mobilities, and the internal w and
-    # v parameters (again, email from Rob).  
-    # For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
+    # v parameters (again, email from Rob):
+    #  "For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0"
     RobMAPI=polaronmobility("Rob-MAPI", 10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
     RobMAPBr=polaronmobility("Rob-MAPBr", 10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
     RobMAPCl=polaronmobility("Rob-MAPCl", 10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
+
+    savepolaron("Rob-MAPI",RobMAPI)
+    savepolaron("Rob-MAPBr",RobMAPBr)
+    savepolaron("Rob-MAPCl",RobMAPCl)
 
     plot(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
     plot!(RobMAPBr.T,RobMAPBr.Hμ,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
@@ -124,7 +141,7 @@ function SendnerCrosscheck()
 #    savefig("Rob-comparison.eps")
 end
 
-#SendnerCrosscheck()
+SendnerCrosscheck() # cross-check data for Rob
 
 #####
 ## Expt. data to compare against
@@ -177,13 +194,12 @@ plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
 plot!(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:dtriangle)
 plot!(MAPIh.T,MAPIh.Hμ,label="Calculated (hole) mobility",markersize=3,marker=:utriangle)
 
-
 savefig("MAPI-eh-mobility-calculated-experimental.png")
 savefig("MAPI-eh-mobility-calculated-experimental.eps")
 
 plot!(ylims=(),yscale=:log10)
 plot!(ylims=(),xscale=:log10) # on log-log axes; powerlaw becomes straight
-plot!(x->1e5*x^(-3/2),20:1000,yscale=:log10)
+plot!(x->1e5*x^(-3/2),20:1000,yscale=:log10) # Trend line for the T^-3/2 powerlaw
 
 savefig("MAPI-eh-mobility-calculated-experimental-log10.png")
 savefig("MAPI-eh-mobility-calculated-experimental-log10.eps")
@@ -236,12 +252,13 @@ function fitPowerLaw()
     plot!(T[5:end], model(T[5:end],p), label="Milot Powerlaw Fit 4:end: $p")
 
     savefig("MAPI-fit-lin.png")
-    savefig("MAPI-fit-lin.eps")
+    savefig("MAPI-fit-lin.pdf")
 
     plot!(ylims=(1,), yscale=:log10)# log-log; power-law --> straight line
     plot!(xlims=(1,), xscale=:log10)
     savefig("MAPI-fit-log.png")
-    savefig("MAPI-fit-log.eps")
+    plot!(legend=false) # no key
+    savefig("MAPI-fit-log.pdf")
 end
 
 fitPowerLaw()
