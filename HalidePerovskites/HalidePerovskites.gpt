@@ -9,20 +9,63 @@ set terminal dumb # Just keep it all in the terminal + output files
 prefix=FILE."-mobility"
 
 set yrange [0:500] # cut-off divergence at T=0; don't care about these values.
+set xrange [0:400] # for comparison to expt data
 set xlabel "Temperature (K)"
 set ylabel "Mobility (cm^2V^{-1}s^{-1})"
-p FILE.'.dat' u 1:4 w lp title "Hellwarth mobility", '' u 1:3 w lp title "Kadanoff Mobility"
+p FILE.'.dat' u 1:4 w lp title "Hellwarth mobility", '' u 1:3 w lp title "Kadanoff Mobility",\
+ "Milot.dat" u 1:2 w lp title "Milot/Herz 2015 TRMC",\
+ "<echo '300 115 15'" w yerrorbars title "Semonin2016" dt solid,\
+ "<echo '300 67.2'" w p title "Saidaminov2015" lt 7 pt 12 
+# # IV estimated mobilities (?!) from large single crystals, assumed ambient T
+# # Nature Communications 6, Article number: 7586 (2015)
+# # doi:10.1038/ncomms8586
+# Saidaminov = [ 300 67.2 ]
+#
+# Semonin2016, doi = {10.1021/acs.jpclett.6b01308},
+# Semonin = [ 300 115 ] # +- 15 cm^2/Vs, holes+electrons
 
 load "gnuplot-render.gpt"
+unset yrange
 
-prefix=FILE."-variational"
+prefix=FILE."-FreeEnergy"
+set ylabel "Free Energy"
+p FILE.'.dat' u 1:13 w lp title "Free Energy", \
+ '' u 1:10 w lp title "A",\
+ '' u 1:11 w lp title "B",\
+ '' u 1:12 w lp title "C"
+load "gnuplot-render.gpt"
 
-set y2range [0:1]
-set y2label "Mass / Tau (reduced units)"
-set y2tics
-p FILE.'.dat' u 1:15 w lp title "Polaron radius", \
- '' u 1:6 w lp axes x1y2 title "v (variational)", '' u 1:7 w lp axes x1y2 title "w (variational)", \
- '' u 1:9 w lp axes x1y2 title "M (Effective mass)", '' u 1:14 w lp axes x1y2 title "Scattering Tau (ps)"
+prefix=FILE."-VW"
+set yrange [0:]
+set xrange [0:300] # beyond here just boring linear. Including 300K point.
+set ylabel "Variational Parameters"
+p FILE.'.dat' u 1:6 w lp title "v", '' u 1:7 w lp title "w"
 
 load "gnuplot-render.gpt"
+unset xrange
+
+prefix=FILE."-meff-tau"
+set yrange [0:]
+set xrange [0:400] # beyond here just boring linear. Including 300K point.
+set ylabel "Effective Mass / Relaxation time (ps)"
+p FILE.'.dat' u 1:9 w lp title "meff", '' u 1:14 w lp title "Tau"
+
+load "gnuplot-render.gpt"
+unset xrange
+
+
+
+# This one is now a bit of a mess, but leaving it here to mine the axes setup
+#prefix=FILE."-variational"
+
+#set y2range [0:1]
+#set y2label "Mass / Tau (reduced units)"
+#set y2tics
+#p FILE.'.dat' u 1:15 w lp title "Polaron radius", \
+# '' u 1:6 w lp axes x1y2 title "v (variational)", '' u 1:7 w lp axes x1y2 title "w (variational)", \
+# '' u 1:9 w lp axes x1y2 title "M (Effective mass)", '' u 1:14 w lp axes x1y2 title "Scattering Tau (ps)"
+
+#load "gnuplot-render.gpt"
+#unset y2tics
+#unset y2label
 

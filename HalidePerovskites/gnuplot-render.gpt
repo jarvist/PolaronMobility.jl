@@ -26,21 +26,23 @@
 # author: Anna Schneider
 
 # line styles
+# Edited by JMF to more reflect Janert's choice of point type below for
+# publication-ready figures. (Well, Physical Review at least!)
 set linetype 1 pt 1 lc rgb '#E41A1C' # red
 set linetype 2 pt 2 lc rgb '#377EB8' # blue
-set linetype 3 pt 8 lc rgb '#4DAF4A' # green
-set linetype 4 pt 12 lc rgb '#984EA3' # purple
-set linetype 5 pt 6 lc rgb '#FF7F00' # orange
-set linetype 6 pt 10 lc rgb '#FFFF33' # yellow
-set linetype 7 pt 3 lc rgb '#A65628' # brown
-set linetype 8 pt 13 lc rgb '#F781BF' # pink
+set linetype 3 pt 6 lc rgb '#4DAF4A' # green
+set linetype 4 pt 4 lc rgb '#984EA3' # purple
+set linetype 5 pt 1 lc rgb '#FF7F00' # orange
+set linetype 6 pt 2 lc rgb '#FFFF33' # yellow
+set linetype 7 pt 6 lc rgb '#A65628' # brown
+set linetype 8 pt 4 lc rgb '#F781BF' # pink
 #####
 
 ##### Gnuplotting xyborder.cfg
-set style line 101 lc rgb '#808080' lt 1 lw 1
-set border 3 front ls 101
-set tics nomirror out scale 0.75
-set format '%g'
+#set style line 101 lc rgb '#808080' lt 1 lw 1
+#set border 3 front ls 101
+#set tics nomirror out scale 0.75
+#set format '%g'
 #####
 
 ##### Gnuplotting grid.cfg
