@@ -1,4 +1,11 @@
-FILE="MAPI-electron"
+# HalidePerovskites.gpt - Jarvist Moore Frost
+# October 2017
+# Gnuplot script to replot all the figures (bar one) for the new (final!?)
+# preprint version of:
+
+# https://arxiv.org/abs/1704.05404
+# Calculating polaron mobility in halide perovskites
+# Jarvist Moore Frost
 
 set terminal dumb # Just keep it all in the terminal + output files
 
@@ -11,6 +18,7 @@ set terminal dumb # Just keep it all in the terminal + output files
 # CsSnBr3.dat          MAPI-electron.dat    Rob-MAPBr.dat        STDOUT.dat
 # CsSnCl3.dat          MAPI-hole.dat        Rob-MAPCl.dat
 
+FILE="MAPI-electron"
 prefix=FILE."-mobility"
 
 set yrange [0:500] # cut-off divergence at T=0; don't care about these values.

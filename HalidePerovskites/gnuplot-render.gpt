@@ -1,5 +1,12 @@
+# Jarvist Moore Frost, October 2017
 # This commandfile is essentially a work-around for GNUPlot's lack of subroutines
 # Instead you source this file, and it will save PDF + PNG tweaked versions of the figures
+
+# set the filename root in the variable prefix
+#     prefix="MyLovelyFigure"
+# Then load this file:
+#     load "gnuplot-render.gpt"
+# To generate MyLovelyFigure{.png,-BW.pdf,-COLOUR.pdf} etc.
 
 # Point types - via
 # http://triclinic.org/2015/04/publication-quality-plots-with-gnuplot/
@@ -98,3 +105,5 @@ replot
 
 set terminal dumb
 set output
+
+# Nb: Perhaps not all options reset!
