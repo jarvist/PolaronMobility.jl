@@ -18,7 +18,7 @@ using PolaronMobility
 using Plots
 pyplot()
 default(grid=false) # No silly dotted grid lines
-default(size=(400,300)) # A good small size for two-column EPS output
+default(size=(400,250)) # A good small size for two-column EPS output
 
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides
 
