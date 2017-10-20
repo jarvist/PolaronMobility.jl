@@ -106,16 +106,20 @@ p 'MAPI-electron.dat' u 1:4 w lp title "MAPI-electron",\
 load "gnuplot-render.gpt"
 
 # This one is now a bit of a mess, but leaving it here to mine the axes setup
-#prefix=FILE."-variational"
+FILE="MAPI-electron"
+prefix=FILE."-VW-vs-rf"
 
-#set y2range [0:1]
+set y2range [0:50]
+set yrange [0:25]
+set xrange [0:400] # beyond here just boring linear. Including 300K point.
+set ylabel "Variational parameters"
+set y2label "Schultz r_f (Å)"
 #set y2label "Mass / Tau (reduced units)"
-#set y2tics
-#p FILE.'.dat' u 1:15 w lp title "Polaron radius", \
+set y2tics
+p FILE.'.dat' u 1:($15*10**10) w lp axes x1y2 title "Polaron radius", \
+ '' u 1:6 w lp  title "v", '' u 1:7 w lp  title "w"
+load "gnuplot-render.gpt"
+
 # '' u 1:6 w lp axes x1y2 title "v (variational)", '' u 1:7 w lp axes x1y2 title "w (variational)", \
 # '' u 1:9 w lp axes x1y2 title "M (Effective mass)", '' u 1:14 w lp axes x1y2 title "Scattering Tau (ps)"
-
-#load "gnuplot-render.gpt"
-#unset y2tics
-#unset y2label
 
