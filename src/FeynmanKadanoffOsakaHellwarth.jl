@@ -187,13 +187,6 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
     @printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )
     @printf("Derived params in SI: ω =%g mb=%g \n",ω ,mb)
 
-    # Dump to log file
-    f=open("$fileprefix.dat","w")
-    @printf(f,"#Model parameters: ε_Inf=%f ε_S=%f freq=%g mb=%f \n",ε_Inf, ε_S, freq, effectivemass)
-    @printf(f,"#Params in SI: ω =%g mb=%g \n",ω ,mb)
-    @printf(f,"#Alpha parameter: α = %f  \n",α )
-    close(f)
-
 
     # Initial v,w to use
     initial=[7.1,6.5]
@@ -454,7 +447,11 @@ end
 
 function savepolaron(fileprefix, p::Polaron) 
     println("Saving data to $fileprefix.dat ...")
-    f=open("$fileprefix.dat","a")
+    f=open("$fileprefix.dat","w")
+    
+    @printf(f,"# Params in SI: ω =%g mb=%g \n",p.ω[1] ,p.mb[1])
+    @printf(f,"# Alpha parameter: α = %f  \n",p.α[1] )
+
     @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis\n",fileprefix)
     @printf(f,"#  1    2     3    4     5     6   7    8  9   10  11  12  13  14 15\n") # columns for GNUPLOT etc.
     for i in 1:length(p.T)
