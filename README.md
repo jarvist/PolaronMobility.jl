@@ -4,8 +4,6 @@
 [![Coverage Status](https://coveralls.io/repos/jarvist/PolaronMobility.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/jarvist/PolaronMobility.jl?branch=master)
 [![codecov.io](http://codecov.io/github/jarvist/PolaronMobility.jl/coverage.svg?branch=master)](http://codecov.io/github/jarvist/PolaronMobility.jl?branch=master)
 
-
-
 These codes calculate the temperature-dependent polaron mobility for
 a material.
 We have parameters for various metal-halide Perovskite.
@@ -27,6 +25,16 @@ loss rates, oscillation etc.)
 May your phonons drag in a manner truly sublime.
 
 ![MAPI Polaron mobility, plotted vs expt data](mobility-calculated-experimental.png)
+
+## Installation
+
+These codes require Julia >0.6 . They are structured as a full Julia package, but are not yet registered with the central METADATA package repository. 
+
+To install, type the following at the Julia REPL:
+
+```
+julia> Pkg.clone("git://github.com/Jarvist/PolaronMobility.jl.git")
+```
 
 ## Research outputs
 
