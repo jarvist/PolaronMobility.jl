@@ -403,11 +403,13 @@ function savepolaron(fileprefix, p::Polaron)
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","w")
     
+    @printf(f,"# %s\n",fileprefix) # put name / material at header
     @printf(f,"# Params in SI: ω =%g mb=%g \n",p.ω[1] ,p.mb[1])
     @printf(f,"# Alpha parameter: α = %f  \n",p.α[1] )
 
-    @printf(f,"# %s \n# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis\n",fileprefix)
-    @printf(f,"#  1    2     3    4     5     6   7    8  9   10  11  12  13  14 15\n") # columns for GNUPLOT etc.
+    @printf(f,"# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis\n")
+    @printf(f,"#  1    2     3    4     5      6   7   8   9  10  11  12  13    14     15\n") # columns for GNUPLOT etc.
+
     for i in 1:length(p.T)
         @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g %g \n",
         p.T[i], p.βred[i], p.Kμ[i], p.Hμ[i], p.FHIPμ[i], 

@@ -1,6 +1,8 @@
 # Wrap PlotPolaron (and it's dependency on Plots) within it's own (sub)module.
 module PlotPolaron
 
+export plotpolaron # Should unify case here c.f. Module 
+
 using PolaronMobility
 using Plots
 
