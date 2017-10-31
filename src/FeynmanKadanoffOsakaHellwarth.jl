@@ -14,7 +14,7 @@ export ImX
 import QuadGK.quadgk
 
 # Plot figures with Plots, which defaults to Pyplot backend
-using Plots
+#using Plots
 #pyplot()
 #default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters

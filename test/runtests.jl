@@ -9,3 +9,6 @@ using Base.Test
 include("FeynmanAlpha.jl")
 include("HellwarthMultipleBranches.jl")
 include("FrostPolaronMobility2017.jl")
+
+println("That's me! If I finished without interupting, let's assume the tests were A.OK."
+
