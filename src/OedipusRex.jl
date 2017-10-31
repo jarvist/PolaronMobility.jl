@@ -1,6 +1,6 @@
 # OedipusRex.jl
 
-using QuadGK
+#using QuadGK
 """
     ReX(v=20,w=20)
 

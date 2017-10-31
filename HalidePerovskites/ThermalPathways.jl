@@ -12,6 +12,7 @@
 push!(LOAD_PATH,"../src/") # load module from local directory
 
 using PolaronMobility 
+using PlotPolaron # Plots dependency
 
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend

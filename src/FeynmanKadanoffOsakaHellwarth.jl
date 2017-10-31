@@ -399,52 +399,6 @@ function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemas
     return(p)
 end
 
-struct susceptibility
-    nu
-    ImX
-    μ
-end
-Susceptibility()=susceptibility([],[],[])
-
-"""
-function ImX(nurange,v,w,βred,α,ω,mb)
- 
-Impedance in (47a) from Feynman1962, directly solving freq dep without taking 
-Hellwarth1999 limit of v->0
-"""
-function ImX(nurange,v,w,βred,α,ω,mb)
-        @printf("\nAin't no Imaginary Impedance like a Feynman 1962 ImX...\n")
-        println("ImX Call signature: v: $v w: $w βred: $βred α: $α ω: $ω mb: $mb")
-    # Feynman, I love you - but using Nu, v; Omega, w in the same paper + formulas, for similar objects?!
-    s=Susceptibility()
-    for nu in nurange
-        R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-        b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
-        a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
-        k(u,a,b,v,nu) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u)*cos(nu*u) # integrand with cos(vu) term, as (47a) 
-
-        @printf("Numerical integration of Feynman1962(42a): nu=%.2f ",nu)
-        @time n=quadgk(u->k(u,a,b,v,nu),0,Inf,maxevals=10^9,reltol=0.1) # numerical quadrature integration of (2)
-        K=n[1]
-        err=n[2]
-        @printf(" quadgk: K=%g err=%g\n",K,err)
-
-        # Full 47a constructed here
-        ImX= 2*α/(3*sqrt(π)) * βred^(3/2) * (sinh(βred*nu/2))/sinh(βred/2) * (v^3/w^3) * K
-
-        μ=ImX^-1 * (q)/(ω*mb)
-
-        @printf(" %.3f %g %g\n",nu,ImX,μ)
-
-        append!(s.nu,nu)
-        append!(s.ImX,ImX)
-        append!(s.μ,μ)
-    end
-
-    @printf("\n\n")
-    return(s)
-end
-
 function savepolaron(fileprefix, p::Polaron) 
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","w")
@@ -462,70 +416,5 @@ function savepolaron(fileprefix, p::Polaron)
         p.Tau[i], p.rfsi[i])
     end
     close(f)
-end
-
-function plotpolaron(fileprefix, p::Polaron; extension="png")  
-    println("Plotting polaron to $fileprefix...")
-
-    #####
-    ## Mass vs. Temperature plot
-    plot(p.T,p.M,label="Phonon effective-mass",
-         markersize=3,marker=:rect,
-         xlab="Temperature (K)",ylab="Phonon effective-mass",
-         ylim=(0,1.2))
-
-    savefig("$fileprefix-mass.$extension")
-
-    #####
-    ## Relaxationtime vs. Temperature plot
-    plot(p.T,p.Tau,label="Kadanoff relaxation time (ps)",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
-
-    savefig("$fileprefix-tau.$extension")
-
-    ## Mass + relaxation time vs. Temperature plot
-    plot(p.T,p.M,label="Phonon effective-mass (m\$_b\$)",markersize=3,marker=:rect,
-        xlab="Temperature (K)",ylab="Effective-mass / relaxation time",ylim=(0,1.2))
-    plot!(p.T,p.Tau,label="Kadanoff relaxation time (ps)",markersize=3,marker=:diamond,
-        xlab="Temperature (K)",ylab="Relaxation time (ps)",ylim=(0,1.2))
-
-    savefig("$fileprefix-mass-tau.$extension")
-
-    ####
-    ## Variational parameters, v and w vs. Temperature plot
-    plot(p.T,p.v,label="v",markersize=3, marker=:rect, xlab="Temperature (K)",ylab="\hbar\omega")
-    plot!(p.T,p.w,label="w",markersize=3, marker=:diamond)
-
-    savefig("$fileprefix-vw.$extension")
-
-    #####
-    ## Spring Constants vs. Temperature plot
-    plot(p.T,p.k,label="Polaron spring-constant",markersize=3, marker=:uptriangle, xlab="Temperature (K)",ylab="Spring-constant",)
-
-    savefig("$fileprefix-spring.$extension")
-
-    #####
-    ## Variation Energy vs. Temperature plots
-    plot( p.T,p.A,label="A",markersize=3,marker=:downtriangle, xlab="Temperature (K)",ylab="Polaron free-energy")
-    plot!(p.T,p.B,label="B",markersize=3,marker=:diamond)
-    plot!(p.T,p.C,label="C",markersize=3,marker=:uptriangle)
-    plot!(p.T,p.F,label="F",markersize=3,marker=:rect)
-    #plot!(Ts,Fs,label="F=-(A+B+C)",markersize=3,marker=:rect)
-
-    savefig("$fileprefix-variational.$extension")
-
-    #####
-    ## Polaron radius vs. Temperature
-    plot(p.T,p.rfsi.*10^10, markersize=3,marker=:rect,
-        label="Polaron radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)",ylims=(0,Inf))
-    plot!(p.T,p.rfsmallalpha.*10^10,label="T=0 Schultz small alpha polaron radius")
-    savefig("$fileprefix-radius.$extension")
-
-    #####
-    ## Calculated mobility comparison plot
-    plot(p.T,p.Kμ,label="Kadanoff",markersize=3,marker=:rect,xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)",ylims=(0,1000))
-    plot!(p.T,p.FHIPμ,label="FHIP",markersize=3,marker=:diamond)
-    plot!(p.T,p.Hμ,label="Hellwarth1999",markersize=3,marker=:uptriangle)
-
-    savefig("$fileprefix-mobility-calculated.$extension")
 end
 
