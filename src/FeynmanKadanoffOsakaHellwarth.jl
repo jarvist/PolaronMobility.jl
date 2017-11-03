@@ -171,15 +171,36 @@ struct Polaron
 end
 Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
 
+"""
+    polaronmobility(Trange, 
+                    ε_Inf, ε_S, freq, effectivemass; 
+                    verbose::Bool=false)
 
-#####
-# OK, this was all in the global scope, but has now been put within a function so it can be called for varying parameters
-function polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
-    println("\n\nPolaron mobility called for $fileprefix with Trange $Trange ...")
+    Solves the Feynman polaron problem variationally with finite temperature
+    Osaka energies.  From the resulting v, and w parameters, calculates polaron
+    structure (wave function size, etc.).  Uses FHIP, Kadanoff (Boltzmann
+    relaxation time) and Hellwarth direct contour integration to predict
+    a temperature-dependent mobility for the material system. 
+    Input is a temperature range (e.g. 10:50:1000), 
+    reduced dielectric constants (e.g. 5, 20),
+    characteristic dielectric phonon frequency (e.g. 2.25E12) - units Hertz
+    bare-band effective-mass (e.g. 012) - units electron mass.
 
-    # Internally we have 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
+    Returns a structure of type Polaron, containing arrays of useful
+    information.  Also prints a lot of information to the standard out - which
+    may be more useful if you're just inquiring as to a particular data point,
+    rather than plotting a temperature-dependent parameter. 
+
+    As an example, to calculate the electron polaron in MAPI at 300 K:
+    polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
+"""
+function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
+    println("\n\nPolaron mobility for system ε_Inf=$ε_Inf, ε_S=$ε_S, freq=$freq, 
+                 effectivemass=$effectivemass; with Trange $Trange ...")
+
+    # Internally we we use 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
     mb=effectivemass*MassElectron 
-    ω = (2*pi)*freq # angular-frequency
+    ω = (2*pi)*freq # angular-frequency, of the 
         
     α=feynmanalpha(ε_Inf, ε_S,  freq,    effectivemass)
     #α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me

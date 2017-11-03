@@ -2,7 +2,7 @@
 #   - use Hellwarth et al. 1999 PRB method to reduce multiple phonon modes to a single effective frequency
 
 push!(LOAD_PATH,"../src/") # load module from local directory
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility 
 
 # ((freq THz)) ((IR Activity / e^2 amu^-1))
 # These data from MAPbI3-Cubic_PeakTable.csv

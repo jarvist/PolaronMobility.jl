@@ -11,7 +11,7 @@
 
 push!(LOAD_PATH,"../src/") # load module from local directory
 
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility 
 
 ##### load in library routines... #####
 # Plot figures with Plots, which defaults to Pyplot backend
@@ -32,8 +32,8 @@ const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 # Call simulation
 
 # PCBM: 4.0, 5.0, ??? , effective-mass=1.0
-polaronmobility("PCBM",     4.0, 5.0, 2.0E12, 1.00)
-
+PCBM=polaronmobility(300, 4.0, 5.0, 2.0E12, 1.00)
+savepolaron("PCBM",PCBM)
 
 println("That's me!")
 

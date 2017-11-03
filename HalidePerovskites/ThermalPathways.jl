@@ -34,10 +34,10 @@ const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-MAPIe=polaronmobility("MAPI-electron", 10:20:1000, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe=polaronmobility(10:20:1000, 4.5, 24.1, 2.25E12, 0.12)
 savepolaron("MAPI-electron",MAPIe)
 plotpolaron("MAPI-electron", MAPIe)
-MAPIh=polaronmobility("MAPI-hole",     10:20:1000, 4.5, 24.1, 2.25E12, 0.15)
+MAPIh=polaronmobility(10:20:1000, 4.5, 24.1, 2.25E12, 0.15)
 plotpolaron("MAPI-hole", MAPIh)
 savepolaron("MAPI-hole",MAPIh)
 

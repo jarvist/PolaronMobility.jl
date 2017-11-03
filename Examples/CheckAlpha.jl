@@ -2,7 +2,7 @@
 #   - check units in Frohlich / Feynman alpha, by testing against lit. values 
 
 push!(LOAD_PATH,"../src/") # load module from local directory
-using FeynmanKadanoffOsakaHellwarth
+using PolaronMobility 
 
 " Copy and pasted out of a Jupyter notebook; this calculates 'alpha' parameters
 for various materials, as a comparison to the literature used when figuring out

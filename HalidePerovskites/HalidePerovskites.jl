@@ -15,7 +15,7 @@ using PolaronMobility
 using PlotPolaron # Plots dependency
 
 ##### load in library routines... #####
-# Plot figures with Plots, which defaults to Pyplot backend
+#"Rob-MAPCl",  Plot figures with Plots, which defaults to Pyplot backend
 using Plots
 pyplot()
 default(grid=false) # No silly dotted grid lines
@@ -63,13 +63,13 @@ checkalpha()
 const cm1=2.997e10 # cm-1 to Herz
 
 function CsSn()
-    CsSnCl3=polaronmobility("CsSnCl3",  10:10:1000, 4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
+    CsSnCl3=polaronmobility(10:10:1000, 4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
     savepolaron("CsSnCl3",CsSnCl3)
 
-    CsSnBr3=polaronmobility("CsSnBr3",  10:10:1000, 5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
+    CsSnBr3=polaronmobility(10:10:1000, 5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
     savepolaron("CsSnBr3",CsSnBr3)
  
-    CsSnI3=polaronmobility("CsSnI3",   10:10:1000, 6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
+    CsSnI3=polaronmobility(10:10:1000, 6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
     savepolaron("CsSnI3",CsSnI3)
  
 end
@@ -88,16 +88,16 @@ CsSn() # generate all that lovely tin data
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-MAPIe=polaronmobility("MAPI-electron", 10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 plotpolaron("MAPI-electron", MAPIe)
 savepolaron("MAPI-electron",MAPIe)
 
-MAPIh=polaronmobility("MAPI-hole",     10:10:1000, 4.5, 24.1, 2.25E12, 0.15)
+MAPIh=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.15)
 plotpolaron("MAPI-hole", MAPIh)
 savepolaron("MAPI-hole",MAPIh)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
-#polaronmobility("PCBM",     4.0, 5.0, 2.25E12, 1.00)
+#polaronmobility(4.0, 5.0, 2.25E12, 1.00)
 
 # CsPbI3: 3.82, 8.27, 2.83 THz (highest freq mode in cubic) 
 #    ^-- v. quick Kmesh=3x3x3 PBESol Calc, JMF 2017-04-12. Files: jarvist@titanium:~/phonopy-work/2017-03-Scott-Distortions/1000-Dielectric/3x3x3-kmesh/
@@ -105,7 +105,7 @@ savepolaron("MAPI-hole",MAPIh)
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
 function CsPbI()
-    CsPbI=polaronmobility("CsPbI3-electron",     10:10:1000, 6.1,6.1+12.0, 2.57E12, 0.12)
+    CsPbI=polaronmobility(10:10:1000, 6.1,6.1+12.0, 2.57E12, 0.12)
     plotpolaron("CsPbI3-electron",CsPbI)
     savepolaron("CsPbI3-electron",CsPbI)
 end
@@ -116,20 +116,18 @@ function SendnerCrosscheck()
 
     # Rob's / Sendner's paper - values extracted form IR measures
     # https://doi.org/10.1039%2Fc6mh00275g
-    #Ts,a,MAPI=polaronmobility("Rob-MAPI", 5.0, 33.5, 40*cm1, 0.104)
-    #Ts,a,MAPBr=polaronmobility("Rob-MAPBr", 4.7, 32.3, 51*cm1, 0.117)
-    #Ts,a,MAPCl=polaronmobility("Rob-MAPCl", 4.0, 29.8, 70*cm1, 0.2)
 
-    # Private communication. It is not well described in the paper but they
+    # These data mainly from Private communication. 
+    # It is not well described in the paper but they
     # used one the Hellwarth effective-mode method to reduce the observed IR
     # oscillators down to a single mode. Rob provided these values by email (as
     # below). The Effetive Masses and dielectric constants are from the paper.
     # Combined, this reproduces their mobilities, and the internal w and
-    # v parameters (again, email from Rob):
-    #  "For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0"
-    RobMAPI=polaronmobility("Rob-MAPI", 10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
-    RobMAPBr=polaronmobility("Rob-MAPBr", 10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
-    RobMAPCl=polaronmobility("Rob-MAPCl", 10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
+    # v parameters (again, data from email from Rob):
+    #  Paper: "For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0"
+    RobMAPI =polaronmobility(10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
+    RobMAPBr=polaronmobility(10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
+    RobMAPCl=polaronmobility(10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
 
     savepolaron("Rob-MAPI",RobMAPI)
     savepolaron("Rob-MAPBr",RobMAPBr)
