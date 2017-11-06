@@ -143,30 +143,26 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
 # Struct to store data
 struct Polaron
     T
-    
-    Kμ 
-    Hμ
-    FHIPμ
-
-    k
-    M
-    
-    A
-    B
-    C
-    F
-    
+    # Mobilities 
+    Kμ; Hμ; FHIPμ
+    # Spring constant and renormalised (phonon-drag) mass
+    k; M
+    # Osaka free energy components (A,B,C) and total (F). See Hellwarth et al. 1999 PRB Part IV
+    A; B; C; F
+    # Relaxation time from Kadanoff Boltzmann transport equation
     Tau
-    
-    v
-    w
-    
+    # Raw variational parameters
+    v; w
+    # Reduced thermodynamic beta
     βred
-    rfsi
-    rfsmallalpha
-    
+    # Feynman polaron radius (Schultz), in SI units. Then also the small-alpha asymptotic approx
+    rfsi; rfsmallalpha
+    # Setup of simulation. These parameters are sent to the function. 
+    # Alpha = Frohlich alpha
     α
+    # Ban effective mass
     mb
+    # Effective dielectric frequency
     ω
 end
 Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
@@ -420,6 +416,16 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
     return(p)
 end
 
+"""
+    savepolaron(fileprefix, p::Polaron)
+
+Saves data from polaron 'p' into file "fileprefix". 
+This is a simple space-delimited text file, with each entry a separate temperature, for plotting with Gnuplot or similar. 
+
+Structure of file is written to the header:
+# Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis
+# 1    2     3    4     5      6   7   8   9  10  11  12  13    14     15
+"""
 function savepolaron(fileprefix, p::Polaron) 
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","w")
