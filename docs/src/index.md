@@ -292,5 +292,5 @@ ImX(nurange,v,w,βred,α,ω,mb)
 ```
 
 ```@docs
-polaronmobility(fileprefix,Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
+polaronmobility(Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
 ```
