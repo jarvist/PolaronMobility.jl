@@ -6,7 +6,6 @@ These codes calculate the temperature-dependent polaron mobility for
 a material.
 We have parameters for various metal-halide Perovskite.
 
-
 It is perhaps easiest to read and understand this documentation alongside the paper:
 [Frost2017PRB](https://doi.org/10.1103/PhysRevB.96.195202)
 ([ArXiv:1704.05404](https://arxiv.org/abs/1704.05404) ).
@@ -37,7 +36,7 @@ May your phonons drag in a manner truly sublime.
 ## Scientific discussion
 
 These codes solve Osaka's [Osaka1961] finite-temperature parameters for the Feynman
-polaron model [Feynman1959]. 
+polaron model [Feynman1955]. 
 We copy the form used in [Hellwarth1999].
 
 For each temperature, the total free energy of the Feynman coupled
@@ -48,10 +47,12 @@ oscillators which make up the lattice, to collapse the problem abck to
 a quasi-particle. 
 
 The codes then calculate the polaron mobility, with both the original low-temperature
-FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] Boltzmann equation
-motivated phonon-emission correction to the FHIP, and Hellwarth's
-[Hellwarth1999] method of returning to an earlier (non low-temperature) result
-in [Feynman1962], then directly calculating the contour integral for the polaron
+FHIP approximation [Feynman1962]; Kadanoff's [Kadanoff1964] Boltzmann equation
+motivated phonon-emission correction to the FHIP; and Hellwarth et al.'s
+[Hellwarth1999] method. 
+This last method (Hellwarth) is probably the most accurate. 
+It uses a more general (non low-temperature-approximation) result in
+[Feynman1962], then directly calculates the contour integral for the polaron
 self-energy with numerical integration.
 
 Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for
@@ -110,34 +111,10 @@ However, since we're integrating numerically anyway, we may as well calculate
 it explicitly.
 
 
-## Research outputs
-
-Polaron mobilities, three different ways
-![Polaron mobilities, three different ways](mobility-calculated.png)
-
-Effective mass of phonon cloud
-![Effective mass of phonon cloud](mass.png)
-
-Spring constant for coupling to phonon cloud
-![Spring constant for coupling to phonon cloud](spring.png)
-
-Variational (temperature-dependent free-energy) parameters for the coupled system
-![Variational (temperature-dependent free-energy) parameters for the coupled system](variational.png)
-
-## Notes
-
-26th June 2017: The code works (and appears to be faster) with the new stable
-version of Julia (0.6). However, it still depends on the 0.7.x interface of
-`Optim`. Therefore, if you want to use these codes with Julia 0.6 or beyond,
-for now you have to pin your Optim package to this old(er) interface.
-
-```
-Pkg.pin("Optim",v"0.7.8")
-```
-
 ## Bibliography
 
-A bibliography in vague order of utility; I recommend reading the first ones first!
+This bibliography is listed in vague order of utility; I recommend reading the
+first ones first!
 
 Feynman also describes his Polaron model in more detail in both 'Statistical
 Mechanics' [Feynman1972] and 'Quantum Mechanics and Path Integrals'
