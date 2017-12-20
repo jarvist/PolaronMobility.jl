@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./css/theme.css" type="text/css" />
   <link rel="stylesheet" href="./css/theme_extra.css" type="text/css" />
   <link rel="stylesheet" href="./css/highlight.css">
+  <link href="./assets/Documenter.css" rel="stylesheet">
   
   <script>
     // Current page data
@@ -111,15 +112,20 @@
 <p><a id='Introduction-1'></a></p>
 <h2 id="introduction">Introduction</h2>
 <p>These codes calculate the temperature-dependent polaron mobility for a material. We have parameters for various metal-halide Perovskite.</p>
-<p>It is perhaps easiest to read this documentation alongside the pre-print: <a href="https://arxiv.org/abs/1704.05404">ArXiv:1704.05404</a> .</p>
-<p>The scientific inputs are the dielectric constants, a characteristic phonon frequency, and the bare-electron band effective-mass.</p>
-<p>From this you can solve a temperature-dependent polaron model (variationally optimising temperature-dependent free-energies for the coupled electron-phonon system), and from this optimised parameters calculate derivative quantities such as the polaron mobility, and polaron features (effective masses, energy loss rates, oscillation etc.)</p>
+<p>It is perhaps easiest to read and understand this documentation alongside the paper: <a href="https://doi.org/10.1103/PhysRevB.96.195202">Frost2017PRB</a> (<a href="https://arxiv.org/abs/1704.05404">ArXiv:1704.05404</a> ).</p>
+<p>The required inputs are the dielectric constants (ϵ-static and ϵ-optic) , a characteristic phonon frequency (ω), and the bare-electron band effective-mass (me).  These values can be relatively easily calculated in the ab-initio electronic structure package of your choosing, or measured directly.</p>
+<p>From these four values, the code solves a temperature-dependent polaron model. This is done by variationally optimising the temperature-dependent free-energies for the coupled electron-phonon system. These optimised parameters describe the polaron with the infinite quantum field of lattice vibrations 'integrated through', and replaced with a phonon-drag term. From this the polaron features such as effective-mass, size of the wavefunction, frequency of energy oscillation etc. can be calculated.</p>
+<p>This polaron state can then be used as an input to further models for polaron mobility.</p>
+<p>The codes are designed to produce a set of temperature-dependent mobilities and other data, for direct incorporation into a scientific publication.</p>
 <p>May your phonons drag in a manner truly sublime.</p>
 <p><a id='Scientific-discussion-1'></a></p>
 <h2 id="scientific-discussion">Scientific discussion</h2>
-<p>These codes solve Osaka's variational method for solving the Feynman model. For each temperature, the total free energy of the Feynman coupled phonon-electron system is minimised by optimising coefficients which control the spring-coupling coefficient and effective-mass for the phonon cloud.</p>
-<p>The codes then calculate the polaron mobility, with both the original low-temperature FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] Boltzmann equation motivated phonon-emission correction to the FHIP, and Hellwarth's [Hellwarth1999] method of returning to an earlier (non low-temperature) result in Feynman1962, then directly calculating the contour integral for the polaron self-energy with numerical integration.</p>
-<p>Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for a single electron interacting with a phonon cloud of non-interacting (harmonic) phonons. The electron-phonon interaction is particularly simple, just considering a dipole interaction. This is folded into a dimensionless <code>alpha</code> parameter, practically constructed from dielectric constants of a material, and a characteristic frequency of the dielectric response. (In a simple covalent semiconductor system, this is the frequency of the linear-optical mode, the only infrared active one.) The Feynman model is a beautiful solution of this most simple quantum field problem where the quantum field variable of the phonon field is integrated out by the path-integral approach to quantum mechanics, to leave an electron interacting via a spring constant with an effective mass–-a single particle problem.</p>
+<p>These codes solve Osaka's [Osaka1961] finite-temperature parameters for the Feynman polaron model [Feynman1959].  We copy the form used in [Hellwarth1999].</p>
+<p>For each temperature, the total free energy of the Feynman coupled phonon-electron system is minimised by optimising coefficients which control the spring-coupling coefficient and effective-mass for the phonon cloud.  You have integrated through the infinite quantum field of the harmonic oscillators which make up the lattice, to collapse the problem abck to a quasi-particle. </p>
+<p>The codes then calculate the polaron mobility, with both the original low-temperature FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] Boltzmann equation motivated phonon-emission correction to the FHIP, and Hellwarth's [Hellwarth1999] method of returning to an earlier (non low-temperature) result in [Feynman1962], then directly calculating the contour integral for the polaron self-energy with numerical integration.</p>
+<p>Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for a single electron interacting with a phonon cloud of non-interacting (harmonic) phonons. The electron-phonon interaction for a polar system is treated at the simple level of being the dielectric response.  These are the infrared-active modes present at the Gamma point in the Brillouin zone.  Along with an effective mode frequency, the dielectric constants are used to calculate the dimensionless 'α' parameter describing the electron-phonon coupling.   (In a simple covalent semiconductor system, the only dielectric active mode is the linear-optical mode.)</p>
+<p>The Feynman model offers a direct solution of this most simple quantum field problem.  The the infinite phonon (quantum) field is 'integrated out' by path integration.  The soluble system is one in which you have an electron interacting by a (harmonic) spring constant with a mass representing the phonon drag.  The variational method allows you to find a set of parameters for this simplified system which produces the smallest free-energy. </p>
+<p>This is now a (renormalised) single particle system, a quasi-particle.</p>
 <p>These Julia codes use Hellwarth's [Hellwarth1999] presentation of Osaka's variational free-energies for the Feynman model. We optimise the <code>v</code> and <code>w</code> parameters for these finite-temperature free energies. These can be alternatively restated the mass 'M' and spring-constant 'k' of the coupled phonon-electron Feynman model.</p>
 <p>Here we apply these methods to the case of hybrid halide perovskites. The method provides the temperature dependent polaron-mobility without any free parameters. No arbitrary relaxation time is needed or used. The scattering processes are treated directly, by including an effective electron-phonon coupling in the specification of the Frohlich 'alpha' parameter, and then all other features come from solving the model. The original Feynman model is correct to all orders in alpha, and the Hellwarth direct contour-integration of the general Feynman mobility statement is suitable for high temperature.</p>
 <p>It was necessary to return to these (rather old!) papers and resolve the models, as hybrid halide perovskites are soft materials with low energy phonons. Therefore the effective temperature in terms of a reduced thermodynamic beta (Beta=hbar omega / (k_Boltzmann * Temperature) ) is much smaller than previously considered.</p>
@@ -139,7 +145,7 @@
 <p><a id='Bibliography-1'></a></p>
 <h2 id="bibliography">Bibliography</h2>
 <p>A bibliography in vague order of utility; I recommend reading the first ones first!</p>
-<p>Feynman also describes his Polaron model in more detail in both 'Statistical Mechanics' (Feynman1972) and 'Quantum Mechanics and Path Integrals' (FeynmanHibbs1965). Note that the differing presentations of Feynman do not always agree in detail.</p>
+<p>Feynman also describes his Polaron model in more detail in both 'Statistical Mechanics' [Feynman1972] and 'Quantum Mechanics and Path Integrals' [FeynmanHibbs1965]. Note that the differing presentations of Feynman do not always agree in detail.</p>
 <p>Schulman's 'Techniques and applications of path integration' has a 10-page chapter on the Polaron problem. It tries to unify the Feynman prescriptions.</p>
 <p>J.T. Devreese's "Fröhlich Polarons. Lecture course including detailed theoretical derivations" (6th edition, 2016) notes on the ArXiv is a very good place to start &amp; to get an overview of the area. https://arxiv.org/abs/1611.06122</p>
 <pre><code>
@@ -292,7 +298,7 @@ frequency (f) of phonon in Hertz, and effective mass (in units of the
 bare electron mass).
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/d90f2c1f33ede144b5e0d6c7296ffbd8a81d8d99/src/FeynmanKadanoffOsakaHellwarth.jl#L32-L38' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility.jl/blob/0c41c7256eb2311e82bb64a388d7c0765b65a79d/src/FeynmanKadanoffOsakaHellwarth.jl#L32-L38' class='documenter-source'>source</a><br></p>
 <p><a id='PolaronMobility.HellwarthBScheme-Tuple{Any}' href='#PolaronMobility.HellwarthBScheme-Tuple{Any}'>#</a>
 <strong><code>PolaronMobility.HellwarthBScheme</code></strong> &mdash; <em>Method</em>.</p>
 <pre><code>HellwarthBScheme(LO)
@@ -302,7 +308,7 @@ Hellwarth et al. 1999 PRB, 'B scheme'.
 Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/d90f2c1f33ede144b5e0d6c7296ffbd8a81d8d99/src/FeynmanKadanoffOsakaHellwarth.jl#L54-L60' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility.jl/blob/0c41c7256eb2311e82bb64a388d7c0765b65a79d/src/FeynmanKadanoffOsakaHellwarth.jl#L54-L60' class='documenter-source'>source</a><br></p>
 <p><a id='PolaronMobility.HellwarthAScheme' href='#PolaronMobility.HellwarthAScheme'>#</a>
 <strong><code>PolaronMobility.HellwarthAScheme</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>HellwarthAScheme(LO,T=295)
@@ -314,7 +320,7 @@ UNTESTED AND UNCERTAIN CODE.
 Follows Hellwarth et al. 1999 PRB, Eqn 50 RHS.
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/d90f2c1f33ede144b5e0d6c7296ffbd8a81d8d99/src/FeynmanKadanoffOsakaHellwarth.jl#L78-L86' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility.jl/blob/0c41c7256eb2311e82bb64a388d7c0765b65a79d/src/FeynmanKadanoffOsakaHellwarth.jl#L78-L86' class='documenter-source'>source</a><br></p>
 <p><a id='PolaronMobility.savepolaron-Tuple{Any,PolaronMobility.Polaron}' href='#PolaronMobility.savepolaron-Tuple{Any,PolaronMobility.Polaron}'>#</a>
 <strong><code>PolaronMobility.savepolaron</code></strong> &mdash; <em>Method</em>.</p>
 <pre><code>savepolaron(fileprefix, p::Polaron)
@@ -324,7 +330,7 @@ Follows Hellwarth et al. 1999 PRB, Eqn 50 RHS.
 <p>Structure of file is written to the header:</p>
 <p><strong>Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis</strong></p>
 <p><strong>1    2     3    4     5      6   7   8   9  10  11  12  13    14     15</strong></p>
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/d90f2c1f33ede144b5e0d6c7296ffbd8a81d8d99/src/FeynmanKadanoffOsakaHellwarth.jl#L419-L428' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility.jl/blob/0c41c7256eb2311e82bb64a388d7c0765b65a79d/src/FeynmanKadanoffOsakaHellwarth.jl#L419-L428' class='documenter-source'>source</a><br></p>
 <pre><code>plotpolaron(fileprefix, p::Polaron; extension=&quot;png&quot;)
 </code></pre>
 
@@ -334,7 +340,7 @@ Follows Hellwarth et al. 1999 PRB, Eqn 50 RHS.
 <p>Impedance in (47a) from Feynman1962, directly solving freq dep without taking Hellwarth1999 limit of v-&gt;0 . </p>
 <p>Calculates a frequency dependent (over range of nu) susceptibility which can be linked back to mobility.</p>
 <p>HERE BE DRAGONS!  Not well tested or validated code; the central numeric integration is highly oscillatory and becomes intractable for large nu.  </p>
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/d90f2c1f33ede144b5e0d6c7296ffbd8a81d8d99/src/Susceptibility.jl#L10-L21' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility.jl/blob/0c41c7256eb2311e82bb64a388d7c0765b65a79d/src/Susceptibility.jl#L10-L21' class='documenter-source'>source</a><br></p>
 <p><a id='PolaronMobility.polaronmobility-NTuple{5,Any}' href='#PolaronMobility.polaronmobility-NTuple{5,Any}'>#</a>
 <strong><code>PolaronMobility.polaronmobility</code></strong> &mdash; <em>Method</em>.</p>
 <pre><code>polaronmobility(Trange, 
@@ -360,7 +366,7 @@ As an example, to calculate the electron polaron in MAPI at 300 K:
 polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/d90f2c1f33ede144b5e0d6c7296ffbd8a81d8d99/src/FeynmanKadanoffOsakaHellwarth.jl#L170-L192' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility.jl/blob/0c41c7256eb2311e82bb64a388d7c0765b65a79d/src/FeynmanKadanoffOsakaHellwarth.jl#L170-L192' class='documenter-source'>source</a><br></p>
               
             </div>
           </div>
@@ -376,12 +382,12 @@ polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 
   Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
 </footer>
-      
+	  
         </div>
       </div>
 
     </section>
-
+    
   </div>
 
   <div class="rst-versions" role="note" style="cursor: pointer">
@@ -391,15 +397,13 @@ polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
       
     </span>
 </div>
-    <script>var base_url = '.';</script>
     <script src="./js/theme.js"></script>
-      <script src="./search/require.js"></script>
-      <script src="./search/search.js"></script>
+      <script src="./assets/mathjaxhelper.js"></script>
 
 </body>
 </html>
 
 <!--
-MkDocs version : 0.17.1
-Build Date UTC : 2017-11-09 18:47:19
+MkDocs version : 0.16.3
+Build Date UTC : 2017-12-20 13:34:11
 -->
