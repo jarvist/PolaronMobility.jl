@@ -6,49 +6,77 @@ These codes calculate the temperature-dependent polaron mobility for
 a material.
 We have parameters for various metal-halide Perovskite.
 
-It is perhaps easiest to read this documentation alongside the pre-print:
-[ArXiv:1704.05404](https://arxiv.org/abs/1704.05404) .
 
-The scientific inputs are the dielectric constants, a characteristic phonon
-frequency, and the bare-electron band effective-mass.
+It is perhaps easiest to read and understand this documentation alongside the paper:
+[Frost2017PRB](https://doi.org/10.1103/PhysRevB.96.195202)
+([ArXiv:1704.05404](https://arxiv.org/abs/1704.05404) ).
 
-From this you can solve a temperature-dependent polaron model (variationally
-optimising temperature-dependent free-energies for the coupled electron-phonon
-system), and from this optimised parameters calculate derivative quantities
-such as the polaron mobility, and polaron features (effective masses, energy
-loss rates, oscillation etc.)
+The required inputs are the dielectric constants (ϵ-static and ϵ-optic)
+, a characteristic phonon frequency (ω), and the bare-electron band
+effective-mass (me).  These values can be relatively easily calculated in the
+ab-initio electronic structure package of your choosing, or measured directly.
+
+From these four values, the code solves a temperature-dependent polaron model.
+This is done by variationally optimising the temperature-dependent
+free-energies for the coupled
+electron-phonon system.
+These optimised parameters describe the polaron with the infinite quantum field
+of lattice vibrations 'integrated through', and replaced with a phonon-drag
+term.
+From this the polaron features such as effective-mass, size of the
+wavefunction, frequency of energy oscillation etc. can be calculated.
+
+This polaron state can then be used as an input to further models for polaron
+mobility.
+
+The codes are designed to produce a set of temperature-dependent mobilities and
+other data, for direct incorporation into a scientific publication.
 
 May your phonons drag in a manner truly sublime.
 
 ## Scientific discussion
 
-These codes solve Osaka's variational method for solving the Feynman model.
+These codes solve Osaka's [Osaka1961] finite-temperature parameters for the Feynman
+polaron model [Feynman1959]. 
+We copy the form used in [Hellwarth1999].
+
 For each temperature, the total free energy of the Feynman coupled
 phonon-electron system is minimised by optimising coefficients which control
-the spring-coupling coefficient and effective-mass for the phonon cloud.
+the spring-coupling coefficient and effective-mass for the phonon cloud. 
+You have integrated through the infinite quantum field of the harmonic
+oscillators which make up the lattice, to collapse the problem abck to
+a quasi-particle. 
 
 The codes then calculate the polaron mobility, with both the original low-temperature
 FHIP approximation [Feynman1962], Kadanoff's [Kadanoff1964] Boltzmann equation
 motivated phonon-emission correction to the FHIP, and Hellwarth's
 [Hellwarth1999] method of returning to an earlier (non low-temperature) result
-in Feynman1962, then directly calculating the contour integral for the polaron
+in [Feynman1962], then directly calculating the contour integral for the polaron
 self-energy with numerical integration.
 
 Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for
 a single electron interacting with a phonon cloud of non-interacting (harmonic)
 phonons.
-The electron-phonon interaction is particularly simple, just considering
-a dipole interaction.
-This is folded into a dimensionless `alpha` parameter, practically constructed
-from dielectric constants of a material, and a characteristic frequency of the
-dielectric response.
-(In a simple covalent semiconductor system, this is the frequency of the
-linear-optical mode, the only infrared active one.)
-The Feynman model is a beautiful solution of this most simple quantum field
-problem where the quantum field variable of the phonon field is integrated out
-by the path-integral approach to quantum mechanics, to leave an electron
-interacting via a spring constant with an effective mass---a single particle
-problem.
+The electron-phonon interaction for a polar system is treated at the simple
+level of being the dielectric response. 
+These are the infrared-active modes present at the Gamma point in the Brillouin
+zone. 
+Along with an effective mode frequency, the dielectric constants are used to
+calculate the dimensionless 'α' parameter describing the electron-phonon
+coupling.  
+(In a simple covalent semiconductor system, the only dielectric active mode is
+the linear-optical mode.)
+
+The Feynman model offers a direct solution of this most simple quantum field
+problem. 
+The the infinite phonon (quantum) field is 'integrated out' by path
+integration. 
+The soluble system is one in which you have an electron interacting by
+a (harmonic) spring constant with a mass representing the phonon drag. 
+The variational method allows you to find a set of parameters for this
+simplified system which produces the smallest free-energy. 
+
+This is now a (renormalised) single particle system, a quasi-particle.
 
 These Julia codes use Hellwarth's [Hellwarth1999] presentation of Osaka's variational
 free-energies for the Feynman model.
@@ -112,8 +140,8 @@ Pkg.pin("Optim",v"0.7.8")
 A bibliography in vague order of utility; I recommend reading the first ones first!
 
 Feynman also describes his Polaron model in more detail in both 'Statistical
-Mechanics' (Feynman1972) and 'Quantum Mechanics and Path Integrals'
-(FeynmanHibbs1965). Note that the differing presentations of Feynman do not always agree in detail.
+Mechanics' [Feynman1972] and 'Quantum Mechanics and Path Integrals'
+[FeynmanHibbs1965]. Note that the differing presentations of Feynman do not always agree in detail.
 
 Schulman's 'Techniques and applications of path integration' has a 10-page
 chapter on the Polaron problem. It tries to unify the Feynman prescriptions.
