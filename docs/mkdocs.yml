@@ -1,5 +1,12 @@
 site_name: PolaronMobility.jl Documentation
 
+pages:
+    - Home: index.md
+    - Scientific discussion: scientific_discussion.md
+    - Examples: examples.md  
+    - Functions provided: functions.md  
+
 theme: readthedocs
 
 docs_dir: build # from Julia's Documentation.jl
+
