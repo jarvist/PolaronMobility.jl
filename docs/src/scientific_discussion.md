@@ -1,26 +1,27 @@
 ## Overview 
 
-These codes solve Osaka's [Osaka1961] finite-temperature parameters for the Feynman
-polaron model [Feynman1955]. 
-We copy the form used in [Hellwarth1999].
+These codes solve the Feynman polaron mode [Feynman1955] with Osaka's
+[Osaka1961] finite-temperature energies. 
+We use the form of these free energies, as presented in [Hellwarth1999].
 
 For each temperature, the total free energy of the Feynman coupled
-phonon-electron system is minimised by optimising coefficients which control
-the spring-coupling coefficient and effective-mass for the phonon cloud. 
-You have integrated through the infinite quantum field of the harmonic
-oscillators which make up the lattice, to collapse the problem abck to
-a quasi-particle. 
+phonon-electron system is minimised by optimising coefficients (`v` and `w`)
+which, equivalently, describe the spring-coupling coefficient (`k`) and
+effective-mass (`M`) of the phonon cloud (i.e. the phonon drag / phonon surfing
+contribution). 
+This integrates through the infinite quantum field of the harmonic oscillators
+which make up the dynamic response of the lattice, to simplify the problem back
+to a quasi-particle (the polaron). 
 
-The codes then calculate the polaron mobility, with both the original low-temperature
-FHIP approximation [Feynman1962]; Kadanoff's [Kadanoff1964] Boltzmann equation
-motivated phonon-emission correction to the FHIP; and Hellwarth et al.'s
-[Hellwarth1999] method. 
+The codes calculate the polaron mobility, with both the original
+low-temperature FHIP asymptotic approximation [Feynman1962]; Kadanoff's
+[Kadanoff1964] Boltzmann equation motivated phonon-emission correction to the
+FHIP; and Hellwarth et al.'s [Hellwarth1999] method. 
 This last method (Hellwarth) is probably the most accurate. 
-It uses a more general (non low-temperature-approximation) result in
-[Feynman1962], then directly calculates the contour integral for the polaron
-self-energy with numerical integration.
+This uses a more general result (Eqn. 44-47) in [Feynman1962], directly
+evaluating the contour integral for the polaron self-energy numerically. 
 
-Underlying all this is the simplified Frohlich Hamiltonian [Frohlich1952] for
+Underlying all this is the simplified Fröhlich Hamiltonian [Frohlich1952] for
 a single electron interacting with a phonon cloud of non-interacting (harmonic)
 phonons.
 The electron-phonon interaction for a polar system is treated at the simple
@@ -35,7 +36,7 @@ the linear-optical mode.)
 
 The Feynman model offers a direct solution of this most simple quantum field
 problem. 
-The the infinite phonon (quantum) field is 'integrated out' by path
+The infinite phonon (quantum) field is 'integrated out' by path
 integration. 
 The soluble system is one in which you have an electron interacting by
 a (harmonic) spring constant with a mass representing the phonon drag. 
@@ -54,7 +55,7 @@ Here we apply these methods to the case of hybrid halide perovskites.
 The method provides the temperature dependent polaron-mobility without any free parameters.
 No arbitrary relaxation time is needed or used. The scattering processes are
 treated directly, by including an effective electron-phonon coupling in the
-specification of the Frohlich 'alpha' parameter, and then all other features
+specification of the Fröhlich α/'alpha' parameter, and then all other features
 come from solving the model.
 The original Feynman model is correct to all orders in alpha, and the Hellwarth
 direct contour-integration of the general Feynman mobility statement is
@@ -66,14 +67,15 @@ phonons. Therefore the effective temperature in terms of a reduced
 thermodynamic beta (Beta=hbar omega / (k_Boltzmann * Temperature) ) is much
 smaller than previously considered.
 
-A finaly note that in [Hellwarth1999], there is a mistake in the formula for 'b',
+A final note that: in [Hellwarth1999], there is a mistake in the formula for 'b',
 which is also present in their prior PRL [Biaggio1997].
 It is correct in [Feynman1962], where there is no factor of b on the right-hand
 side.
-It doesn't matter too much, as setting it to zero makes ~0.1% difference in the
-eventual mobility.
-However, since we're integrating numerically anyway, we may as well calculate
-it explicitly.
+They probably didn't notice this, as they set it to zero. 
+This doesn't make too much difference (~0.1%, for the hybrid halide
+perovskites) to the calculated mobility.  
+Since we're integrating numerically anyway, we may as well calculate it
+explicitly.
 
 
 ## Bibliography
