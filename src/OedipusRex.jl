@@ -1,4 +1,6 @@
 # OedipusRex.jl
+# - Polaron optical absorption
+#     A WORK IN PROGRESS!
 
 #using QuadGK
 """

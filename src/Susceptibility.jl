@@ -1,5 +1,8 @@
 # Susceptibility.jl
+#  Frequency-dependent susceptibility (and thus mobility) of the Feynman polaron state
+#    A WORK IN PROGRESS.
 
+# Data structure to store the results
 struct susceptibility
     nu
     ImX
@@ -25,7 +28,7 @@ function ImX(nurange,v,w,βred,α,ω,mb)
     # Feynman, I love you - but using Nu, v; Omega, w in the same paper + formulas, for similar objects?!
     s=Susceptibility()
     for nu in nurange
-        R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
+        R=(v^2-w^2)/(w^2*v)     # inline, page 300 just after Eqn (2). Note this is wrong in some textbooks / 1990s PRB.
         b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
         a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
         k(u,a,b,v,nu) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u)*cos(nu*u) # integrand with cos(vu) term, as (47a)

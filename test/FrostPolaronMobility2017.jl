@@ -1,4 +1,4 @@
-# Cross-check against own data..
+# Cross-check against data published in Frost 2017 PRB. 
 
 const T=300
 
@@ -11,7 +11,6 @@ MAPIh=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.15)
 
 # Hellwarth mobility
 @test MAPIe.Hμ[1] ≈ 136.42 rtol=0.02
-
 # Test variational parameters
 @test MAPIe.v[1] ≈ 19.86 rtol=0.02
 @test MAPIe.w[1] ≈ 16.96 rtol=0.02

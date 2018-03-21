@@ -1,8 +1,8 @@
 # FeynmanKadanoffOsakaHellwarth.jl
 # Codes by Jarvist Moore Frost, 2017
 # Calculate Polaron Mobility - by a Osaka/Hellwarth variational solution to the Feynman model
-# If you run this, it should construct the model, solve for varying temperature, then produce plots as .pngs in the local directory.
-# These codes were developed with Julia 0.5.0, and requires the Optim and Plots packages.
+
+# These codes were developed with Julia 0.5.0 - Julia 0.6.2, and require the Optim and Plots packages.
 
 export Polaron # Type to hold the data
 export feynmanalpha, polaronmobility, savepolaron, plotpolaron
@@ -13,10 +13,6 @@ export ImX
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
 
-# Plot figures with Plots, which defaults to Pyplot backend
-#using Plots
-#pyplot()
-#default(size=(800,600)) # For the .png file output
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
 
@@ -27,14 +23,16 @@ const me=MassElectron = 9.10938188e-31;                          # kg
 const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2 
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
-# via Feynman 1955
-#   http://dx.doi.org/10.1103/PhysRev.97.660
 """
 feynmanalpha(ε_Inf,ε_S,freq,m_eff)
 
     Calculates the Frohlich alpha parameter, for a given dielectric constant,
     frequency (f) of phonon in Hertz, and effective mass (in units of the
     bare electron mass).
+
+    See Feynman 1955:
+    http://dx.doi.org/10.1103/PhysRev.97.660
+
 """
 function feynmanalpha(ε_Inf,ε_S,freq,m_eff)
     ω=freq*2*pi #frequency to angular velocity
@@ -47,15 +45,13 @@ function feynmanalpha(ε_Inf,ε_S,freq,m_eff)
 end
 
 #####
-# Hellwarth multiple phonon branch reduction
-
-# Most simple scheme
-# Hellwarth (58), assuming further typo on LHS, actually should be W_e
 """
 	HellwarthBScheme(LO)
+	
+    Multiple phonon mode reduction to a single effective frequency. 
+	Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method. 
+    Averaging procedure is constructed by considering the average effect of the action of multiple branches. 
 
-	Multiple phonon mode reduction to a single effective frequency.
-	Hellwarth et al. 1999 PRB, 'B scheme'.
 	Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
 """
 function HellwarthBScheme(LO)
@@ -78,11 +74,12 @@ end
 """
 	HellwarthAScheme(LO,T=295)
 
-	Multiple phonon mode reduction to a single effective frequency. 
+    Multiple phonon mode reduction to a single effective frequency. 
 	Temperature dependent, defaults to T=295 K.
+    
+    Follows Hellwarth et al. 1999 PRB 'A' scheme, Eqn 50 RHS.
+	
 	UNTESTED AND UNCERTAIN CODE.
-
-	Follows Hellwarth et al. 1999 PRB, Eqn 50 RHS.
 """
 function HellwarthAScheme(LO,T=295)
     println("Hellwarth A scheme...T=$T K")
@@ -111,17 +108,15 @@ function HellwarthAScheme(LO,T=295)
 	return(freq)
 end
 
-
-
 #####
 # Set up equations for the polaron free energy, which we will variationally improve upon
 
-# Hellwarth 1999 PRB - Part IV; T-dep of the Feynman variation parameter
+# Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
 # Originally a Friday afternoon of hacking to try and implement the T-dep electron-phonon coupling from the above PRB
 # Which was unusually successful! And more or less reproduced Table III
 
 # Define Osaka's free-energies (Hellwarth1999 version) as Julia functions
-# Equation numbers follow above Hellwarth 1999 PRB
+# Equation numbers follow above Hellwarth et al. 1999 PRB
 # 62b
 A(v,w,β)=3/β*( log(v/w) - 1/2*log(2*π*β) - log(sinh(v*β/2)/sinh(w*β/2)))
 # 62d
@@ -130,17 +125,17 @@ Y(x,v,β)=1/(1-exp(-v*β))*(1+exp(-v*β)-exp(-v*x)-exp(v*(x-β)))
 f(x,v,w,β)=(exp(β-x)+exp(x))/(w^2*x*(1-x/β)+Y(x,v,β)*(v^2-w^2)/v)^(1/2)
 # 62c
 B(v,w,β,α) = α*v/(sqrt(π)*(exp(β)-1)) * quadgk(x->f(x,v,w,β),0,β/2)[1]
-#62e
+# 62e
 C(v,w,β)=3/4*(v^2-w^2)/v * (coth(v*β/2)-2/(v*β))
-
-F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
+# 62a
+F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) 
 
 # Can now evaluate, e.g.
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
 # BUT - this is just the objective function! (The temperature-dependent free-energy.) Not the optimised parameters.
 # Also there's a scary numeric integration (quadgk) buried within...
 
-# Struct to store data
+# Structure to store data of polaron solution + other parameters, for each temperature
 struct Polaron
     T
     # Mobilities 
@@ -165,7 +160,7 @@ struct Polaron
     # Effective dielectric frequency
     ω
 end
-Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
+Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]) # structure initialisation 
 
 """
     polaronmobility(Trange, 
@@ -196,14 +191,13 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
 
     # Internally we we use 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
     mb=effectivemass*MassElectron 
-    ω = (2*pi)*freq # angular-frequency, of the 
+    ω = (2*pi)*freq # angular-frequency, of the phonon mode 
         
     α=feynmanalpha(ε_Inf, ε_S,  freq,    effectivemass)
     #α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me
 
     @printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )
     @printf("Derived params in SI: ω =%g mb=%g \n",ω ,mb)
-
 
     # Initial v,w to use
     initial=[7.1,6.5]
@@ -214,7 +208,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
     # Empty struct for storing data 
     # A slightly better way of doing this ф_ф ...
     p=Polaron()
-    # populate data structure with prior knowledge
+    # populate data structure with (athermal) parameters supplied...
     append!(p.α,α) # appending so as not to mess with type immutability
     append!(p.mb,mb)
     append!(p.ω,ω)
@@ -226,10 +220,13 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         append!(p.βred,βred)
         @printf("T: %f β: %.3g βred: %.3g ħω  = %.3g meV\t",T,β,βred, 1E3* ħ*ω  / q)
         myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
-        # Now updated to use Optim > 0.7.8 (Julia 0.6 only version) 
+        # Now updated to use Optim > 0.7.8 call signature (Julia >0.6 only) 
         res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); 
             optimizer=BFGS)
-        # allow_f_increases=true,  - increases stability of algorith, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
+        # allow_f_increases=true,  
+        #  - increases stability of algorithm, particular when calling it for
+        #  a single, extreme value of temperature, but makes it more likely to
+        #  crash as it steps outside Fminbox(), le sigh.
 
         minimum=Optim.minimizer(res)
         print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
@@ -238,7 +235,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
             show(res)
         end
         
-        v=minimum[1]
+        v=minimum[1] # unpack these from minimised results
         w=minimum[2]
             
         @printf("\n VariationalParams v= %.2f  w= %.2f",v,w)
