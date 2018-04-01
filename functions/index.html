@@ -136,52 +136,17 @@ See Feynman 1955:
 http://dx.doi.org/10.1103/PhysRev.97.660
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/a4f7d2f8d5235288af49132a310c12be1f7776d9/src/FeynmanKadanoffOsakaHellwarth.jl#L26-L36' class='documenter-source'>source</a><br></p>
-<p><a id='PolaronMobility.HellwarthBScheme-Tuple{Any}' href='#PolaronMobility.HellwarthBScheme-Tuple{Any}'>#</a>
-<strong><code>PolaronMobility.HellwarthBScheme</code></strong> &mdash; <em>Method</em>.</p>
-<pre><code>HellwarthBScheme(LO)
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/FeynmanKadanoffOsakaHellwarth.jl#L26-L36' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.feynmanvw-Tuple{Any}' href='#PolaronMobility.feynmanvw-Tuple{Any}'>#</a>
+<strong><code>PolaronMobility.feynmanvw</code></strong> &mdash; <em>Method</em>.</p>
+<pre><code>feynmanvw(α)
 
-Multiple phonon mode reduction to a single effective frequency. 
-Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method. 
-Averaging procedure is constructed by considering the average effect of the action of multiple branches. 
-
-Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
+Calculate v and w variational polaron parameters (Feynman original athermal action), 
+for the supplied α Frohlich coupling.
+Returns v,w.
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/a4f7d2f8d5235288af49132a310c12be1f7776d9/src/FeynmanKadanoffOsakaHellwarth.jl#L48-L56' class='documenter-source'>source</a><br></p>
-<p><a id='PolaronMobility.HellwarthAScheme' href='#PolaronMobility.HellwarthAScheme'>#</a>
-<strong><code>PolaronMobility.HellwarthAScheme</code></strong> &mdash; <em>Function</em>.</p>
-<pre><code>HellwarthAScheme(LO,T=295)
-
-Multiple phonon mode reduction to a single effective frequency. 
-Temperature dependent, defaults to T=295 K.
-
-Follows Hellwarth et al. 1999 PRB 'A' scheme, Eqn 50 RHS.
-
-UNTESTED AND UNCERTAIN CODE.
-</code></pre>
-
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/a4f7d2f8d5235288af49132a310c12be1f7776d9/src/FeynmanKadanoffOsakaHellwarth.jl#L74-L83' class='documenter-source'>source</a><br></p>
-<p><a id='PolaronMobility.savepolaron-Tuple{Any,PolaronMobility.Polaron}' href='#PolaronMobility.savepolaron-Tuple{Any,PolaronMobility.Polaron}'>#</a>
-<strong><code>PolaronMobility.savepolaron</code></strong> &mdash; <em>Method</em>.</p>
-<pre><code>savepolaron(fileprefix, p::Polaron)
-</code></pre>
-
-<p>Saves data from polaron 'p' into file "fileprefix".  This is a simple space-delimited text file, with each entry a separate temperature, for plotting with Gnuplot or similar. </p>
-<p>Structure of file is written to the header:</p>
-<p><strong>Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis</strong></p>
-<p><strong>1    2     3    4     5      6   7   8   9  10  11  12  13    14     15</strong></p>
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/a4f7d2f8d5235288af49132a310c12be1f7776d9/src/FeynmanKadanoffOsakaHellwarth.jl#L451-L460' class='documenter-source'>source</a><br></p>
-<pre><code>plotpolaron(fileprefix, p::Polaron; extension=&quot;png&quot;)
-</code></pre>
-
-<p><a id='PolaronMobility.ImX-NTuple{7,Any}' href='#PolaronMobility.ImX-NTuple{7,Any}'>#</a>
-<strong><code>PolaronMobility.ImX</code></strong> &mdash; <em>Method</em>.</p>
-<p>function ImX(nurange,v,w,βred,α,ω,mb)</p>
-<p>Impedance in (47a) from Feynman1962, directly solving freq dep without taking Hellwarth1999 limit of v-&gt;0 . </p>
-<p>Calculates a frequency dependent (over range of nu) susceptibility which can be linked back to mobility.</p>
-<p>HERE BE DRAGONS!  Not well tested or validated code; the central numeric integration is highly oscillatory and becomes intractable for large nu.  </p>
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/a4f7d2f8d5235288af49132a310c12be1f7776d9/src/Susceptibility.jl#L13-L24' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/FeynmanKadanoffOsakaHellwarth.jl#L150-L156' class='documenter-source'>source</a><br></p>
 <p><a id='PolaronMobility.polaronmobility-NTuple{5,Any}' href='#PolaronMobility.polaronmobility-NTuple{5,Any}'>#</a>
 <strong><code>PolaronMobility.polaronmobility</code></strong> &mdash; <em>Method</em>.</p>
 <pre><code>polaronmobility(Trange, 
@@ -207,7 +172,49 @@ As an example, to calculate the electron polaron in MAPI at 300 K:
 polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/a4f7d2f8d5235288af49132a310c12be1f7776d9/src/FeynmanKadanoffOsakaHellwarth.jl#L200-L222' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/FeynmanKadanoffOsakaHellwarth.jl#L200-L222' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.HellwarthBScheme-Tuple{Any}' href='#PolaronMobility.HellwarthBScheme-Tuple{Any}'>#</a>
+<strong><code>PolaronMobility.HellwarthBScheme</code></strong> &mdash; <em>Method</em>.</p>
+<pre><code>HellwarthBScheme(LO)
+
+Multiple phonon mode reduction to a single effective frequency. 
+Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method. 
+Averaging procedure is constructed by considering the average effect of the action of multiple branches. 
+
+Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/FeynmanKadanoffOsakaHellwarth.jl#L48-L56' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.HellwarthAScheme' href='#PolaronMobility.HellwarthAScheme'>#</a>
+<strong><code>PolaronMobility.HellwarthAScheme</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>HellwarthAScheme(LO,T=295)
+
+Multiple phonon mode reduction to a single effective frequency. 
+Temperature dependent, defaults to T=295 K.
+
+Follows Hellwarth et al. 1999 PRB 'A' scheme, Eqn 50 RHS.
+
+UNTESTED AND UNCERTAIN CODE.
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/FeynmanKadanoffOsakaHellwarth.jl#L74-L83' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.savepolaron-Tuple{Any,PolaronMobility.Polaron}' href='#PolaronMobility.savepolaron-Tuple{Any,PolaronMobility.Polaron}'>#</a>
+<strong><code>PolaronMobility.savepolaron</code></strong> &mdash; <em>Method</em>.</p>
+<pre><code>savepolaron(fileprefix, p::Polaron)
+</code></pre>
+
+<p>Saves data from polaron 'p' into file "fileprefix".  This is a simple space-delimited text file, with each entry a separate temperature, for plotting with Gnuplot or similar. </p>
+<p>Structure of file is written to the header:</p>
+<p><strong>Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis</strong></p>
+<p><strong>1    2     3    4     5      6   7   8   9  10  11  12  13    14     15</strong></p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/FeynmanKadanoffOsakaHellwarth.jl#L451-L460' class='documenter-source'>source</a><br></p>
+<p><a id='PolaronMobility.ImX-NTuple{7,Any}' href='#PolaronMobility.ImX-NTuple{7,Any}'>#</a>
+<strong><code>PolaronMobility.ImX</code></strong> &mdash; <em>Method</em>.</p>
+<p>function ImX(nurange,v,w,βred,α,ω,mb)</p>
+<p>Impedance in (47a) from Feynman1962, directly solving freq dep without taking Hellwarth1999 limit of v-&gt;0 . </p>
+<p>Calculates a frequency dependent (over range of nu) susceptibility which can be linked back to mobility.</p>
+<p>HERE BE DRAGONS!  Not well tested or validated code; the central numeric integration is highly oscillatory and becomes intractable for large nu.  </p>
+<p><a target='_blank' href='https://github.com/jarvist/PolaronMobility-FeynmanKadanoffOsakaHellwarth/blob/1b65151aeae1b40cf1bd77c009ddd01161c979d8/src/Susceptibility.jl#L13-L24' class='documenter-source'>source</a><br></p>
               
             </div>
           </div>
