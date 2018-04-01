@@ -159,7 +159,7 @@ println(&quot;CdTe  α=&quot;,α,&quot; Stone 0.39 / Devreese 0.29&quot;)
 <p>We get a value of <code>0.351</code>. </p>
 <p><a id='Single-temperature-phonon-properties-1'></a></p>
 <h2 id="single-temperature-phonon-properties">Single temperature phonon properties</h2>
-<p>Let us calculate the room-temperature (300 K) character of the electron-polaron in methylammonium lead iodide perovskite (MAPI). </p>
+<p>Let us calculate the room-temperature (300 K) character of the electron-polaron in methylammonium lead iodide perovskite (MAPI).  The parameters we use are as in Frost2017PRB.</p>
 <p>The call signature is (Temperature range, ϵ-optical, ϵ-static, phonon-frequency (Hz), effective-mass (in mass-of-electron units)).  For electrons in MAPI, these are ϵ=4.5/24.1, f=2.25 THz, me=0.12 electron masses. </p>
 <pre><code>MAPIe=polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 </code></pre>
@@ -207,10 +207,10 @@ Polaron Mobility theories:
 <p>Beyond <code>Polaron Mobility theories:</code>, the code enters its final phase and uses the <code>v</code> and <code>w</code> parameters specifying the polaron to calculate a charge carrier mobility.  The asymtotic 'FHIP' mobility (low T) is calculated, this can be most easily related to textbook expressions that directly infer a mobility from an <code>α</code> parameter. It lacks optical phonon emission, and so shows pathological high temperature (kT &gt; ħω) behaviour.  The Kadanoff mobility (see the original paper) improves on this by assuming a Boltzmann process (independent scattering events).  From this theory we can also get an average scattering time, which we relate to the time-scale of the polaron interacting with the phonon cloud, and so to the rate of polaron cooling.  Finally the Hellwarth1999 scheme is used, which goes back to the original 1962 FHIP paper, and directly carries out the contour integral for the polaron impedence function. We improve on this slightly by explicitly calculating with <code>b</code>, though the approximation <code>b=0</code> makes very little difference for any so-far tested materials. </p>
 <p><a id='Hellwarth's-multi-mode-scheme-1'></a></p>
 <h2 id="hellwarths-multi-mode-scheme">Hellwarth's multi-mode scheme</h2>
-<p>The above examples are slightly back-to-front - in that we've specified a single mode frequency, as if the material were a simple tetrahedral semiconductor with only one infrared active mode. </p>
-<p>In order to use these theories with more complex (many atoms in a unit cell) materials of technological relevance, we must first reduce all of these infrared-active phonon responses to a single effective one. </p>
+<p>The above examples are slightly back-to-front - in that we've specified a single mode frequency, as if the material were a simple tetrahedral semiconductor with only one infrared active mode.  (The Linear Optical 'LO' phonon mode.)</p>
+<p>In order to use these theories with more complex (many atoms in a unit cell) materials of technological relevance, we must first reduce all of these Infrared-active phonon responses to a single effective one. </p>
 <p>For this we will use the averaging scheme described in Hellwarth1999.  Currently only the B scheme (athermal) is correctly implemented; a partial A scheme implementation is present.</p>
-<p>Let's test it against the Hellwarth1999 literature data. The argument to the function is a table of frequencies (cm^-1) and infrared activities (unit does not matter, as long as it is consistent). </p>
+<p>Let's test it against the Hellwarth1999 literature data.  The argument to the function is a table of frequencies (cm^-1) and infrared activities (unit does not matter, as long as it is consistent). </p>
 <pre><code class="julia"># Hellwarth et al. PRB 1999 Table II - BiSiO frequencies and activities
 HellwarthII = [
     106.23 8.86
@@ -251,7 +251,7 @@ savepolaron(&quot;MAPI-electron&quot;,MAPIe)
 plotpolaron(&quot;MAPI-electron&quot;, MAPIe)
 </code></pre>
 
-<p>The convenience function <code>plotpolaron</code> generates (and saves) a number of <code>Polts.jl</code> figures of the temperature dependent behaviour. It has been separated off into its own submodule (<code>PlotPolaron</code>), so that the <code>Plots.jl</code> dependency does not slow down general loading of the package.</p>
+<p>The convenience function <code>plotpolaron</code> generates (and saves) a number of <code>Plots.jl</code> figures of the temperature dependent behaviour. It has been separated off into its own submodule (<code>PlotPolaron</code>), so that the <code>Plots.jl</code> dependency does not slow down general loading of the package.</p>
 <p><a id='Further-examples-1'></a></p>
 <h2 id="further-examples">Further examples</h2>
 <p>More complete examples are provided in the examples/ and HalidePerovskites/ folders of the main PolaronMobility.jl repository.</p>
