@@ -5,7 +5,7 @@
 # These codes were developed with Julia 0.5.0 - Julia 0.6.2, and require the Optim and Plots packages.
 
 export Polaron # Type to hold the data
-export feynmanalpha, polaronmobility, savepolaron, plotpolaron
+export feynmanalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export ImX
 
@@ -112,6 +112,7 @@ end
 # Set up equations for the polaron free energy, which we will variationally improve upon
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
+
 # Originally a Friday afternoon of hacking to try and implement the T-dep electron-phonon coupling from the above PRB
 # Which was unusually successful! And more or less reproduced Table III
 
@@ -134,6 +135,40 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
 # BUT - this is just the objective function! (The temperature-dependent free-energy.) Not the optimised parameters.
 # Also there's a scary numeric integration (quadgk) buried within...
+
+# In Julia we have 'Multiple dispatch', so let's just construct the Feynman (athermal) 
+# energy as the same signature, but without the thermodynamic beta
+
+# Integrand of (31) in Feynman I (Feynman 1955, Physical Review, "Slow electrons...")
+fF(τ,v,w)=(w^2 * τ + (v^2-w^2)/v*(1-exp(-v*τ)))^-0.5 * exp(-τ)
+# (31) in Feynman I
+AF(v,w,α)=π^(-0.5) * α*v * quadgk(τ->fF(τ,v,w),0,Inf)[1]
+# (33) in Feynman I
+F(v,w,α)=(3/(4*v))*(v-w)^2-AF(v,w,α)
+
+# Let's wrap this in a simple function
+"""
+    feynmanvw(α)
+
+    Calculate v and w variational polaron parameters (Feynman original athermal action), 
+    for the supplied α Frohlich coupling.
+	Returns v,w. 
+"""
+function feynmanvw(α)
+    initial=[7.0,6.0]
+    # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
+    lower=[0.1,0.1]
+    upper=[1000.0,1000.0]
+
+    myf(x) = F(x[1],x[2],α) # Wraps the function so just the two variational params are exposed
+
+    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); optimizer=BFGS)
+    # allow_f_increases=true,  - increases stability of algorith, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
+    
+    v,w=Optim.minimizer(res)
+    
+    return v,w
+end
 
 # Structure to store data of polaron solution + other parameters, for each temperature
 struct Polaron
