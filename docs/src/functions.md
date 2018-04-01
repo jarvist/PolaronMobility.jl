@@ -5,6 +5,14 @@ feynmanalpha(ε_Inf,ε_S,freq,m_eff)
 ```
 
 ```@docs
+feynmanvw(α)
+```
+
+```@docs
+polaronmobility(Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
+```
+
+```@docs
 HellwarthBScheme(LO)
 ```
 
@@ -17,13 +25,6 @@ savepolaron(fileprefix, p::Polaron)
 ```
 
 ```@docs
-plotpolaron(fileprefix, p::Polaron; extension="png")
-```
-
-```@docs
 ImX(nurange,v,w,βred,α,ω,mb)
 ```
 
-```@docs
-polaronmobility(Trange, ε_Inf, ε_S,  freq,    effectivemass; figures::Bool=true, verbose::Bool=false)
-```
