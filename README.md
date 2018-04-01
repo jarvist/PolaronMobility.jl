@@ -85,10 +85,31 @@ Spring constant for coupling to phonon cloud
 Variational (temperature-dependent free-energy) parameters for the coupled system
 ![Variational (temperature-dependent free-energy) parameters for the coupled system](variational.png)
 
-# Community guidelines
 
-These codes currently have a single contributor. 
-Code contributions are welcome - please engage via GitHub issues. 
-GitHub issues are also the preferred forum for discussing any issues, and
-providing help with the codes. 
+## Community guidelines
+
+Contributions to the code (extending that which is calculated), or additional
+physical systems / examples, are very welcome. 
+
+If you have questions about the software, scientific questions, or find errors,
+please create a [GitHub issue](https://github.com/jarvist/PolaronMobility.jl/issues). 
+
+If you find this package (or snippets, such as the entered and tested
+free-energy expressions) useful for your work, please cite the paper 
+[Frost2017PRB](https://doi.org/10.1103/PhysRevB.96.195202). 
+
+```
+@article{Frost2017,
+  doi = {10.1103/physrevb.96.195202},
+  url = {https://doi.org/10.1103/physrevb.96.195202},
+  year  = {2017},
+  month = {nov},
+  publisher = {American Physical Society ({APS})},
+  volume = {96},
+  number = {19},
+  author = {Jarvist Moore Frost},
+  title = {Calculating polaron mobility in halide perovskites},
+  journal = {Physical Review B}
+}
+```
 

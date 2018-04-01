@@ -40,6 +40,7 @@ We get a value of `0.351`.
 
 Let us calculate the room-temperature (300 K) character of the electron-polaron
 in methylammonium lead iodide perovskite (MAPI). 
+The parameters we use are as in Frost2017PRB.
 
 The call signature is (Temperature range, ϵ-optical, ϵ-static, phonon-frequency
 (Hz), effective-mass (in mass-of-electron units)). 
@@ -51,7 +52,9 @@ masses.
 MAPIe=polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 ```
 
-This will think for a bit (as Julia just-in-time compiles the required functions), and then spits out a considerable amount of information to `STDOUT`. 
+This will think for a bit (as Julia just-in-time compiles the required
+functions), and then spits out a considerable amount of information to
+`STDOUT`. 
 
 ```
 Polaron mobility for system ε_Inf=4.5, ε_S=24.1, freq=2.25e12, 
@@ -135,16 +138,19 @@ tested materials.
 The above examples are slightly back-to-front - in that we've specified
 a single mode frequency, as if the material were a simple tetrahedral
 semiconductor with only one infrared active mode. 
+(The Linear Optical 'LO' phonon mode.)
 
 In order to use these theories with more complex (many atoms in a unit cell)
 materials of technological relevance, we must first reduce all of these
-infrared-active phonon responses to a single effective one. 
+Infrared-active phonon responses to a single effective one. 
 
 For this we will use the averaging scheme described in Hellwarth1999. 
 Currently only the B scheme (athermal) is correctly implemented; a partial
 A scheme implementation is present.
 
-Let's test it against the Hellwarth1999 literature data. The argument to the function is a table of frequencies (cm^-1) and infrared activities (unit does not matter, as long as it is consistent). 
+Let's test it against the Hellwarth1999 literature data. 
+The argument to the function is a table of frequencies (cm^-1) and infrared
+activities (unit does not matter, as long as it is consistent). 
 
 ```julia
 # Hellwarth et al. PRB 1999 Table II - BiSiO frequencies and activities
@@ -185,6 +191,7 @@ range to the polaronmobility funtion.
 MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 savepolaron("MAPI-electron",MAPIe)
 ```
+
 `savepolaron` saves a column-delimited text file for post-production plotting
 (with gnuplot) or similar.
 
@@ -193,7 +200,7 @@ using PlotPolaron
 plotpolaron("MAPI-electron", MAPIe)
 ```
 The convenience function `plotpolaron` generates (and saves) a number of
-`Polts.jl` figures of the temperature dependent behaviour.
+`Plots.jl` figures of the temperature dependent behaviour.
 It has been separated off into its own submodule (`PlotPolaron`), so that the
 `Plots.jl` dependency does not slow down general loading of the package.
 

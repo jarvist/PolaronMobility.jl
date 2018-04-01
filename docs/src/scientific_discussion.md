@@ -1,6 +1,6 @@
 ## Overview 
 
-These codes solve the Feynman polaron mode [Feynman1955] with Osaka's
+These codes solve the Feynman polaron mode [Feynman1955] with Ōsaka's
 [Osaka1961] finite-temperature energies. 
 We use the form of these free energies, as presented in [Hellwarth1999].
 
@@ -45,7 +45,7 @@ simplified system which produces the smallest free-energy.
 
 This is now a (renormalised) single particle system, a quasi-particle.
 
-These Julia codes use Hellwarth's [Hellwarth1999] presentation of Osaka's variational
+These Julia codes use Hellwarth's [Hellwarth1999] presentation of Ōsaka's variational
 free-energies for the Feynman model.
 We optimise the `v` and `w` parameters for these finite-temperature free energies.
 These can be alternatively restated the mass 'M' and spring-constant 'k' of the
@@ -64,7 +64,7 @@ suitable for high temperature.
 It was necessary to return to these (rather old!) papers and resolve the
 models, as hybrid halide perovskites are soft materials with low energy
 phonons. Therefore the effective temperature in terms of a reduced
-thermodynamic beta (Beta=hbar omega / (k_Boltzmann * Temperature) ) is much
+thermodynamic beta (beta=hbar omega / (k_Boltzmann * Temperature) ; β=ħω/(k_B.T) ) is much
 smaller than previously considered.
 
 A final note that: in [Hellwarth1999], there is a mistake in the formula for 'b',
@@ -100,7 +100,7 @@ https://arxiv.org/abs/1611.06122
 
 % This introduces two prescriptions for reducing a multi-mode polar lattice to
 % a single ~mean-field~ response.
-% It contains a modern version of the Osaka finite temperature free-energies
+% It contains a modern version of the Ōsaka finite temperature free-energies
 % for use in a variational solution of the Feynman temperature problem.
 % It also includes how to (numerically) do the contour integration to get the
 % DC-response of the polaron developed in Feynman1962.
