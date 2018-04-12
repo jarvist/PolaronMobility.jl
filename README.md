@@ -56,8 +56,22 @@ MAPIe=polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 ```
 
 Will calculate the polaron mobility for methyl-ammonium lead halide perovskite
-(f=2.25 THz; ϵoptical=4.5; ϵstatic=24.1; effective-mass=0.12 electron-masses)  
-at 300 K. 
+(f=2.25 THz; ϵoptical=4.5; ϵstatic=24.1; effective-mass=0.12 electron-masses) at 300 K. 
+
+An abbreviated output should look like:
+```
+T: 300.000000 β: 2.41e+20 βred: 0.36 ħω  = 9.31 meV     Converged? : true
+ VariationalParams v= 19.86  w= 16.96   ||   M=0.371407 k=106.835753    
+ POLARON SIZE (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )
+     Schultz1959(2.4): rf= 0.528075 (int units) = 2.68001e-09 m [SI]
+ Polaron Free Energy: A= -6.448815 B= 7.355626 C= 2.911977 F= -3.818788  = -35.534786 meV
+Polaron Mobility theories:
+    μ(FHIP)= 0.082049 m^2/Vs    = 820.49 cm^2/Vs
+     Eqm. Phonon. pop. Nbar: 2.308150 
+    μ(Kadanoff1963 [Eqn. 25]) = 0.019689 m^2/Vs      = 196.89 cm^2/Vs
+    Tau=1/Gamma0 = 1.15751e-13 = 0.115751 ps
+    μ(Hellwarth1999)= 0.013642 m^2/Vs   = 136.42 cm^2/Vs
+```
 
 Further details in the
 [documentation](https://jarvist.github.io/PolaronMobility.jl/).
