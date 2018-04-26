@@ -5,7 +5,7 @@
 # These codes were developed with Julia 0.5.0 - Julia 0.6.2, and require the Optim and Plots packages.
 
 export Polaron # Type to hold the data
-export feynmanalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
+export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export ImX
 
@@ -24,7 +24,7 @@ const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
 """
-feynmanalpha(ε_Inf,ε_S,freq,m_eff)
+frohlichalpha(ε_Inf,ε_S,freq,m_eff)
 
     Calculates the Frohlich alpha parameter, for a given dielectric constant,
     frequency (f) of phonon in Hertz, and effective mass (in units of the
@@ -34,12 +34,12 @@ feynmanalpha(ε_Inf,ε_S,freq,m_eff)
     http://dx.doi.org/10.1103/PhysRev.97.660
 
 """
-function feynmanalpha(ε_Inf,ε_S,freq,m_eff)
+function frohlichalpha(ε_Inf,ε_S,freq,m_eff)
     ω=freq*2*pi #frequency to angular velocity
-    # Note to self - you've introduced the 4*pi factor into the dielectric constant; 
-    # This gives numeric agreement with literature values, but I'm uncertain of the justification.
-    # Such a factor also seems to be necessary for calculation of Exciton binding energies (see below).
-    # Maybe scientists in the 50s assumed that the Epsilon subsumed the 4*pi factor?
+    # Note: we need to add a 4*pi factor to the permitivity of freespace. 
+    # This gives numeric agreement with literature values.  This is required as
+    # the contemporary 1950s and 1960s literature implicitly used atomic units,
+    # where the electric constant ^-1 has this factor baked in, k_e=1/(4πϵ_0).
     α=0.5* (1/ε_Inf - 1/ε_S)/(4*pi*ε_0) * (q^2/(hbar*ω)) * (2*me*m_eff*ω/hbar)^0.5
     return (α)
 end
@@ -228,7 +228,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
     mb=effectivemass*MassElectron 
     ω = (2*pi)*freq # angular-frequency, of the phonon mode 
         
-    α=feynmanalpha(ε_Inf, ε_S,  freq,    effectivemass)
+    α=frohlichalpha(ε_Inf, ε_S,  freq,    effectivemass)
     #α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me
 
     @printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )

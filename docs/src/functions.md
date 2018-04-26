@@ -1,7 +1,7 @@
 ## Functions provided 
 
 ```@docs
-feynmanalpha(ε_Inf,ε_S,freq,m_eff)
+frohlichalpha(ε_Inf,ε_S,freq,m_eff)
 ```
 
 ```@docs

@@ -29,7 +29,7 @@ The call signature is (ϵ-optical, ϵ-static, phonon-frequency (Hz),
 effective-mass (in mass-of-electron units)).
 
 ```
-α=feynmanalpha(7.1, 10.4, 5.08E12, 0.095)
+α=frohlichalpha(7.1, 10.4, 5.08E12, 0.095)
 println("CdTe  α=",α," Stone 0.39 / Devreese 0.29")
 @test α ≈ 0.3 atol=0.1
 ```
