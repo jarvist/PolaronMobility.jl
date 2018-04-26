@@ -23,6 +23,8 @@ const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 #####
 # Call simulation
 
+Trange=100:50:600
+
 # Rutile 
 # Hendry et al. PRB 69, 081101 (2004)
 # DOI: https://doi.org/10.1103/PhysRevB.69.081101
@@ -41,12 +43,12 @@ meff=1.2 # ¬  - perpendicular # p.3 LHS, 4th para
 # https://www.azom.com/article.aspx?ArticleID=1179 - optical properties
 ϵ_optic=2.49^2 # Anatase: 6.2
 
-anatase=polaronmobility(10:20:1000, ϵ_optic, ϵ_static, f, meff)
+anatase=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
 savepolaron("anatase",anatase)
 
 ϵ_optic=2.903^2 # Rutile: 8.427
 
-rutile=polaronmobility(10:20:1000, ϵ_optic, ϵ_static, f, meff)
+rutile=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
 savepolaron("rutile",rutile)
 
 # Mobility of Electronic Charge Carriers in Titanium Dioxide
@@ -55,5 +57,41 @@ savepolaron("rutile",rutile)
 # DOI: https://doi.org/10.1021/jp801028j
 # Lots of nice comparison; single crystal mobility data; Arrhenius plots etc.
 
+# Materials Project values 
+# mp-554278 - Bg=2.677 eV
+ϵ_optic=6.2 
+ϵ_static=35.47
+
+rutilemp=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
+savepolaron("ruilemp",rutilemp)
+
+# mp-52620 V3O5 - Bg=2.156 eV
+ϵ_optic=4.88 
+ϵ_static=13.67
+
+vanadium=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
+savepolaron("vanadium",vanadium)
+
+# mp-19399 Cr2O5 - Bg=2.437 eV
+ϵ_optic=6.32 
+ϵ_static=11.05
+
+chromium=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
+savepolaron("chromium",chromium)
+
+# mp-7048 Al2O3 - Bg=4.455
+ϵ_optic=3.16
+ϵ_static=8.98
+
+alumina=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
+savepolaron("alumina",alumina)
+
 println("That's me!")
+
+# Rather basic analysis via the shell: 
+#run(` grep "^300" '*'.dat '|' awk '{print $1,$4}' `)
+#run(` grep Alpha '*'.dat `)
+
+# grep "^300" *.dat | awk '{print $1,$4}'
+# grep Alpha *.dat
 
