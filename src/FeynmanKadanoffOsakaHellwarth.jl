@@ -34,13 +34,16 @@ frohlichalpha(ε_Inf,ε_S,freq,m_eff)
     http://dx.doi.org/10.1103/PhysRev.97.660
 
 """
-function frohlichalpha(ε_Inf,ε_S,freq,m_eff)
+function frohlichalpha(ε_optic,ε_static,freq,m_eff)
     ω=freq*2*pi #frequency to angular velocity
     # Note: we need to add a 4*pi factor to the permitivity of freespace. 
     # This gives numeric agreement with literature values.  This is required as
     # the contemporary 1950s and 1960s literature implicitly used atomic units,
     # where the electric constant ^-1 has this factor baked in, k_e=1/(4πϵ_0).
-    α=0.5* (1/ε_Inf - 1/ε_S)/(4*pi*ε_0) * (q^2/(hbar*ω)) * (2*me*m_eff*ω/hbar)^0.5
+    α= 0.5/(4*π*ε_0) *              # Units: m/F
+       (1/ε_optic - 1/ε_static) *   # Units: none 
+       (q^2/(hbar*ω)) *             # Units: F
+       sqrt(2*me*m_eff*ω/ħ)         # Units: 1/m
     return (α)
 end
 
