@@ -149,7 +149,7 @@ AF(v,w,α)=π^(-0.5) * α*v * quadgk(τ->fF(τ,v,w),0,Inf)[1]
 # (33) in Feynman I
 F(v,w,α)=(3/(4*v))*(v-w)^2-AF(v,w,α)
 
-# Let's wrap this in a simple function
+# Let's wrap the Feynman athermal variation approximation in a simple function
 """
     feynmanvw(α)
 
@@ -276,7 +276,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         v=minimum[1] # unpack these from minimised results
         w=minimum[2]
             
-        @printf("\n VariationalParams v= %.2f  w= %.2f",v,w)
+        @printf("\n Polaraon Parameters:  v= %.4f  w= %.4f",v,w)
 
         # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
         # See Page 1007, just after equation (18)
@@ -287,20 +287,25 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         append!(p.k,k)
         append!(p.M,M)
 
-        @printf("\t||\t M=%f k=%f\t",M,k)
+        @printf("  ||   M=%f  k=%f\t",M,k)
        
-        @printf("\n Polaron frequency (SI) v=  %.2g Hz \t w=  %.2g Hz\t",v*ω /(2*pi),w*ω /(2*pi))
+        @printf("\n Polaron frequency (SI) v= %.2g Hz  w= %.2g Hz",
+                v*ω /(2*pi),w*ω /(2*pi))
 
 		# (46) in Feynman1955
 		meSmallAlpha(α )=α /6 + 0.025*α ^2
 		# (47) In Feynman1955
 		meLargeAlpha(α )=16*α ^4 / (81*π ^4)
 		#meLargeAlpha(α )=202*(α /10)^4
-		@printf("\n Feynman1955(46,47): meSmallAlpha(α)= %.3f meLargeAlpha(α)= %.3f",meSmallAlpha(α),meLargeAlpha(α))
-        @printf("\n Feynman1962: Approximate ~ Large alpha limit, v/w = %.2f  =~approx~= alpha^2 = %.2f ",v/w,α ^2)
+        if (verbose) # asymptotic solutions - not that interesting when you have the actual ones!
+		    @printf("\n Feynman1955(46,47): meSmallAlpha(α)= %.3f meLargeAlpha(α)= %.3f",
+                    meSmallAlpha(α),meLargeAlpha(α))
+            @printf("\n Feynman1962: Approximate ~ Large alpha limit, v/w = %.2f  =~approx~= alpha^2 = %.2f ",
+                    v/w,α ^2)
+        end
 
         # POLARON SIZE
-        @printf("\n POLARON SIZE (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )")
+        @printf("\n Polaron size (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )")
         # Schultz1959 - rather nicely he actually specifies everything down into units!
         # just before (2.4) in Schultz1959
         mu=((v^2-w^2)/v^2)
@@ -311,6 +316,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("\n\t Schultz1959(2.4): rf= %g (int units) = %g m [SI]",rf,rfsi )
         append!(p.rfsi,rfsi)
 
+        if (verbose)
         scale=sqrt(2*mb*ω) # Note we're using mb; 
         #band effective-mass in SI units (i.e. meff*melectron)
 		
@@ -340,6 +346,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         # Devreese1972: 10.1103/PhysRevB.5.2367
         # p.2371, RHS.
         @printf("\n Devreese1972: (Large Alpha) Franck-Condon frequency = %.2f", 4*α ^2/(9*pi))
+        end
 
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
         @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
@@ -354,7 +361,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         #    - low-T mobility, final result of Feynman1962
         # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
         # I believe here β is in SI (expanded) units
-        @printf("\nPolaron Mobility theories:")
+        @printf("\n Polaron Mobility theories:")
         μ=(w/v)^3 * (3*q)/(4*mb*ħ*ω^2*α*β) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
         @printf("\n\tμ(FHIP)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
         append!(p.T,T)
@@ -376,8 +383,10 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         #
         # From 1963 Kadanoff, (9), define eqm. number of phonons (just from T and phonon omega)
         Nbar=(exp(βred) - 1)^-1
-        @printf("\n\t Eqm. Phonon. pop. Nbar: %f ",Nbar)
-        @printf("\n\texp(Bred): %f exp(-Bred): %f exp(Bred)-1: %f",exp(βred),exp(-βred),exp(βred)-1)
+        @printf("\n\t\tEqm. Phonon. pop. Nbar: %f ",Nbar)
+        if (verbose)
+            @printf("\n\texp(Bred): %f exp(-Bred): %f exp(Bred)-1: %f",exp(βred),exp(-βred),exp(βred)-1)
+        end
         Nbar=exp(-βred) 
         #Note - this is only way to get Kadanoff1963 to be self-consistent with
         #FHIP, and later statements (Devreese) of the Kadanoff mobility. 
@@ -394,18 +403,27 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
             # Factor of omega to get it as a rate relative to phonon frequency
             # Factor of omega*hbar to get it as a rate per energy window
         μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
-        @printf("\n\tμ(Kadanoff1963 [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
-        @printf("\n\tGamma0 = %g rad/s = %g /s \n\tTau=1/Gamma0 = %g = %f ps",
-            Gamma0, Gamma0/(2*pi), 2*pi/Gamma0, 2*pi*1E12/Gamma0)
+        
+        if (verbose) # these are cross-checks
+            @printf("\n\tμ(Kadanoff1963 [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
+            @printf("\n\t\t Eqm. Phonon. pop. Nbar: %f ",Nbar)
+        end
+
+        @printf("\n\t\tGamma0 = %g rad/s = %g /s ",
+                Gamma0, Gamma0/(2*pi))
+        @printf(" \n\t\tTau=1/Gamma0 = %g = %f ps",
+            2*pi/Gamma0, 2*pi*1E12/Gamma0)
         Eloss=hbar*ω * Gamma0/(2*pi) # Simply Energy * Rate
-        @printf("\n\tEnergy Loss = %g J/s = %g meV/ps",Eloss,Eloss * 1E3 / (q*1E12) ) 
+        @printf("\n\t\tEnergy Loss = %g J/s = %g meV/ps",Eloss,Eloss * 1E3 / (q*1E12) ) 
         append!(p.Tau, 2*pi*1E12/Gamma0) # Boosted into ps ?
 
 
-        # Hellwarth1999 - directly do contour integration in Feynman1962, for finite temperature DC mobility
-
-        # Hellwarth1999 Eqn (2) and (1) - These are going back to the general (pre low-T limit) formulas in Feynman1962.
-        # to evaluate these, you need to do the explicit contour integration to get the polaron self-energy
+        # Hellwarth1999 - directly do contour integration in Feynman1962, for
+        # finite temperature DC mobility
+        # Hellwarth1999 Eqn (2) and (1) - These are going back to the general
+        # (pre low-T limit) formulas in Feynman1962.  to evaluate these, you
+        # need to do the explicit contour integration to get the polaron
+        # self-energy
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
         
         #b=R*βred/sinh(b*βred*v/2) # This self-references b! What on Earth?
@@ -424,6 +442,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
         append!(p.Hμ,μ*100^2)
         
+        if (verbose)
         # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
         # So let's test this
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
@@ -438,11 +457,11 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("\n\tμ(Hellwarth1999,b=0)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
         @printf("\n\tError due to b=0; %f",(100^2*μ-p.Hμ[length(p.Hμ)])/(100^2*μ))
         #append!(Hμs,μ*100^2)
-        
-        #ImX(v,w,βred,α,ω,mb)
+        end
 
         # Recycle previous variation results (v,w) as next guess
         initial=[v,w] # Caution! Might cause weird sticking in local minima
+        
         append!(p.v,v)
         append!(p.w,w)
     end
