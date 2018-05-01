@@ -1,4 +1,5 @@
-# Titania - polaron mobility 
+# Titania - polaron mobility; for Titania and other corrosion relevant oxides
+# Just an initial sketch - before getting the major-leagues (DFT calcs) out.
 println("   My Oberon! what visions have I seen!")
 println("   Methought I was enamour'd of an ass.")
 
@@ -25,7 +26,7 @@ const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
 Trange=100:50:600
 
-# Rutile 
+# Rutile - spectra and effective mass from:
 # Hendry et al. PRB 69, 081101 (2004)
 # DOI: https://doi.org/10.1103/PhysRevB.69.081101
 f=24E12 # p.3 LHS, 2nd para
@@ -57,15 +58,15 @@ savepolaron("rutile",rutile)
 # DOI: https://doi.org/10.1021/jp801028j
 # Lots of nice comparison; single crystal mobility data; Arrhenius plots etc.
 
-# Materials Project values 
+# Materials Project DFT dielectric constants 
 # mp-554278 - Bg=2.677 eV
 ϵ_optic=6.2 
 ϵ_static=35.47
 
 rutilemp=polaronmobility(Trange, ϵ_optic, ϵ_static, f, meff)
-savepolaron("ruilemp",rutilemp)
+savepolaron("rutile-mp",rutilemp)
 
-# mp-52620 V3O5 - Bg=2.156 eV
+# mp-52620 V2O5 - Bg=2.156 eV
 ϵ_optic=4.88 
 ϵ_static=13.67
 
@@ -89,9 +90,9 @@ savepolaron("alumina",alumina)
 println("That's me!")
 
 # Rather basic analysis via the shell: 
-#run(` grep "^300" '*'.dat '|' awk '{print $1,$4}' `)
-#run(` grep Alpha '*'.dat `)
-
+# Extract 300 K data point:
 # grep "^300" *.dat | awk '{print $1,$4}'
+
+# Have a look at 'alpha' parameter'
 # grep Alpha *.dat
 
