@@ -5,14 +5,18 @@ properties of methylammonium lead-iodide perovskite.
 
 ## Loading the Module
 
-However you run Julia (whether at the REPL; within a Jupyter notebook; or in
-a standalone script/program), you will first need to load the module. 
-As the Module is not yet registered, you will first need to tell Julia where
-to find the codes.
+First just run an import of the module, to see if Julia can find it.
+
+```julia
+using PolaronMobility 
+```
+
+If you are running the module from outside the Julia package directory (i.e.
+you have cloned the repository elsewhere to more easily work on the codes), you
+can supplement the `LOAD_PATH`.
 
 ```julia
 push!(LOAD_PATH,"../src/") # load module from local directory
-using PolaronMobility 
 ```
 
 ## α/alpha parameter 
@@ -22,11 +26,21 @@ a dimensionless coupling, alpha (`α`).
 This gives the long-range ('non analytic') contribution from electrodynamic
 coupling into infrared active phonon modes.
 
-As an example, let us calculate α for CdTe, and compare it to literature
+```math
+\alpha = 
+\frac{1}{2} \;
+\frac{1}{4\pi\epsilon_0} \:
+\left( \frac{1}{\epsilon_{optical}} - \frac{1}{\epsilon_{static}} \right ) \;
+\frac{e^2}{\hbar \omega} \;
+\sqrt{\frac{2m_e\omega}{\hbar}}
+```
+
+This is provided as a convenience function (with correct units!). 
+Let us demonstrate by calculating α for CdTe, and compare it to literature
 values.
 
-The call signature is (ϵ-optical, ϵ-static, phonon-frequency (Hz),
-effective-mass (in mass-of-electron units)).
+The call signature is: ϵ-optical, ϵ-static, phonon-frequency (Hz),
+effective-mass (in mass-of-electron units).
 
 ```
 α=frohlichalpha(7.1, 10.4, 5.08E12, 0.095)
@@ -40,10 +54,12 @@ We get a value of `0.351`.
 
 Let us calculate the room-temperature (300 K) character of the electron-polaron
 in methylammonium lead iodide perovskite (MAPI). 
-The parameters we use are as in Frost2017PRB.
+The parameters we use are as in `Frost2017PRB`.
 
-The call signature is (Temperature range, ϵ-optical, ϵ-static, phonon-frequency
-(Hz), effective-mass (in mass-of-electron units)). 
+The call signature to `polaronmobility` is: 
+Temperature range, ϵ-optical, ϵ-static, phonon-frequency (Hz), effective-mass
+(in mass-of-electron units). 
+
 For electrons in MAPI, these are ϵ=4.5/24.1, f=2.25 THz, me=0.12 electron
 masses. 
 
@@ -62,53 +78,44 @@ Polaron mobility for system ε_Inf=4.5, ε_S=24.1, freq=2.25e12,
 Polaron mobility input parameters: ε_Inf=4.500000 ε_S=24.100000 freq=2.25e+12 α=2.393991 
 Derived params in SI: ω =1.41372e+13 mb=1.09313e-31 
 T: 300.000000 β: 2.41e+20 βred: 0.36 ħω  = 9.31 meV		Converged? : true
- VariationalParams v= 19.86  w= 16.96	||	 M=0.371407 k=106.835753	
- Polaron frequency (SI) v=  4.5e+13 Hz 	 w=  3.8e+13 Hz	
- Feynman1955(46,47): meSmallAlpha(α)= 0.542 meLargeAlpha(α)= 0.067
- Feynman1962: Approximate ~ Large alpha limit, v/w = 1.17  =~approx~= alpha^2 = 5.73 
- POLARON SIZE (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )
+ Polaraon Parameters:  v= 19.8635  w= 16.9621  ||   M=0.371360  k=106.845717	
+ Polaron frequency (SI) v= 4.5e+13 Hz  w= 3.8e+13 Hz
+ Polaron size (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )
 	 Schultz1959(2.4): rf= 0.528075 (int units) = 2.68001e-09 m [SI]
-	 Schultz1959(2.5a) with 0.44: Feynman α→0 expansion: rfa= 1.68761 (int units) = 2.96691e-09 m [SI]
-	 Schultz1959(2.5a) with 4/9 re-derivation: Feynman α→0 expansion: rfa= 1.67915 (int units) = 2.95204e-09 m [SI]
-	 Schultz1959(2.5b): Feynman α→∞ expansion: rf= 9.00127 (int units) = 1.58247e-08 m [SI]
-	 Schultz1959(5.7-5.8): fixed-e: phononfreq= 16.9603 (int units) = 3.81607e+13 [SI, Hz] = 157.82 [meV]
-	 Schultz1959(5.7-5.8): reducd mass: phononfreq= 19.8617 (int units) = 4.46888e+13 [SI, Hz] = 184.818 [meV]
-	 Schultz1959: electronfreq= 10.3361 (int units) = 2.32563e+13 [SI, Hz] = 96.1804 [meV]
-	 Schultz1959: combinedfreq= 8.82623 (int units) = 1.9859e+13 [SI, Hz] = 82.1303 [meV]
- Devreese1972: (Large Alpha) Franck-Condon frequency = 0.81
- Polaron Free Energy: A= -6.448815 B= 7.355626 C= 2.911977 F= -3.818788	 = -35.534786 meV
-Polaron Mobility theories:
-	μ(FHIP)= 0.082049 m^2/Vs 	= 820.49 cm^2/Vs
-	μ(Kadanoff,via Devreese2016)= 0.019689 m^2/Vs 	= 196.89 cm^2/Vs
-	 Eqm. Phonon. pop. Nbar: 2.308150 
-	exp(Bred): 1.433247 exp(-Bred): 0.697716 exp(Bred)-1: 0.433247
-	μ(Kadanoff1963 [Eqn. 25]) = 0.019689 m^2/Vs 	 = 196.89 cm^2/Vs
-	Gamma0 = 5.4282e+13 rad/s = 8.63925e+12 /s 
-	Tau=1/Gamma0 = 1.15751e-13 = 0.115751 ps
-	Energy Loss = 1.288e-08 J/s = 80.3904 meV/ps
+ Polaron Free Energy: A= -6.448918 B= 7.355627 C= 2.912080 F= -3.818788	 = -35.534786 meV
+ Polaron Mobility theories:
+	μ(FHIP)= 0.082053 m^2/Vs 	= 820.53 cm^2/Vs
+	μ(Kadanoff,via Devreese2016)= 0.019690 m^2/Vs 	= 196.90 cm^2/Vs
+		Eqm. Phonon. pop. Nbar: 2.308150 
+		Gamma0 = 5.42813e+13 rad/s = 8.63914e+12 /s  
+		Tau=1/Gamma0 = 1.15752e-13 = 0.115752 ps
+		Energy Loss = 1.28798e-08 J/s = 80.3893 meV/ps
 	μ(Hellwarth1999)= 0.013642 m^2/Vs 	= 136.42 cm^2/Vs
-	μ(Hellwarth1999,b=0)= 0.013663 m^2/Vs 	= 136.63 cm^2/Vs
-	Error due to b=0; 0.001539
 ```
 
 The output is a little ad-hoc, and specific values are perhaps best understood
 with comparison to the code, and to the references to the original papers!
 
-Initially the polaron calculation is made; this involves varying `v` and `w` to
-minimise the miss-match between the trial (analytically solvable) polaron
-Hamiltonian energy, and the true temperature-dependent free-energy (as
-specified by Osaka). 
-The method uses automatic differentiation to get gradients for the optimisation
-procedure. 
+Initially the polaron state is solved for variationally.  
+This involves varying `v` and `w` to minimise the miss-match between the trial
+(analytically solvable) polaron Hamiltonian action, and the true
+temperature-dependent free-energy (as specified by Osaka).  The method uses
+automatic differentiation to get gradients for the optimisation procedure. 
 
 'Textbook' expressions that predict polaron character and mobilities make
-assumptions about `v` and `w` (usually that either `v` is small, or `v=w`).
+assumptions about `v` and `w` (usually that either `v` is small, or `v=w`), and
+rather than use the finite-temperature free-energies of Osaka, use a more
+simple athermal polaron energy function.
 
 Values that can be directly derived from these `v` and `w` variational
-parameters are then displayed.  Essentially we are just using `Julia` as
-a glorified scientific calculator at this point, but with the units checked. 
-Perhaps most of interest are the Schultz polaron 'size', various resonant
-frequencies, and the polaron free energies. 
+parameters are then displayed.  This includes the phonon-drag mass
+renormalisation (`M`), the effective spring-constant of this drag (`k`), and
+the S.I. oscillation rates `v` and `w` in `Hz`.  
+The Schultz polaron size (rf) is outputted in various units. 
+The total polaron energy (as well as its decomposition into free-energy
+contributions) is also output (`A,B,C; and F`).  Essentially we are just using
+`Julia` as a glorified scientific calculator at this point, but with the units
+checked. 
 
 The polaron theories are constructed in reduced units. Generally this means
 that energy is in units of ħω, and frequencies in a unit of ω (of the input
@@ -116,22 +123,28 @@ phonon frequency). For convenience, these are re-printed in SI or more standard
 units. 
 
 Beyond `Polaron Mobility theories:`, the code enters its final phase and uses
-the `v` and `w` parameters specifying the polaron to calculate a charge
-carrier mobility. 
+the `v` and `w` parameters specifying the polaron as an input to theories of
+mobility, and so directly calculate a charge carrier mobility. 
+
+
 The asymtotic 'FHIP' mobility (low T) is calculated, this can be most easily
 related to textbook expressions that directly infer a mobility from an `α`
 parameter. It lacks optical phonon emission, and so shows pathological high
 temperature (kT > ħω) behaviour. 
+
 The Kadanoff mobility (see the original paper) improves on this by assuming
 a Boltzmann process (independent scattering events). 
 From this theory we can also get an average scattering time, which we relate to
 the time-scale of the polaron interacting with the phonon cloud, and so to the
 rate of polaron cooling. 
+
 Finally the Hellwarth1999 scheme is used, which goes back to the original 1962
 FHIP paper, and directly carries out the contour integral for the polaron
-impedence function. We improve on this slightly by explicitly calculating with
+impedance function. We improve on this slightly by explicitly calculating with
 `b`, though the approximation `b=0` makes very little difference for any so-far
 tested materials. 
+
+The data are also returned as a packed up in type of `struct Polaron` with fields of (`T, Kμ, Hμ, FHIPμ, k, M, A, B, C, F, Tau, v, w, βred, rfsi, rfsmallalpha, α, mb, ω`).
 
 ## Hellwarth's multi-mode scheme
 
@@ -185,7 +198,7 @@ Hellwarth (61) Omega (freq): 500.08501275972833
 ## Temperature-dependent behaviour
 
 Getting temperature-dependent behaviour is a matter of sending a temperature
-range to the polaronmobility funtion.
+range to the `polaronmobility` function.
 
 ```julia
 MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)

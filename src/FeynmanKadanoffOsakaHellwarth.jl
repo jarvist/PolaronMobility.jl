@@ -166,7 +166,7 @@ function feynmanvw(α)
     myf(x) = F(x[1],x[2],α) # Wraps the function so just the two variational params are exposed
 
     res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); optimizer=BFGS)
-    # allow_f_increases=true,  - increases stability of algorith, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
+    # allow_f_increases=true,  - increases stability of algorithm, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
     
     v,w=Optim.minimizer(res)
     
@@ -193,7 +193,7 @@ struct Polaron
     # Setup of simulation. These parameters are sent to the function. 
     # Alpha = Frohlich alpha
     α
-    # Ban effective mass
+    # Band effective mass
     mb
     # Effective dielectric frequency
     ω

@@ -10,3 +10,10 @@ theme: readthedocs
 
 docs_dir: build # from Julia's Documentation.jl
 
+markdown_extensions: # This + extra_javascript required for LaTeX maths
+    - mdx_math
+
+extra_javascript: 
+    - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML
+    - assets/mathjaxhelper.js
+
