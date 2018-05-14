@@ -45,7 +45,7 @@ effective-mass (in mass-of-electron units).
 ```
 α=frohlichalpha(7.1, 10.4, 5.08E12, 0.095)
 println("CdTe  α=",α," Stone 0.39 / Devreese 0.29")
-@test α ≈ 0.3 atol=0.1
+#@test α ≈ 0.3 atol=0.1
 ```
 
 We get a value of `0.351`. 
@@ -205,20 +205,38 @@ MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 savepolaron("MAPI-electron",MAPIe)
 ```
 
-`savepolaron` saves a column-delimited text file for post-production plotting
+`savepolaron` outputs a column-delimited text file for post-production plotting
 (with gnuplot) or similar.
 
+Example `gnuplot` scripts can be found in
+[Examples](https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/) and
+[HalidePerovskites](http://github.com/jarvist/PolaronMobility.jl/tree/master/HalidePerovskites/).
+
+## Built in plotting
+
+The convenience function `plotpolaron` generates (and saves) a number of
+`Plots.jl` figures of the temperature dependent behaviour.
+
+It has been separated off into its own submodule (`PlotPolaron`), so that the
+`Plots.jl` dependency does not slow down loading of `PolaronMobility.jl`.
+
+We therefore need to inform Julia where to find PlotPolaron,
+
 ```julia
+
+push!(LOAD_PATH,"../src/") 
 using PlotPolaron
 plotpolaron("MAPI-electron", MAPIe)
 ```
-The convenience function `plotpolaron` generates (and saves) a number of
-`Plots.jl` figures of the temperature dependent behaviour.
-It has been separated off into its own submodule (`PlotPolaron`), so that the
-`Plots.jl` dependency does not slow down general loading of the package.
+
+Here is a figure showing typical temperature-dependent behaviour of the
+three-different polaron mobility approximations, for MAPI.
+
+![MAPI mobility](assets/MAPI-mobility.png)
 
 ## Further examples
 
-More complete examples are provided in the examples/ and HalidePerovskites/
-folders of the main PolaronMobility.jl repository.
+More complete examples are provided in 
+[Examples](https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/) and
+[HalidePerovskites](http://github.com/jarvist/PolaronMobility.jl/tree/master/HalidePerovskites/).
 
