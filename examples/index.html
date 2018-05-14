@@ -77,6 +77,9 @@
     <li class="toctree-l2"><a href="#temperature-dependent-behaviour">Temperature-dependent behaviour</a></li>
     
 
+    <li class="toctree-l2"><a href="#built-in-plotting">Built in plotting</a></li>
+    
+
     <li class="toctree-l2"><a href="#further-examples">Further examples</a></li>
     
 
@@ -148,7 +151,7 @@
 <p>The call signature is: ϵ-optical, ϵ-static, phonon-frequency (Hz), effective-mass (in mass-of-electron units).</p>
 <pre><code>α=frohlichalpha(7.1, 10.4, 5.08E12, 0.095)
 println(&quot;CdTe  α=&quot;,α,&quot; Stone 0.39 / Devreese 0.29&quot;)
-@test α ≈ 0.3 atol=0.1
+#@test α ≈ 0.3 atol=0.1
 </code></pre>
 
 <p>We get a value of <code>0.351</code>. </p>
@@ -232,15 +235,24 @@ Hellwarth (61) Omega (freq): 500.08501275972833
 savepolaron(&quot;MAPI-electron&quot;,MAPIe)
 </code></pre>
 
-<p><code>savepolaron</code> saves a column-delimited text file for post-production plotting (with gnuplot) or similar.</p>
-<pre><code class="julia">using PlotPolaron
+<p><code>savepolaron</code> outputs a column-delimited text file for post-production plotting (with gnuplot) or similar.</p>
+<p>Example <code>gnuplot</code> scripts can be found in <a href="https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/">Examples</a> and <a href="http://github.com/jarvist/PolaronMobility.jl/tree/master/HalidePerovskites/">HalidePerovskites</a>.</p>
+<p><a id='Built-in-plotting-1'></a></p>
+<h2 id="built-in-plotting">Built in plotting</h2>
+<p>The convenience function <code>plotpolaron</code> generates (and saves) a number of <code>Plots.jl</code> figures of the temperature dependent behaviour.</p>
+<p>It has been separated off into its own submodule (<code>PlotPolaron</code>), so that the <code>Plots.jl</code> dependency does not slow down loading of <code>PolaronMobility.jl</code>.</p>
+<p>We therefore need to inform Julia where to find PlotPolaron,</p>
+<pre><code class="julia">
+push!(LOAD_PATH,&quot;../src/&quot;) 
+using PlotPolaron
 plotpolaron(&quot;MAPI-electron&quot;, MAPIe)
 </code></pre>
 
-<p>The convenience function <code>plotpolaron</code> generates (and saves) a number of <code>Plots.jl</code> figures of the temperature dependent behaviour. It has been separated off into its own submodule (<code>PlotPolaron</code>), so that the <code>Plots.jl</code> dependency does not slow down general loading of the package.</p>
+<p>Here is a figure showing typical temperature-dependent behaviour of the three-different polaron mobility approximations, for MAPI.</p>
+<p><img alt="MAPI mobility" src="../assets/MAPI-mobility.png" /></p>
 <p><a id='Further-examples-1'></a></p>
 <h2 id="further-examples">Further examples</h2>
-<p>More complete examples are provided in the examples/ and HalidePerovskites/ folders of the main PolaronMobility.jl repository.</p>
+<p>More complete examples are provided in  <a href="https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/">Examples</a> and <a href="http://github.com/jarvist/PolaronMobility.jl/tree/master/HalidePerovskites/">HalidePerovskites</a>.</p>
               
             </div>
           </div>
