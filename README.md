@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/jarvist/PolaronMobility.jl.svg?branch=master)](https://travis-ci.org/jarvist/PolaronMobility.jl)
 [![Coverage Status](https://coveralls.io/repos/jarvist/PolaronMobility.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/jarvist/PolaronMobility.jl?branch=master)
 [![codecov.io](http://codecov.io/github/jarvist/PolaronMobility.jl/coverage.svg?branch=master)](http://codecov.io/github/jarvist/PolaronMobility.jl?branch=master)
+[![docs-latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://jarvist.github.io/PolaronMobility.jl/)
 
 `PolaronMobility.jl` is a Julia package which calculates the
 temperature-dependent polaron mobility for a material. 
@@ -28,14 +29,13 @@ method.
 They offer a convenient basis for writing codes that build on these variational
 solutions. 
 
-More extensive documentation is available
-[![here](https://img.shields.io/badge/docs-latest-blue.svg)](https://jarvist.github.io/PolaronMobility.jl/),
-which is perhaps easiest to read and understand alongside the first paper:
+More [extensive documentation](https://jarvist.github.io/PolaronMobility.jl/),
+is perhaps easiest to read and understand alongside the first paper:
 [ArXiv:1704.05404](https://arxiv.org/abs/1704.05404)
 / [Frost2017PRB](https://doi.org/10.1103/PhysRevB.96.195202).
 
 
-## Installation
+## Local installation
 
 These codes require Julia >0.6 . They are structured as a full Julia package,
 but are not yet registered with the central METADATA package repository. 
@@ -45,6 +45,17 @@ To install, type the following at the Julia REPL:
 ```
 julia> Pkg.clone("https://github.com/Jarvist/PolaronMobility.jl.git")
 ```
+
+## JuliaBox
+
+There is an [example notebook](JuliaBox-Example.ipynb) which can be run interactively on the (free) JuliaBox notebook server. This is the fastest way to calculate a few polaron parameters, if you do not have Julia.
+
+1) Login to [Juliabox](https://juliabox.com).
+2) Click on the 'git' button
+3) Enter `https://github.com/jarvist/PolaronMobility.jl.git` (this repository) as the git URL
+4) Auto-filled defaults are fine; click '+' and wait for it to clone
+5) You should now have a `PolaronMobility` directory in your JuliaBox, with the above notebook inside.
+6) Once setup, you can save the Notebook URL as a bookmark: [https://juliabox.com/notebook/notebooks/PolaronMobility/JuliaBox-Example.ipynb]
 
 ## Using
 
