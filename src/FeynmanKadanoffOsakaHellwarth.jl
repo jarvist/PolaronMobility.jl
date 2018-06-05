@@ -17,10 +17,10 @@ import QuadGK.quadgk
 using Optim
 
 # Physical constants
-const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
-const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2 
+const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s
+const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2
 const me=MassElectron = 9.10938188e-31;                          # kg
-const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2 
+const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
 """
@@ -36,12 +36,12 @@ frohlichalpha(ε_Inf,ε_S,freq,m_eff)
 """
 function frohlichalpha(ε_optic,ε_static,freq,m_eff)
     ω=freq*2*pi #frequency to angular velocity
-    # Note: we need to add a 4*pi factor to the permitivity of freespace. 
+    # Note: we need to add a 4*pi factor to the permitivity of freespace.
     # This gives numeric agreement with literature values.  This is required as
     # the contemporary 1950s and 1960s literature implicitly used atomic units,
     # where the electric constant ^-1 has this factor baked in, k_e=1/(4πϵ_0).
     α= 0.5/(4*π*ε_0) *              # Units: m/F
-       (1/ε_optic - 1/ε_static) *   # Units: none 
+       (1/ε_optic - 1/ε_static) *   # Units: none
        (q^2/(hbar*ω)) *             # Units: F
        sqrt(2*me*m_eff*ω/ħ)         # Units: 1/m
     return (α)
@@ -50,10 +50,10 @@ end
 #####
 """
 	HellwarthBScheme(LO)
-	
-    Multiple phonon mode reduction to a single effective frequency. 
-	Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method. 
-    Averaging procedure is constructed by considering the average effect of the action of multiple branches. 
+
+    Multiple phonon mode reduction to a single effective frequency.
+	Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method.
+    Averaging procedure is constructed by considering the average effect of the action of multiple branches.
 
 	Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
 """
@@ -77,11 +77,11 @@ end
 """
 	HellwarthAScheme(LO,T=295)
 
-    Multiple phonon mode reduction to a single effective frequency. 
+    Multiple phonon mode reduction to a single effective frequency.
 	Temperature dependent, defaults to T=295 K.
-    
+
     Follows Hellwarth et al. 1999 PRB 'A' scheme, Eqn 50 RHS.
-	
+
 	UNTESTED AND UNCERTAIN CODE.
 """
 function HellwarthAScheme(LO,T=295)
@@ -132,14 +132,14 @@ B(v,w,β,α) = α*v/(sqrt(π)*(exp(β)-1)) * quadgk(x->f(x,v,w,β),0,β/2)[1]
 # 62e
 C(v,w,β)=3/4*(v^2-w^2)/v * (coth(v*β/2)-2/(v*β))
 # 62a
-F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) 
+F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 
 # Can now evaluate, e.g.
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
 # BUT - this is just the objective function! (The temperature-dependent free-energy.) Not the optimised parameters.
 # Also there's a scary numeric integration (quadgk) buried within...
 
-# In Julia we have 'Multiple dispatch', so let's just construct the Feynman (athermal) 
+# In Julia we have 'Multiple dispatch', so let's just construct the Feynman (athermal)
 # energy as the same signature, but without the thermodynamic beta
 
 # Integrand of (31) in Feynman I (Feynman 1955, Physical Review, "Slow electrons...")
@@ -151,14 +151,15 @@ F(v,w,α)=(3/(4*v))*(v-w)^2-AF(v,w,α)
 
 # Let's wrap the Feynman athermal variation approximation in a simple function
 """
-    feynmanvw(α)
+    feynmanvw(α; v=7.0, w=6.0)
 
-    Calculate v and w variational polaron parameters (Feynman original athermal action), 
+    Calculate v and w variational polaron parameters,
     for the supplied α Frohlich coupling.
-	Returns v,w. 
+    This version uses the original athermal action (Feynman 1955).
+	Returns v,w.
 """
-function feynmanvw(α)
-    initial=[7.0,6.0]
+function feynmanvw(α; v=7.0, w=6.0) # v,w defaults
+    initial=[v,w]
     # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
     lower=[0.1,0.1]
     upper=[1000.0,1000.0]
@@ -167,16 +168,54 @@ function feynmanvw(α)
 
     res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); optimizer=BFGS)
     # allow_f_increases=true,  - increases stability of algorithm, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
-    
+
     v,w=Optim.minimizer(res)
-    
+
+    return v,w
+end
+
+# Unbundled version of the finite temperature one
+"""
+    feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false)
+
+    Calculate v and w variational polaron parameters,
+    for the supplied α Frohlich coupling and βred reduced thermodynamic temperature.
+    This uses the Osaka finite temperature action.
+    Returns v,w.
+"""
+function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
+    # Initial v,w to use
+    initial=[v,w]
+    # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
+    lower=[0.1,0.1]
+    upper=[100.0,100.0]
+
+    myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
+    # Now updated to use Optim > 0.7.8 call signature (Julia >0.6 only)
+    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox();
+        optimizer=BFGS)
+    # allow_f_increases=true,
+    #  - increases stability of algorithm, particular when calling it for
+    #  a single, extreme value of temperature, but makes it more likely to
+    #  crash as it steps outside Fminbox(), le sigh.
+
+    minimum=Optim.minimizer(res)
+    print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
+    if verbose
+        println()
+        show(res)
+    end
+
+    v=minimum[1] # unpack these from minimised results
+    w=minimum[2]
+
     return v,w
 end
 
 # Structure to store data of polaron solution + other parameters, for each temperature
 struct Polaron
     T
-    # Mobilities 
+    # Mobilities
     Kμ; Hμ; FHIPμ
     # Spring constant and renormalised (phonon-drag) mass
     k; M
@@ -190,7 +229,7 @@ struct Polaron
     βred
     # Feynman polaron radius (Schultz), in SI units. Then also the small-alpha asymptotic approx
     rfsi; rfsmallalpha
-    # Setup of simulation. These parameters are sent to the function. 
+    # Setup of simulation. These parameters are sent to the function.
     # Alpha = Frohlich alpha
     α
     # Band effective mass
@@ -198,19 +237,19 @@ struct Polaron
     # Effective dielectric frequency
     ω
 end
-Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]) # structure initialisation 
+Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]) # structure initialisation
 
 """
-    polaronmobility(Trange, 
-                    ε_Inf, ε_S, freq, effectivemass; 
+    polaronmobility(Trange,
+                    ε_Inf, ε_S, freq, effectivemass;
                     verbose::Bool=false)
 
     Solves the Feynman polaron problem variationally with finite temperature
     Osaka energies.  From the resulting v, and w parameters, calculates polaron
     structure (wave function size, etc.).  Uses FHIP, Kadanoff (Boltzmann
     relaxation time) and Hellwarth direct contour integration to predict
-    a temperature-dependent mobility for the material system. 
-    Input is a temperature range (e.g. 10:50:1000), 
+    a temperature-dependent mobility for the material system.
+    Input is a temperature range (e.g. 10:50:1000),
     reduced dielectric constants (e.g. 5, 20),
     characteristic dielectric phonon frequency (e.g. 2.25E12) - units Hertz
     bare-band effective-mass (e.g. 012) - units electron mass.
@@ -218,32 +257,29 @@ Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]) # st
     Returns a structure of type Polaron, containing arrays of useful
     information.  Also prints a lot of information to the standard out - which
     may be more useful if you're just inquiring as to a particular data point,
-    rather than plotting a temperature-dependent parameter. 
+    rather than plotting a temperature-dependent parameter.
 
     As an example, to calculate the electron polaron in MAPI at 300 K:
     polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 """
 function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
-    println("\n\nPolaron mobility for system ε_Inf=$ε_Inf, ε_S=$ε_S, freq=$freq, 
+    println("\n\nPolaron mobility for system ε_Inf=$ε_Inf, ε_S=$ε_S, freq=$freq,
                  effectivemass=$effectivemass; with Trange $Trange ...")
 
     # Internally we we use 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
-    mb=effectivemass*MassElectron 
-    ω = (2*pi)*freq # angular-frequency, of the phonon mode 
-        
+    mb=effectivemass*MassElectron
+    ω = (2*pi)*freq # angular-frequency, of the phonon mode
+
     α=frohlichalpha(ε_Inf, ε_S,  freq,    effectivemass)
     #α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me
+
+    v=7.1 # starting guess for v,w variational parameters
+    w=6.5
 
     @printf("Polaron mobility input parameters: ε_Inf=%f ε_S=%f freq=%g α=%f \n",ε_Inf, ε_S, freq, α )
     @printf("Derived params in SI: ω =%g mb=%g \n",ω ,mb)
 
-    # Initial v,w to use
-    initial=[7.1,6.5]
-    # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
-    lower=[0.1,0.1]
-    upper=[100.0,100.0]
-
-    # Empty struct for storing data 
+    # Empty struct for storing data
     # A slightly better way of doing this ф_ф ...
     p=Polaron()
     # populate data structure with (athermal) parameters supplied...
@@ -252,30 +288,18 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
     append!(p.ω,ω)
 
     # We define βred as the subsuming the energy of the phonon; i.e. kbT c.f. ħω
-    for T in Trange 
+    for T in Trange
         β=1/(kB*T)
         βred=ħ*ω*β
         append!(p.βred,βred)
         @printf("T: %f β: %.3g βred: %.3g ħω  = %.3g meV\t",T,β,βred, 1E3* ħ*ω  / q)
-        myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
-        # Now updated to use Optim > 0.7.8 call signature (Julia >0.6 only) 
-        res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); 
-            optimizer=BFGS)
-        # allow_f_increases=true,  
-        #  - increases stability of algorithm, particular when calling it for
-        #  a single, extreme value of temperature, but makes it more likely to
-        #  crash as it steps outside Fminbox(), le sigh.
 
-        minimum=Optim.minimizer(res)
-        print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
-        if verbose
-            println()
-            show(res)
+        if T==0
+            v,w=feynmanvw(α, v=v,w=w)
+        else
+            v,w=feynmanvw(α,βred, v=v,w=w)
         end
-        
-        v=minimum[1] # unpack these from minimised results
-        w=minimum[2]
-            
+
         @printf("\n Polaraon Parameters:  v= %.4f  w= %.4f",v,w)
 
         # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
@@ -288,7 +312,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         append!(p.M,M)
 
         @printf("  ||   M=%f  k=%f\t",M,k)
-       
+
         @printf("\n Polaron frequency (SI) v= %.2g Hz  w= %.2g Hz",
                 v*ω /(2*pi),w*ω /(2*pi))
 
@@ -317,27 +341,27 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         append!(p.rfsi,rfsi)
 
         if (verbose)
-        scale=sqrt(2*mb*ω) # Note we're using mb; 
+        scale=sqrt(2*mb*ω) # Note we're using mb;
         #band effective-mass in SI units (i.e. meff*melectron)
-		
+
         rfa=(3/(0.44*α ))^0.5 # As given in Schultz1959(2.5a), but that 0.44 is actually 4/9
         @printf("\n\t Schultz1959(2.5a) with 0.44: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
-        rfa=(3/((4/9)*α ))^0.5 # Rederived from Feynman1955, 8-8-2017; Yellow 2017.B Notebook pp.33-34	
+        rfa=(3/((4/9)*α ))^0.5 # Rederived from Feynman1955, 8-8-2017; Yellow 2017.B Notebook pp.33-34
         @printf("\n\t Schultz1959(2.5a) with 4/9 re-derivation: Feynman α→0 expansion: rfa= %g (int units) = %g m [SI]",rfa,scale*rfa )
         append!(p.rfsmallalpha,scale*rfa)
 
-        rfb=3*(pi/2)^0.5 * α 
+        rfb=3*(pi/2)^0.5 * α
         @printf("\n\t Schultz1959(2.5b): Feynman α→∞ expansion: rf= %g (int units) = %g m [SI]",rfb,scale*rfb )
-        
+
         # Schultz1959 - Between (5.7) and (5.8) - resonance of Feynman SHM system
         phononfreq=sqrt(k/M)
         @printf("\n\t Schultz1959(5.7-5.8): fixed-e: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
- 
+
         phononfreq=sqrt(k/mu) # reduced mass
         @printf("\n\t Schultz1959(5.7-5.8): reducd mass: phononfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             phononfreq,phononfreq*ω /(2*pi), phononfreq*hbar*ω *1000/q)
-        
+
         @printf("\n\t Schultz1959: electronfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
             sqrt(k/1),sqrt(k/1)*ω /(2*pi), sqrt(k/1)*hbar*ω *1000/q)
         @printf("\n\t Schultz1959: combinedfreq= %g (int units) = %g [SI, Hz] = %g [meV]",
@@ -355,9 +379,9 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         append!(p.B,B(v,w,βred,α))
         append!(p.C,C(v,w,βred))
         append!(p.F,F(v,w,βred,α))
-        
 
-        # FHIP 
+
+        # FHIP
         #    - low-T mobility, final result of Feynman1962
         # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
         # I believe here β is in SI (expanded) units
@@ -366,14 +390,14 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("\n\tμ(FHIP)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
         append!(p.T,T)
         append!(p.FHIPμ,μ*100^2)
-        
+
 
         # Kadanoff
-        #     - low-T mobility, constructed around Boltzmann equation. 
+        #     - low-T mobility, constructed around Boltzmann equation.
         #     - Adds factor of 3/(2*beta) c.f. FHIP, correcting phonon emission behaviour
         # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mob
         μ=(w/v)^3 * (q)/(2*mb*ω*α) * exp(ħ*ω*β) * exp((v^2-w^2)/(w^2*v))
-        @printf("\n\tμ(Kadanoff,via Devreese2016)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
+        @printf("\n\tμ(Kadanoff,via Devreese2016)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
 
         append!(p.Kμ,μ*100^2)
 
@@ -387,9 +411,9 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         if (verbose)
             @printf("\n\texp(Bred): %f exp(-Bred): %f exp(Bred)-1: %f",exp(βred),exp(-βred),exp(βred)-1)
         end
-        Nbar=exp(-βred) 
+        Nbar=exp(-βred)
         #Note - this is only way to get Kadanoff1963 to be self-consistent with
-        #FHIP, and later statements (Devreese) of the Kadanoff mobility. 
+        #FHIP, and later statements (Devreese) of the Kadanoff mobility.
         #It suggests that Kadanoff used the wrong identy for Nbar in 23(b) for
         #the Gamma0 function, and should have used a version with the -1 to
         #account for Bose / phonon statistics
@@ -403,7 +427,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
             # Factor of omega to get it as a rate relative to phonon frequency
             # Factor of omega*hbar to get it as a rate per energy window
         μ=q/( mb*(M+1) * Gamma0 ) #(25) Kadanoff 1963, with SI effective mass
-        
+
         if (verbose) # these are cross-checks
             @printf("\n\tμ(Kadanoff1963 [Eqn. 25]) = %f m^2/Vs \t = %.2f cm^2/Vs",μ,μ*100^2)
             @printf("\n\t\t Eqm. Phonon. pop. Nbar: %f ",Nbar)
@@ -414,7 +438,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf(" \n\t\tTau=1/Gamma0 = %g = %f ps",
             2*pi/Gamma0, 2*pi*1E12/Gamma0)
         Eloss=hbar*ω * Gamma0/(2*pi) # Simply Energy * Rate
-        @printf("\n\t\tEnergy Loss = %g J/s = %g meV/ps",Eloss,Eloss * 1E3 / (q*1E12) ) 
+        @printf("\n\t\tEnergy Loss = %g J/s = %g meV/ps",Eloss,Eloss * 1E3 / (q*1E12) )
         append!(p.Tau, 2*pi*1E12/Gamma0) # Boosted into ps ?
 
 
@@ -425,7 +449,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         # need to do the explicit contour integration to get the polaron
         # self-energy
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-        
+
         #b=R*βred/sinh(b*βred*v/2) # This self-references b! What on Earth?
         # OK! I now understand that there is a typo in Hellwarth1999 and
         # Biaggio1997. They've introduced a spurious b on the R.H.S. compared to
@@ -435,20 +459,20 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
         k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
         K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
-        
+
         #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
         RHS= α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
         μ=RHS^-1 * (q)/(ω*mb)
-        @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)    
+        @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
         append!(p.Hμ,μ*100^2)
-        
+
         if (verbose)
         # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
         # So let's test this
         R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-        b=0 
+        b=0
         a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
-        k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
+        #k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
         K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
 
         #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
@@ -458,32 +482,33 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("\n\tError due to b=0; %f",(100^2*μ-p.Hμ[length(p.Hμ)])/(100^2*μ))
         #append!(Hμs,μ*100^2)
         end
+        @printf("\n") # blank line at end of spiel.
 
         # Recycle previous variation results (v,w) as next guess
         initial=[v,w] # Caution! Might cause weird sticking in local minima
-        
+
         append!(p.v,v)
         append!(p.w,w)
+
     end
 
-    @printf("\n") # blank line at end of spiel.
     return(p)
 end
 
 """
     savepolaron(fileprefix, p::Polaron)
 
-Saves data from polaron 'p' into file "fileprefix". 
-This is a simple space-delimited text file, with each entry a separate temperature, for plotting with Gnuplot or similar. 
+Saves data from polaron 'p' into file "fileprefix".
+This is a simple space-delimited text file, with each entry a separate temperature, for plotting with Gnuplot or similar.
 
 Structure of file is written to the header:
 # Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus, rfsis
 # 1    2     3    4     5      6   7   8   9  10  11  12  13    14     15
 """
-function savepolaron(fileprefix, p::Polaron) 
+function savepolaron(fileprefix, p::Polaron)
     println("Saving data to $fileprefix.dat ...")
     f=open("$fileprefix.dat","w")
-    
+
     @printf(f,"# %s\n",fileprefix) # put name / material at header
     @printf(f,"# Params in SI: ω =%g mb=%g \n",p.ω[1] ,p.mb[1])
     @printf(f,"# Alpha parameter: α = %f  \n",p.α[1] )
@@ -493,11 +518,10 @@ function savepolaron(fileprefix, p::Polaron)
 
     for i in 1:length(p.T)
         @printf(f,"%d %03f %g %g %g %g %g %g %g %g %g %g %g %g %g \n",
-        p.T[i], p.βred[i], p.Kμ[i], p.Hμ[i], p.FHIPμ[i], 
+        p.T[i], p.βred[i], p.Kμ[i], p.Hμ[i], p.FHIPμ[i],
         p.v[i], p.w[i],
-        p.k[i], p.M[i], p.A[i], p.B[i], p.C[i], p.F[i], 
+        p.k[i], p.M[i], p.A[i], p.B[i], p.C[i], p.F[i],
         p.Tau[i], p.rfsi[i])
     end
     close(f)
 end
-
