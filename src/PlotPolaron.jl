@@ -59,7 +59,7 @@ function plotpolaron(fileprefix, p::Polaron; extension="png")
     ## Polaron radius vs. Temperature
     plot(p.T,p.rfsi.*10^10, markersize=3,marker=:rect,
         label="Polaron radius",xlab="Temperature (K)",ylab="Polaron Radius (Angstrom)",ylims=(0,Inf))
-    plot!(p.T,p.rfsmallalpha.*10^10,label="T=0 Schultz small alpha polaron radius")
+#    plot!(p.T,p.rfsmallalpha.*10^10,label="T=0 Schultz small alpha polaron radius") # obsolete
     savefig("$fileprefix-radius.$extension")
 
     #####
