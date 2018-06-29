@@ -1,132 +1,102 @@
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   
-  <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Examples - PolaronMobility.jl Documentation</title>
-  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>Examples - PolaronMobility.jl Documentation</title>
+    <link href="../css/bootstrap-3.3.7.min.css" rel="stylesheet">
+    <link href="../css/font-awesome-4.7.0.css" rel="stylesheet">
+    <link href="../css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/highlight.css">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
 
-  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
-  <link rel="stylesheet" href="../css/highlight.css">
-  
-  <script>
-    // Current page data
-    var mkdocs_page_name = "Examples";
-    var mkdocs_page_input_path = "examples.md";
-    var mkdocs_page_url = "/examples/";
-  </script>
-  
-  <script src="../js/jquery-2.1.1.min.js"></script>
-  <script src="../js/modernizr-2.8.3.min.js"></script>
-  <script type="text/javascript" src="../js/highlight.pack.js"></script> 
-  
+    <script src="../js/jquery-3.2.1.min.js"></script>
+    <script src="../js/bootstrap-3.3.7.min.js"></script>
+    <script src="../js/highlight.pack.js"></script>
+    
+    <base target="_top">
+    <script>
+      var base_url = '..';
+      var is_top_frame = false;
+        
+        var pageToc = [
+          {title: "Loading the Module", url: "#_top", children: [
+          ]},
+          {title: "\u03b1/alpha parameter", url: "#alpha-parameter", children: [
+          ]},
+          {title: "Feynman athermal polaron", url: "#feynman-athermal-polaron", children: [
+          ]},
+          {title: "Single temperature phonon properties", url: "#single-temperature-phonon-properties", children: [
+          ]},
+          {title: "Hellwarth's multi-mode scheme", url: "#hellwarths-multi-mode-scheme", children: [
+          ]},
+          {title: "Temperature-dependent behaviour", url: "#temperature-dependent-behaviour", children: [
+          ]},
+          {title: "Plotting", url: "#plotting", children: [
+          ]},
+          {title: "Built in plotting", url: "#built-in-plotting", children: [
+          ]},
+          {title: "Further examples", url: "#further-examples", children: [
+          ]},
+        ];
+
+    </script>
+    <script src="../js/base.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      <script src="../assets/mathjaxhelper.js"></script> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body>
+<script>
+if (is_top_frame) { $('body').addClass('wm-top-page'); }
+</script>
 
-  <div class="wy-grid-for-nav">
 
-    
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
-      <div class="wy-side-nav-search">
-        <a href=".." class="icon icon-home"> PolaronMobility.jl Documentation</a>
-        <div role="search">
-  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-  </form>
-</div>
-      </div>
 
-      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-	<ul class="current">
-	  
-          
-            <li class="toctree-l1">
-		
-    <a class="" href="..">Home</a>
-	    </li>
-          
-            <li class="toctree-l1">
-		
-    <a class="" href="../scientific_discussion/">Scientific discussion</a>
-	    </li>
-          
-            <li class="toctree-l1 current">
-		
-    <a class="current" href="./">Examples</a>
-    <ul class="subnav">
-            
-    <li class="toctree-l2"><a href="#loading-the-module">Loading the Module</a></li>
+<div class="container-fluid wm-page-content">
+  <a name="_top"></a>
     
 
-    <li class="toctree-l2"><a href="#alpha-parameter">α/alpha parameter</a></li>
+  <div class="row wm-article-nav-buttons" role="navigation" aria-label="navigation">
+    
+    <div class="wm-article-nav pull-right">
+      <a href="../functions/" class="btn btn-xs btn-default pull-right">
+        Next
+        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      <a href="../functions/" class="btn btn-xs btn-link">
+        Functions provided
+      </a>
+    </div>
+    
+    <div class="wm-article-nav">
+      <a href="../scientific_discussion/" class="btn btn-xs btn-default pull-left">
+        <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        Previous</a><a href="../scientific_discussion/" class="btn btn-xs btn-link">
+        Scientific discussion
+      </a>
+    </div>
+    
+  </div>
+
     
 
-    <li class="toctree-l2"><a href="#single-temperature-phonon-properties">Single temperature phonon properties</a></li>
-    
-
-    <li class="toctree-l2"><a href="#hellwarths-multi-mode-scheme">Hellwarth's multi-mode scheme</a></li>
-    
-
-    <li class="toctree-l2"><a href="#temperature-dependent-behaviour">Temperature-dependent behaviour</a></li>
-    
-
-    <li class="toctree-l2"><a href="#built-in-plotting">Built in plotting</a></li>
-    
-
-    <li class="toctree-l2"><a href="#further-examples">Further examples</a></li>
-    
-
-    </ul>
-	    </li>
-          
-            <li class="toctree-l1">
-		
-    <a class="" href="../functions/">Functions provided</a>
-	    </li>
-          
-        </ul>
-      </div>
-      &nbsp;
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="..">PolaronMobility.jl Documentation</a>
-      </nav>
-
-      
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="breadcrumbs navigation">
-  <ul class="wy-breadcrumbs">
-    <li><a href="..">Docs</a> &raquo;</li>
-    
-      
-    
-    <li>Examples</li>
-    <li class="wy-breadcrumbs-aside">
-      
-    </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main">
-            <div class="section">
-              
-                <p>Perhaps the easiest way to understand the code is to see how it can be used for science.  As an example system, we are going to look at some of the basic polaron properties of methylammonium lead-iodide perovskite.</p>
+    <p>Perhaps the easiest way to understand the code is to see how it can be used for science.  As an example system, we are going to look at some of the basic polaron properties of methylammonium lead-iodide perovskite.</p>
+<p>The 'Feynman' units used internally set the LO phonon reduced frequency omega=1, hbar=1 and mass-of-electron=1. </p>
 <p><a id='Loading-the-Module-1'></a></p>
 <h2 id="loading-the-module">Loading the Module</h2>
-<p>First just run an import of the module, to see if Julia can find it.</p>
 <pre><code class="julia">using PolaronMobility 
 </code></pre>
 
@@ -155,6 +125,15 @@ println(&quot;CdTe  α=&quot;,α,&quot; Stone 0.39 / Devreese 0.29&quot;)
 </code></pre>
 
 <p>We get a value of <code>0.351</code>. </p>
+<p><a id='Feynman-athermal-polaron-1'></a></p>
+<h2 id="feynman-athermal-polaron">Feynman athermal polaron</h2>
+<p>Tabulated by Schultz (Phys.Rev. 116, 1959. https://doi.org/10.1103/PhysRev.116.526)  are some numeric solutions to the athermal Feynman model. These values are often reproduced in the textbooks (e.g. Feynman &amp; Hibbs, Emended Edition, p. 319).  For instance, Schultz gets for <code>α=5</code>, <code>v=4.02</code>, <code>w=2.13</code> and <code>E=-5.4401</code>. </p>
+<pre><code>julia&gt; v,w=feynmanvw(5.0)
+(4.0343437574170915, 2.1400182510339403)
+julia&gt; F(v,w,5.0)
+-5.440144454909065
+</code></pre>
+
 <p><a id='Single-temperature-phonon-properties-1'></a></p>
 <h2 id="single-temperature-phonon-properties">Single temperature phonon properties</h2>
 <p>Let us calculate the room-temperature (300 K) character of the electron-polaron in methylammonium lead iodide perovskite (MAPI).  The parameters we use are as in <code>Frost2017PRB</code>.</p>
@@ -190,7 +169,7 @@ T: 300.000000 β: 2.41e+20 βred: 0.36 ħω  = 9.31 meV     Converged? : true
 <p>Values that can be directly derived from these <code>v</code> and <code>w</code> variational parameters are then displayed.  This includes the phonon-drag mass renormalisation (<code>M</code>), the effective spring-constant of this drag (<code>k</code>), and the S.I. oscillation rates <code>v</code> and <code>w</code> in <code>Hz</code>.   The Schultz polaron size (rf) is outputted in various units.  The total polaron energy (as well as its decomposition into free-energy contributions) is also output (<code>A,B,C; and F</code>).  Essentially we are just using <code>Julia</code> as a glorified scientific calculator at this point, but with the units checked. </p>
 <p>The polaron theories are constructed in reduced units. Generally this means that energy is in units of ħω, and frequencies in a unit of ω (of the input phonon frequency). For convenience, these are re-printed in SI or more standard units. </p>
 <p>Beyond <code>Polaron Mobility theories:</code>, the code enters its final phase and uses the <code>v</code> and <code>w</code> parameters specifying the polaron as an input to theories of mobility, and so directly calculate a charge carrier mobility. </p>
-<p>The asymtotic 'FHIP' mobility (low T) is calculated, this can be most easily related to textbook expressions that directly infer a mobility from an <code>α</code> parameter. It lacks optical phonon emission, and so shows pathological high temperature (kT &gt; ħω) behaviour. </p>
+<p>The asymptotic 'FHIP' mobility (low T) is calculated, this can be most easily related to textbook expressions that directly infer a mobility from an <code>α</code> parameter. It lacks optical phonon emission, and so shows pathological high temperature (kT &gt; ħω) behaviour. </p>
 <p>The Kadanoff mobility (see the original paper) improves on this by assuming a Boltzmann process (independent scattering events).  From this theory we can also get an average scattering time, which we relate to the time-scale of the polaron interacting with the phonon cloud, and so to the rate of polaron cooling. </p>
 <p>Finally the Hellwarth1999 scheme is used, which goes back to the original 1962 FHIP paper, and directly carries out the contour integral for the polaron impedance function. We improve on this slightly by explicitly calculating with <code>b</code>, though the approximation <code>b=0</code> makes very little difference for any so-far tested materials. </p>
 <p>The data are also returned as a packed up in type of <code>struct Polaron</code> with fields of (<code>T, Kμ, Hμ, FHIPμ, k, M, A, B, C, F, Tau, v, w, βred, rfsi, rfsmallalpha, α, mb, ω</code>).</p>
@@ -235,73 +214,67 @@ Hellwarth (61) Omega (freq): 500.08501275972833
 savepolaron(&quot;MAPI-electron&quot;,MAPIe)
 </code></pre>
 
-<p><code>savepolaron</code> outputs a column-delimited text file for post-production plotting (with gnuplot) or similar.</p>
+<p><a id='Plotting-1'></a></p>
+<h2 id="plotting">Plotting</h2>
+<p>For publication, <code>savepolaron</code> outputs a column-delimited text file for post-production plotting (with gnuplot) or similar.</p>
+<pre><code>savepolaron(&quot;MAPI-electron&quot;,MAPIe)
+</code></pre>
+
 <p>Example <code>gnuplot</code> scripts can be found in <a href="https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/">Examples</a> and <a href="http://github.com/jarvist/PolaronMobility.jl/tree/master/HalidePerovskites/">HalidePerovskites</a>.</p>
 <p><a id='Built-in-plotting-1'></a></p>
 <h2 id="built-in-plotting">Built in plotting</h2>
 <p>The convenience function <code>plotpolaron</code> generates (and saves) a number of <code>Plots.jl</code> figures of the temperature dependent behaviour.</p>
 <p>It has been separated off into its own submodule (<code>PlotPolaron</code>), so that the <code>Plots.jl</code> dependency does not slow down loading of <code>PolaronMobility.jl</code>.</p>
-<p>We therefore need to inform Julia where to find PlotPolaron,</p>
+<p>To use it, we therefore need to inform Julia where to find PlotPolaron. A suitable initialisation script was kindly supplied by @wkearn:</p>
 <pre><code class="julia">
-push!(LOAD_PATH,&quot;../src/&quot;) 
+using PolaronMobility, Plots
+gr()
+include(Pkg.dir(&quot;PolaronMobility&quot;,&quot;src&quot;,&quot;PlotPolaron.jl&quot;))
 using PlotPolaron
-plotpolaron(&quot;MAPI-electron&quot;, MAPIe)
 </code></pre>
 
+<p>As with savepolaron, the call signature is output-file-string and then the polaron object which you have calculated.</p>
+<pre><code class="julia">plotpolaron(&quot;MAPI-electron&quot;,MAPIe)
+</code></pre>
+
+<p>This will attempt to make fairly sensible defaults, and plot a lot of different data of sufficient quality for talk slides.</p>
 <p>Here is a figure showing typical temperature-dependent behaviour of the three-different polaron mobility approximations, for MAPI.</p>
 <p><img alt="MAPI mobility" src="../assets/MAPI-mobility.png" /></p>
 <p><a id='Further-examples-1'></a></p>
 <h2 id="further-examples">Further examples</h2>
 <p>More complete examples are provided in  <a href="https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/">Examples</a> and <a href="http://github.com/jarvist/PolaronMobility.jl/tree/master/HalidePerovskites/">HalidePerovskites</a>.</p>
-              
-            </div>
-          </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../functions/" class="btn btn-neutral float-right" title="Functions provided">Next <span class="icon icon-circle-arrow-right"></span></a>
-      
-      
-        <a href="../scientific_discussion/" class="btn btn-neutral" title="Scientific discussion"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-      
+
+  <br>
+    
+
+  <div class="row wm-article-nav-buttons" role="navigation" aria-label="navigation">
+    
+    <div class="wm-article-nav pull-right">
+      <a href="../functions/" class="btn btn-xs btn-default pull-right">
+        Next
+        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      <a href="../functions/" class="btn btn-xs btn-link">
+        Functions provided
+      </a>
     </div>
-  
-
-  <hr/>
-
-  <div role="contentinfo">
-    <!-- Copyright etc -->
+    
+    <div class="wm-article-nav">
+      <a href="../scientific_discussion/" class="btn btn-xs btn-default pull-left">
+        <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        Previous</a><a href="../scientific_discussion/" class="btn btn-xs btn-link">
+        Scientific discussion
+      </a>
+    </div>
     
   </div>
 
-  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
-</footer>
-      
-        </div>
-      </div>
-
-    </section>
-
-  </div>
-
-  <div class="rst-versions" role="note" style="cursor: pointer">
-    <span class="rst-current-version" data-toggle="rst-current-version">
-      
-      
-        <span><a href="../scientific_discussion/" style="color: #fcfcfc;">&laquo; Previous</a></span>
-      
-      
-        <span style="margin-left: 15px"><a href="../functions/" style="color: #fcfcfc">Next &raquo;</a></span>
-      
-    </span>
+    <br>
 </div>
-    <script>var base_url = '..';</script>
-    <script src="../js/theme.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
-      <script src="../assets/mathjaxhelper.js"></script>
-      <script src="../search/require.js"></script>
-      <script src="../search/search.js"></script>
+
+<footer class="col-md-12 wm-page-content">
+  <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a> using <a href="https://github.com/gristlabs/mkdocs-windmill">Windmill</a> theme by Grist Labs.</p>
+</footer>
 
 </body>
 </html>
