@@ -166,8 +166,10 @@ function feynmanvw(α; v=7.0, w=6.0) # v,w defaults
 
     myf(x) = F(x[1],x[2],α) # Wraps the function so just the two variational params are exposed
 
-    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox(); optimizer=BFGS)
-    # allow_f_increases=true,  - increases stability of algorithm, but makes it more likely to crash as it steps outside Fminbox(), le sigh.
+    # Now updated to use Optim.jl > 0.15.0 call signature (Julia >0.6 only)
+    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
+                 lower, upper, initial, Fminbox( BFGS() ) )
+    # specify Optim.jl optimizer. This is doing all the work.
 
     v,w=Optim.minimizer(res)
 
@@ -191,13 +193,11 @@ function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
     upper=[100.0,100.0]
 
     myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
-    # Now updated to use Optim > 0.7.8 call signature (Julia >0.6 only)
-    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), initial, lower, upper, Fminbox();
-        optimizer=BFGS)
-    # allow_f_increases=true,
-    #  - increases stability of algorithm, particular when calling it for
-    #  a single, extreme value of temperature, but makes it more likely to
-    #  crash as it steps outside Fminbox(), le sigh.
+    
+    # Now updated to use Optim > 0.15.0 call signature (Julia >0.6 only)
+    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
+                 lower, upper, initial, Fminbox( BFGS() ) )
+    # specify Optim.jl optimizer. This is doing all the work.
 
     minimum=Optim.minimizer(res)
     print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
