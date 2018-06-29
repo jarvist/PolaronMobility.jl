@@ -218,7 +218,6 @@ range to the `polaronmobility` function.
 
 ```julia
 MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
-savepolaron("MAPI-electron",MAPIe)
 ```
 
 ## Plotting
@@ -226,7 +225,7 @@ savepolaron("MAPI-electron",MAPIe)
 For publication, `savepolaron` outputs a column-delimited text file for post-production plotting
 (with gnuplot) or similar.
 
-```
+```julia
 savepolaron("MAPI-electron",MAPIe)
 ```
 
@@ -246,7 +245,6 @@ To use it, we therefore need to inform Julia where to find PlotPolaron.
 A suitable initialisation script was kindly supplied by @wkearn:
 
 ```julia
-
 using PolaronMobility, Plots
 gr()
 include(Pkg.dir("PolaronMobility","src","PlotPolaron.jl"))
@@ -261,6 +259,13 @@ plotpolaron("MAPI-electron",MAPIe)
 ```
 This will attempt to make fairly sensible defaults, and plot a lot of different
 data of sufficient quality for talk slides.
+
+Much for the functionality has been unrolled into the [Jupyter Notebook
+example](https://github.com/jarvist/PolaronMobility.jl/blob/master/JuliaBox-Example.ipynb),
+which should also be interactively-runnable from (https://juliabox.com). See
+the repository
+[README.md](https://github.com/jarvist/PolaronMobility.jl/blob/master/README.md#juliabox)
+for the latest information.
 
 Here is a figure showing typical temperature-dependent behaviour of the
 three-different polaron mobility approximations, for MAPI.
