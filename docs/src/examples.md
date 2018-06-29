@@ -3,9 +3,10 @@ science.
 As an example system, we are going to look at some of the basic polaron
 properties of methylammonium lead-iodide perovskite.
 
-## Loading the Module
+The 'Feynman' units used internally set the LO phonon reduced frequency
+omega=1, hbar=1 and mass-of-electron=1. 
 
-First just run an import of the module, to see if Julia can find it.
+## Loading the Module
 
 ```julia
 using PolaronMobility 
@@ -49,6 +50,21 @@ println("CdTe  α=",α," Stone 0.39 / Devreese 0.29")
 ```
 
 We get a value of `0.351`. 
+
+## Feynman athermal polaron
+
+Tabulated by Schultz (Phys.Rev. 116, 1959.
+https://doi.org/10.1103/PhysRev.116.526)  are some numeric solutions to the
+athermal Feynman model. These values are often reproduced in the textbooks
+(e.g. Feynman & Hibbs, Emended Edition, p. 319). 
+For instance, Schultz gets for `α=5`, `v=4.02`, `w=2.13` and `E=-5.4401`. 
+
+```
+julia> v,w=feynmanvw(5.0)
+(4.0343437574170915, 2.1400182510339403)
+julia> F(v,w,5.0)
+-5.440144454909065
+```
 
 ## Single temperature phonon properties
 
@@ -127,7 +143,7 @@ the `v` and `w` parameters specifying the polaron as an input to theories of
 mobility, and so directly calculate a charge carrier mobility. 
 
 
-The asymtotic 'FHIP' mobility (low T) is calculated, this can be most easily
+The asymptotic 'FHIP' mobility (low T) is calculated, this can be most easily
 related to textbook expressions that directly infer a mobility from an `α`
 parameter. It lacks optical phonon emission, and so shows pathological high
 temperature (kT > ħω) behaviour. 
@@ -205,8 +221,14 @@ MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 savepolaron("MAPI-electron",MAPIe)
 ```
 
-`savepolaron` outputs a column-delimited text file for post-production plotting
+## Plotting
+
+For publication, `savepolaron` outputs a column-delimited text file for post-production plotting
 (with gnuplot) or similar.
+
+```
+savepolaron("MAPI-electron",MAPIe)
+```
 
 Example `gnuplot` scripts can be found in
 [Examples](https://github.com/jarvist/PolaronMobility.jl/tree/master/examples/) and
@@ -220,14 +242,25 @@ The convenience function `plotpolaron` generates (and saves) a number of
 It has been separated off into its own submodule (`PlotPolaron`), so that the
 `Plots.jl` dependency does not slow down loading of `PolaronMobility.jl`.
 
-We therefore need to inform Julia where to find PlotPolaron,
+To use it, we therefore need to inform Julia where to find PlotPolaron.
+A suitable initialisation script was kindly supplied by @wkearn:
 
 ```julia
 
-push!(LOAD_PATH,"../src/") 
+using PolaronMobility, Plots
+gr()
+include(Pkg.dir("PolaronMobility","src","PlotPolaron.jl"))
 using PlotPolaron
-plotpolaron("MAPI-electron", MAPIe)
 ```
+
+As with savepolaron, the call signature is output-file-string and then the
+polaron object which you have calculated.
+
+```julia
+plotpolaron("MAPI-electron",MAPIe)
+```
+This will attempt to make fairly sensible defaults, and plot a lot of different
+data of sufficient quality for talk slides.
 
 Here is a figure showing typical temperature-dependent behaviour of the
 three-different polaron mobility approximations, for MAPI.

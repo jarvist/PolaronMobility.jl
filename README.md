@@ -127,3 +127,6 @@ free-energy expressions) useful for your work, please cite the paper
 }
 ```
 
+These codes use the `Optim.jl` optimisation library to do the essential calculation in the Feynman variational theory. 
+[![DOI](http://joss.theoj.org/papers/10.21105/joss.00615/status.svg)](https://doi.org/10.21105/joss.00615)
+

@@ -1,6 +1,7 @@
 println("FeynmanAthermal Tests - check athermal feynmanvw(α) -> v,w literature values.")
 
 # Results from Feynman & Hibbs, Emended Edition, p 319.
+# α v w E
 Schultz=[
 3.00 3.44 2.55 -3.1333
 5.00 4.02 2.13 -5.4401
