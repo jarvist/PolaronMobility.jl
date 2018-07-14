@@ -37,10 +37,13 @@ end
 
 	UNTESTED AND UNCERTAIN CODE.
 """
-function HellwarthAScheme(LO,T=295)
+function HellwarthAScheme(LO; T=295)
     println("Hellwarth A scheme...T=$T K")
-    β=LO[:,1].*2*pi*1E12*ħ/(kB*T) #assuming units of THz
-    H50 = sum( ((LO[:,2].^2).*coth.(β))./LO[:,1] )
+    omega=LO[:,1] # No unit conversion
+    #omega=LO[:,1].*2*pi*1E12 # THz --> Hz
+    #omega=LO[:,1].*2*pi*0.02998*1E12 # cm^-1 --> Hz
+    β=(omega.*ħ)/(kB*T) #assuming units SI 
+    H50 = sum( ((LO[:,2].^2).*coth.(β))./omega )
     println("Hellwarth (50) summation: ",H50)
 
     H51= sum( LO[:,2].^2 ) # sum of total ir activity squarred
@@ -54,13 +57,15 @@ function HellwarthAScheme(LO,T=295)
     freq=0.0 #required for Julia 0.5 so it realises variable still required for return.
     # Very primitive manner to decouple Omega from both sides of the eqn.
 	# Should really rewrite as a bisection (at least!)
-    for freq in 0.1:0.1:20
-        pseudo_omega=omegacoth*coth(freq * 2*pi*1E12*ħ/(2*kB*T))
+    maxfreq=maximum(omega)
+    for freq in 0.1:maxfreq/2500:maxfreq
+        pseudo_omega=omegacoth/coth(freq * ħ/(2*kB*T))
         if freq>pseudo_omega
             println("freq: $freq pseudo-omega: $pseudo_omega")
+            println("freq: ",freq/(2*pi*0.02998*1E12), " pseudo-omega: ",pseudo_omega/(2*pi*0.02998*1E12))
             break
         end
     end
-	return(freq)
+	return freq
 end
 

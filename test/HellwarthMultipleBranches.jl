@@ -138,4 +138,33 @@ println("\t MAPI: (low-frequency, non molecular IR, only)")
 Bscheme=HellwarthBScheme(MAPI_low)
 println(Bscheme, " ~= 2.25 THz")
 
-@test Bscheme ≈ 2.25 atol=0.01 
+println("\n\nHellwarth1999 (party like it's)")
+
+Hellwarth=
+[
+106.23 8.86 
+160.51 9.50 
+180.33 20.85
+206.69 10.05
+252.76 27.00
+369.64 61.78
+501.71 52.87
+553.60 86.18
+585.36 75.41
+607.29 98.15
+834.53 89.36
+]
+
+println("\nHellwarth B scheme... Hellwarth data...")
+Bscheme=HellwarthBScheme(Hellwarth)
+println(Bscheme, " ~= W 196.9 cm^-1  Ω = 500 cm^-1")
+
+println("\nHellwarth A scheme T=0... Hellwarth data...")
+Ascheme=HellwarthAScheme(Hellwarth,T=0)
+
+println("\nHellwarth A scheme T=295... Hellwarth data...")
+Ascheme=HellwarthAScheme(Hellwarth,T=295)
+println(Ascheme, " ~= W 196.9 cm^-1   Ω = 504 cm^-1")
+
+@test Bscheme ≈ 2.25 atol=0.01
+
