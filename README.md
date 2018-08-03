@@ -46,6 +46,18 @@ To install, type the following at the Julia REPL:
 julia> Pkg.clone("https://github.com/Jarvist/PolaronMobility.jl.git")
 ```
 
+### Common errors
+
+Often errors discoverd when trying to run these codes are related to changes in the interface to [`Optim.jl`](https://github.com/JuliaNLSolvers/Optim.jl)
+
+This general appears as a MethodError with the internal Optim type, perhaps similar to:
+`MethodError: Cannot convert an object of type Optim.BFGS{...`
+
+You may want to check the Optim package version and status:
+`Pkg.status("Optim")`
+
+The present versions of the code require `Optim 0.15-`.
+
 ## JuliaBox
 
 There is an [example notebook](JuliaBox-Example.ipynb) which can be run interactively on the (free) JuliaBox notebook server. This is the fastest way to calculate a few polaron parameters, if you do not have Julia.
@@ -55,6 +67,7 @@ There is an [example notebook](JuliaBox-Example.ipynb) which can be run interact
 3) Enter `https://github.com/jarvist/PolaronMobility.jl.git` (this repository) as the git URL
 4) Auto-filled defaults are fine; click '+' and wait for it to clone
 5) You should now have a `PolaronMobility` directory in your JuliaBox, with the above notebook inside.
+5b) As of 2nd Aug 2018, you a more modern version of the `Optim` package than comes as default on JuliaBox. Click on 'Packages' from the root page. Within the new pop-up window type `Optim` into the 'registered package box', click '+' to add it to your list, then click on the 'build' button. Hopefully a new Julia image with an updated Optim will be built.
 6) Once setup, you can save the Notebook URL as a bookmark: [https://juliabox.com/notebook/notebooks/PolaronMobility/JuliaBox-Example.ipynb]
 
 ## Using
