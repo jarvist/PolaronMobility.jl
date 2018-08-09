@@ -54,7 +54,7 @@ function HellwarthAScheme(LO; T=295)
     omegacoth=H51/H50
     println("omegacoth: ",omegacoth)
 
-    freq=0.0 #required for Julia 0.5 so it realises variable still required for return.
+    solnfreq=0.0 #required for Julia 0.5 so it realises variable still required for return.
     # Very primitive manner to decouple Omega from both sides of the eqn.
 	# Should really rewrite as a bisection (at least!)
     maxfreq=maximum(omega)
@@ -63,9 +63,10 @@ function HellwarthAScheme(LO; T=295)
         if freq>pseudo_omega
             println("freq: $freq pseudo-omega: $pseudo_omega")
             println("freq: ",freq/(2*pi*0.02998*1E12), " pseudo-omega: ",pseudo_omega/(2*pi*0.02998*1E12))
+            solnfreq=freq
             break
         end
     end
-	return freq
+	return solnfreq
 end
 

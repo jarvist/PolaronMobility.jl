@@ -3,6 +3,9 @@
 
 push!(LOAD_PATH,"../src/") # load module from local directory
 using PolaronMobility 
+using Test
+
+@testset "HellwarthEffectiveFrequency" begin
 
 # ((freq THz)) ((IR Activity / e^2 amu^-1))
 # These data from MAPbI3-Cubic_PeakTable.csv
@@ -137,6 +140,7 @@ println("\t MAPI: (low-frequency, non molecular IR, only)")
 
 Bscheme=HellwarthBScheme(MAPI_low)
 println(Bscheme, " ~= 2.25 THz")
+@test Bscheme ≈ 2.25 atol=0.01
 
 println("\n\nHellwarth1999 (party like it's)")
 
@@ -166,5 +170,6 @@ println("\nHellwarth A scheme T=295... Hellwarth data...")
 Ascheme=HellwarthAScheme(Hellwarth,T=295)
 println(Ascheme, " ~= W 196.9 cm^-1   Ω = 504 cm^-1")
 
-@test Bscheme ≈ 2.25 atol=0.01
+
+end
 
