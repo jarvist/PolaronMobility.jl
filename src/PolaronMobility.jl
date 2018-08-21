@@ -11,11 +11,6 @@ export HellwarthBScheme, HellwarthAScheme
 export ImX
 
 ##### load in library routines... #####
-# stdlib
-using LinearAlgebra
-using Printf
-
-
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
 

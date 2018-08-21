@@ -1,7 +1,7 @@
 push!(LOAD_PATH,"../src/") # load module from local directory
 
 using PolaronMobility
-using Test
+using Base.Test
 
 @testset "PolaronMobility" begin
 
