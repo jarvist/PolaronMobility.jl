@@ -1,3 +1,5 @@
+@testset "FeynmanAthermal tests" begin
+
 println("FeynmanAthermal Tests - check athermal feynmanvw(α) -> v,w literature values.")
 
 # Results from Feynman & Hibbs, Emended Edition, p 319.
@@ -22,5 +24,7 @@ for r in rows(Schultz)
     @test v ≈ vSchultz atol=0.1 # Strangely these need more tolerance than the Energies
     @test w ≈ wSchultz atol=0.1
     @test E ≈ ESchultz atol=0.001
+end
+
 end
 
