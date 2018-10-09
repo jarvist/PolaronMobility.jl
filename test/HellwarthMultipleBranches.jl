@@ -1,10 +1,6 @@
 # HellwarthEffectiveFrequency.jl 
 #   - use Hellwarth et al. 1999 PRB method to reduce multiple phonon modes to a single effective frequency
 
-push!(LOAD_PATH,"../src/") # load module from local directory
-using PolaronMobility 
-using Base.Test
-
 @testset "HellwarthEffectiveFrequency" begin
 
 # ((freq THz)) ((IR Activity / e^2 amu^-1))
