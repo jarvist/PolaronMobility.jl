@@ -40,12 +40,12 @@ is perhaps easiest to read and understand alongside the first paper:
 ## Local installation
 
 These codes require Julia >0.6 . They are structured as a full Julia package,
-but are not yet registered with the central METADATA package repository. 
+but and are registered with the central METADATA package repository. 
 
 To install, type the following at the Julia REPL:
 
 ```
-julia> Pkg.clone("https://github.com/Jarvist/PolaronMobility.jl.git")
+julia> import Pkg; Pkg.add("PolaronMobility")
 ```
 
 ### Common errors
