@@ -34,7 +34,7 @@ function plotpolaron(fileprefix, p::Polaron; extension="png")
 
     ####
     ## Variational parameters, v and w vs. Temperature plot
-    plot(p.T,p.v,label="v",markersize=3, marker=:rect, xlab="Temperature (K)",ylab="\hbar\omega")
+    plot(p.T,p.v,label="v",markersize=3, marker=:rect, xlab="Temperature (K)",ylab="hbar-omega")
     plot!(p.T,p.w,label="w",markersize=3, marker=:diamond)
 
     savefig("$fileprefix-vw.$extension")

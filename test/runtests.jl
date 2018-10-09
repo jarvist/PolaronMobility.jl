@@ -1,7 +1,12 @@
 push!(LOAD_PATH,"../src/") # load module from local directory
 
 using PolaronMobility
-using Test
+
+if VERSION < v"0.7.0-DEV.2005"
+    using Base.Test
+else
+    using Test
+end
 
 @testset "PolaronMobility" begin
 
