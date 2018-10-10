@@ -12,8 +12,10 @@ export ImX
 
 ##### load in library routines... #####
 # stdlib
-using LinearAlgebra
-using Printf
+if VERSION > v"0.7.0-DEV.2005"
+    using LinearAlgebra
+    using Printf
+end
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
 
@@ -27,12 +29,12 @@ const me=MassElectron = 9.10938188e-31;                          # kg
 const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
-include("types.jl") # Polaron type
-include("FeynmanTheory.jl") # Actions + variational functions  
-include("HellwarthTheory.jl") # multimode -> equivalent mode.
+include("types.jl")            # Polaron types
+include("FeynmanTheory.jl")    # Actions + variational functions  
+include("HellwarthTheory.jl")  # multimode -> equivalent mode.
 include("MobilityTheories.jl") # Main polaronmobility function 
-include("Susceptibility.jl") # ImX calculation
-include("OedipusRex.jl") # Optical Absorption
+include("Susceptibility.jl")   # ImX calculation
+include("OedipusRex.jl")       # Optical Absorption
 
 end # module
 
