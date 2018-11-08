@@ -75,3 +75,12 @@ println("Corrected B (62c, electron-phonon free energy, but corrected as Osaka."
 PolaronMobility.B(v,w,β,α) = exp(β)* α*v/(sqrt(π)*(exp(β)-1)) * quadgk(x->PolaronMobility.f(x,v,w,β),0,β/2)[1]
 HellwarthTableIII()
 
+end
+
+# Taking it back to where it all started; directly doing the full integral in Osaka1959
+OsakaIntegrand(t,v,w,β) = exp(-t) / sqrt( w^2*t*(1-t/β) + (v^2-w^2)/v  *(1-exp(-v*t)+(1-coth(v/2*β)*(cosh(v*t)-1))) )  
+PolaronMobility.B(v,w,β,α) = 1/sqrt(pi) * α*v* exp(β)/(exp(β)-1) * quadgk(x->OsakaIntegrand(x,v,w,β),0,β)
+# CURRENTLY BROKEN (!)
+# sqrt(x) in the integrand is taken negative; so Julia throws a hissy fit - not expecting to find Imaginary values.
+HellwarthTableIII()
+
