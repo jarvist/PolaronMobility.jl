@@ -116,16 +116,16 @@ function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
                  lower, upper, initial, Fminbox( BFGS() ) )
     # specify Optim.jl optimizer. This is doing all the work.
 
-    minimum=Optim.minimizer(res)
-    print("\tConverged? : ",Optim.converged(res) ) # All came out as 'true'
+    if Optim.converged(res) == false
+        print("\tWARNING: Failed to converge to v,w soln? : ",Optim.converged(res) )
+    end
+
     if verbose
         println()
         show(res)
     end
 
-    v=minimum[1] # unpack these from minimised results
-    w=minimum[2]
-
+    v,w=Optim.minimizer(res)
     return v,w
 end
 
