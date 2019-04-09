@@ -21,6 +21,7 @@ The mobility is calculated in three ways:
 1) numerically by integrating the polaron self-energy along the imaginary axis (`Hellwarth1999`)
 2) using the Kadanoff Boltzmann equation approximation (`Kadanoff1963`)
 3) using the FHIP low-temperature asymptotic solution (`FHIP`)
+
 These three methods are in approximately descending order of accuracy. 
 
 We provide parameters for various metal-halide Perovskites, and other
