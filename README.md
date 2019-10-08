@@ -15,13 +15,16 @@ The electron-phonon coupling is treated as an effective α (alpha) Frohlich
 Hamiltonian parameter. 
 The band structure is treated with an effective mass theory. 
 The variational problem is solved numerically for finite-temperature free
-energies, rather than by the asymptotic solutions to the athermal energies, as
-often found in the textbooks.  
-The mobility is calculated numerically by integrating the polaron self-energy
-along the imaginary axis, as well as with the Kadanoff Boltzmann equation
-approximation, and the FHIP low-temperature asymptotic solution. 
+energies. 
+(The original 1960s work, and thus textbook solutions, often use asymptotic approximations to the integrals, with a more simple athermal action.)   
+The mobility is calculated in three ways:
+1) numerically by integrating the polaron self-energy along the imaginary axis (`Hellwarth1999`)
+2) using the Kadanoff Boltzmann equation approximation (`Kadanoff1963`)
+3) using the FHIP low-temperature asymptotic solution (`FHIP`)
 
-We provided parameters for various metal-halide Perovskites, and other
+These three methods are in approximately descending order of accuracy. 
+
+We provide parameters for various metal-halide Perovskites, and other
 interesting systems.
 
 The motivation for developing these codes was to enable polaron mobility
@@ -60,17 +63,14 @@ You may want to check the Optim package version and status:
 
 The present versions of the code require `Optim 0.15-`.
 
-## JuliaBox
+## Polarons in the cloud
 
-There is an [example notebook](JuliaBox-Example.ipynb) which can be run interactively on the (free) JuliaBox notebook server. This is the fastest way to calculate a few polaron parameters, if you do not have Julia.
+There is an [example notebook](JuliaBox-Example.ipynb) which can be run interactively on the (free) MyBinder notebook server. This is the fastest way to calculate a few polaron parameters, if you do not have Julia.
 
-1) Login to [Juliabox](https://juliabox.com).
-2) Click on the 'git' button
-3) Enter `https://github.com/jarvist/PolaronMobility.jl.git` (this repository) as the git URL
-4) Auto-filled defaults are fine; click '+' and wait for it to clone
-5) You should now have a `PolaronMobility` directory in your JuliaBox, with the above notebook inside.
-5b) As of 2nd Aug 2018, you a more modern version of the `Optim` package than comes as default on JuliaBox. Click on 'Packages' from the root page. Within the new pop-up window type `Optim` into the 'registered package box', click '+' to add it to your list, then click on the 'build' button. Hopefully a new Julia image with an updated Optim will be built.
-6) Once setup, you can save the Notebook URL as a bookmark: [https://juliabox.com/notebook/notebooks/PolaronMobility/JuliaBox-Example.ipynb]
+1) Click on [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jarvist/PolaronMobility.jl/master?filepath=JuliaBox-Example.ipynb)
+2) That's it!
+
+(Currently plotting does not work, as the Docker image is not built with the (heavy weight) Plots dependency, and I'm not sure how I can do this just for MyBinder, without requiring it generally for PolaronMobility.jl. If this is problematic for you, please open an issue and I'll try to fix it!)
 
 ## Using
 
@@ -142,6 +142,6 @@ free-energy expressions) useful for your work, please cite the paper
 }
 ```
 
-These codes use the `Optim.jl` optimisation library to do the essential calculation in the Feynman variational theory. 
+These codes use the `Optim.jl` optimisation library to do the essential calculation of the Feynman variational theory. 
 [![DOI](http://joss.theoj.org/papers/10.21105/joss.00615/status.svg)](https://doi.org/10.21105/joss.00615)
 
