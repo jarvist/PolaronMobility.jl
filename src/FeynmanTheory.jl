@@ -50,7 +50,7 @@ function feynmanvw(α; v=7.0, w=6.0) # v,w defaults
     lower=[0.1,0.1]
     upper=[1000.0,1000.0]
 
-    myf(x) = F(x[1],x[2],α) # Wraps the function so just the two variational params are exposed
+    myf(x) = F(x[1],x[2],α) # Wraps the function so just the two variational params are exposed, so that Optim can call it
 
     # Now updated to use Optim.jl > 0.15.0 call signature (Julia >0.6 only)
     res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
@@ -88,18 +88,16 @@ C(v,w,β)=3/4*(v^2-w^2)/v * (coth(v*β/2)-2/(v*β))
 # 62a
 F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 
-# Can now evaluate, e.g.
+# Can now evaluate the polaron temperature-dependent free-energy, from the solved v,w parameters, e.g.
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
-# BUT - this is just the objective function! (The temperature-dependent free-energy.) Not the optimised parameters.
-# Also there's a scary numeric integration (quadgk) buried within...
 
-# Unbundled version of the finite temperature one
 """
     feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false)
 
-    Calculate v and w variational polaron parameters,
-    for the supplied α Frohlich coupling and βred reduced thermodynamic temperature.
-    This uses the Osaka finite temperature action.
+    Calculate v and w variational polaron parameters, for the supplied
+    α Frohlich coupling and βred reduced thermodynamic temperature.
+    This uses the Osaka finite temperature action, as presented in Hellwarth
+    and Biaggio 1999.  
     Returns v,w.
 """
 function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
@@ -109,7 +107,7 @@ function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
     lower=[0.1,0.1]
     upper=[100.0,100.0]
 
-    myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed
+    myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed, so Optim can call it
     
     # Now updated to use Optim > 0.15.0 call signature (Julia >0.6 only)
     res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
@@ -120,7 +118,7 @@ function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
         print("\tWARNING: Failed to converge to v,w soln? : ",Optim.converged(res) )
     end
 
-    if verbose
+    if verbose # pretty print Optim solution
         println()
         show(res)
     end
