@@ -21,7 +21,7 @@ w=MAPIe.w[1]
 ω=MAPIe.ω[1]
 mb=MAPIe.mb[1]
 
-nu=0:0.1:10
+nu=0:0.1:40
 println("Integrating ImX for nu=$nu range...")
 s=ImX(nu, v, w, βred,α,ω,mb)
 
@@ -30,9 +30,14 @@ using Plots
 
 plot( s.nu,s.ImX,label="ImX",
          markersize=3,marker=:downtriangle, xlab="nu (units Omega)",ylab="ImX")
+xaxis!(:log10)
+yaxis!(:log10)
 savefig("MAPIe-ImX.png")
 plot( s.nu,s.μ,label="mu",
          markersize=3,marker=:uptriangle, xlab="nu (units Omega)",ylab="Mob")
+xaxis!(:log10)
+yaxis!(:log10)
+
 savefig("MAPIe-mu.png")
 
 println("That's me!")

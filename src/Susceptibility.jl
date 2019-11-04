@@ -28,12 +28,12 @@ function ImX(nurange,v,w,βred,α,ω,mb)
     # Feynman, I love you - but using Nu, v; Omega, w in the same paper + formulas, for similar objects?!
     s=Susceptibility()
     for nu in nurange
-        R=(v^2-w^2)/(w^2*v)     # inline, page 300 just after Eqn (2). Note this is wrong in some textbooks / 1990s PRB.
-        b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
-        a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
+        R=(v^2-w^2)/(w^2*v)     # FHIP1962, page 1011, eqn (47c). Note this is wrong in some textbooks / 1990s PRB.
+        b=R*βred/sinh(βred*v/2) # FHIP1962, page 1010, eqn (47b)
+        a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2)) # FHIP1962, page 1010, eqn (47b)
         k(u,a,b,v,nu) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u)*cos(nu*u) # integrand with cos(vu) term, as (47a)
 
-        @printf("Numerical integration of Feynman1962(42a): nu=%.2f ",nu)
+        @printf("Numerical integration of FHIP1962(42a): nu=%.2f ",nu)
         @time n=quadgk(u->k(u,a,b,v,nu),0,Inf,maxevals=10^9,reltol=0.1) # numerical quadrature integration of (2)
         K=n[1]
         err=n[2]
