@@ -9,6 +9,8 @@ export Polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export ImX
+export frohlichPartial, IRtoDielectric, IRtoalpha
+
 
 ##### load in library routines... #####
 # stdlib
@@ -29,12 +31,15 @@ const me=MassElectron = 9.10938188e-31;                          # kg
 const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
+const amu = 1.660_539_066_60e-27 # kg
+
 include("types.jl")            # Polaron types
 include("FeynmanTheory.jl")    # Actions + variational functions  
 include("HellwarthTheory.jl")  # multimode -> equivalent mode.
 include("MobilityTheories.jl") # Main polaronmobility function 
 include("Susceptibility.jl")   # ImX calculation
 include("OedipusRex.jl")       # Optical Absorption
+include("MultipleBranches.jl")  # Oct 2019 extension to multiple phonon branches
 
 end # module
 
