@@ -50,5 +50,7 @@ meff=0.12
 #ϵ_ired=ϵ_i/ɛ_0
 #ϵ_s=ϵ_ired + ϵ_o
 
-IRtoalpha(MAPI,vol)
+ϵ_s=sum(ϵ_i)
+
+IRtoalpha(MAPI,vol, ϵ_o,ϵ_s,meff)
 

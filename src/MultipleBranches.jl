@@ -11,7 +11,7 @@ Calculate a (partial) dielectric electron-phonon coupling element.
 """
 function frohlichPartial(ϵ_o,ϵ_s,ϵ_i,f,meff)
     ω=f*2π
-    α=1/(4*π*ɛ0) * ϵ_i/(ϵ_o*ϵ_s) * (q^2/ħ) * sqrt(meff*me/(2*ω*ħ))
+    α=1/(4*π*ɛ_0) * ϵ_i/(ϵ_o*ϵ_s) * (q^2/ħ) * sqrt(meff*me/(2*ω*ħ))
     return α
 end
 
@@ -45,7 +45,7 @@ IRtoalpha(IR,volume)
 Calculates contribution to dielectric constant for each polar phonon mode, and
 thereby the Frohlich alpha contribution for this mode.
 """
-function IRtoalpha(IR,volume)
+function IRtoalpha(IR,volume, ϵ_o,ϵ_s,meff)
     ϵ=0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
     α_sum=0.0
     for r in rows(IR)
