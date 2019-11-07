@@ -26,7 +26,7 @@ function IRtoDielectric(IR,volume)
     ϵ=0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
     for r in rows(IR)
         f,S=r # frequency in THz; activity in e^2 amu^-1
-        f=f #* THz
+        f=f * 1E12 #* THz
         ω=2π * f
         S=S * q^2 / amu
         ϵ_mode = S / ω^2 / volume
@@ -35,7 +35,7 @@ function IRtoDielectric(IR,volume)
         println("Mode f= $f S= $S ϵ_mode = $(ϵ_mode/ɛ_0)")
     end
     println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ/ɛ_0) relative")
-    return ϵ
+    return ϵ/ɛ_0
 end
 
 
@@ -50,11 +50,12 @@ function IRtoalpha(IR,volume, ϵ_o,ϵ_s,meff)
     α_sum=0.0
     for r in rows(IR)
         f,S=r # frequency in THz; activity in e^2 amu^-1
-        f=f #* THz
+        f=f * 1E12 #* THz
         ω=2π * f
         S=S * q^2 / amu
         ϵ_mode = S / ω^2 / volume
         ϵ_mode /= 3 # take isotropic average = divide by 3
+        ϵ_mode /= ɛ_0 # reduced dielectric constant
         ϵ+=ϵ_mode
         #println("Mode f= $f S= $S ϵ_mode = $(upreferred(ϵ_mode/u"ɛ0"))")
         α=frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f,meff)
@@ -63,7 +64,7 @@ function IRtoalpha(IR,volume, ϵ_o,ϵ_s,meff)
             println("Notable Mode f= $f    α_partial=$α")
         end
     end
-    println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ/ɛ_0) relative")
+    println("Sum alpha: $(α_sum)")
     return (ϵ/ɛ_0), α_sum
 end
 

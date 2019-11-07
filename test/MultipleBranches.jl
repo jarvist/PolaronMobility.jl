@@ -52,5 +52,7 @@ meff=0.12
 
 ϵ_s=sum(ϵ_i)
 
+println("Sum of ionic dielectric: $(ϵ_s)")
+
 IRtoalpha(MAPI,vol, ϵ_o,ϵ_s,meff)
 
