@@ -50,9 +50,23 @@ meff=0.12
 #ϵ_ired=ϵ_i/ɛ_0
 #ϵ_s=ϵ_ired + ϵ_o
 
-ϵ_s=sum(ϵ_i)
+ϵ_s=sum(ϵ_i)+ϵ_o # total (static) dielectric = sum of ionic, and optical
 
 println("Sum of ionic dielectric: $(ϵ_s)")
 
 IRtoalpha(MAPI,vol, ϵ_o,ϵ_s,meff)
+
+# A bit cyclical, but this is extrapolating back to if MAPI had a single LO
+# mode, at the point where the Hellwarth1999 averaging approximation puts it.
+MAPI_singlemode = [
+2.25 1.67502750447212449732 ]
+
+# By comparison to 2017 PRB, this should be 24.1-4.5 = 19.6
+#  Nb: however, that dielectric is from my 2014 NanoLetters, whereas the
+#  2015PRB above is a different calculation, with different convergence.
+ϵ_i=IRtoDielectric(MAPI_singlemode,vol)
+ϵ_s=sum(ϵ_i)+ϵ_o
+println("Sum of ionic dielectric: $(ϵ_s)")
+IRtoalpha(MAPI_singlemode,vol, ϵ_o,ϵ_s,meff)
+
 

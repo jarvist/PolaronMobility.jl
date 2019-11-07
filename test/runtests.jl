@@ -13,7 +13,7 @@ end
 #include("FrohlichAlpha.jl") # Simple test of Frohlich alpha vs. literature values
 #include("FeynmanAthermal.jl") # Athermal Feynman tests
 #include("HellwarthMultipleBranches.jl") # Test Hellwarth et al. 1999 PRB 'B' multiple branch reduction scheme
-#include("FrostPolaronMobility2017.jl") # Reproduce values published in Frost 2017 PRB 
+include("FrostPolaronMobility2017.jl") # Reproduce values published in Frost 2017 PRB 
 include("MultipleBranches.jl") # Test explicit Oct 2019:-> explicit phonon branches
 end
 
