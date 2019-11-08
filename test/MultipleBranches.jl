@@ -56,8 +56,22 @@ meff=0.12
 
 println("Sum of ionic dielectric: $(ϵ_s)")
 
-IRtoalpha(MAPI,vol, ϵ_o,ϵ_s,meff)
+IRtoalpha(MAPI, volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
 
+
+println()
+splat=DielectricFromIRmode.(eachrow(MAPI), volume=vol)
+println(splat)
+println("Sum of dieletric: ", sum(splat))
+
+f_dielectric=hcat( MAPI[:,1], splat)
+println("f_dielectric: ",f_dielectric)
+
+alphas=frohlichPartial.(eachrow(f_dielectric), ϵ_o = ϵ_o, ϵ_s = ϵ_o+sum(splat), meff=meff)
+println("alphas: ",alphas)
+println("sum alphas: ", sum(alphas))
+
+println()
 # A bit cyclical, but this is extrapolating back to if MAPI had a single LO
 # mode, at the point where the Hellwarth1999 averaging approximation puts it.
 MAPI_singlemode = [
@@ -69,11 +83,14 @@ MAPI_singlemode = [
 ϵ_i=IRtoDielectric(MAPI_singlemode,vol)
 ϵ_s=sum(ϵ_i)+ϵ_o
 println("Sum of ionic dielectric: $(ϵ_s)")
-_,αmode_MAPIe=IRtoalpha(MAPI_singlemode,vol, ϵ_o,ϵ_s,meff)
+_,αmode_MAPIe=IRtoalpha(MAPI_singlemode,volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
 
 α_MAPIe=frohlichalpha(4.5, 24.1, 2.25E12, meff)
 
 @test αmode_MAPIe ≈ α_MAPIe atol=0.01
+
+
+f,α = IRtoalpha(MAPI, volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
 
 end # @testset
 

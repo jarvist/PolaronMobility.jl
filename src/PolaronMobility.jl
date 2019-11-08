@@ -9,7 +9,8 @@ export Polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export ImX
-export frohlichPartial, IRtoDielectric, IRtoalpha
+
+export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 
 
 ##### load in library routines... #####
