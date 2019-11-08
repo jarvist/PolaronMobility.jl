@@ -11,6 +11,7 @@ export HellwarthBScheme, HellwarthAScheme
 export ImX
 
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
+export Hellwarth1999mobilityRHS
 
 
 ##### load in library routines... #####

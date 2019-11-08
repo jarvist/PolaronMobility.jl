@@ -71,6 +71,16 @@ alphas=frohlichPartial.(eachrow(f_dielectric), ϵ_o = ϵ_o, ϵ_s = ϵ_o+sum(spla
 println("alphas: ",alphas)
 println("sum alphas: ", sum(alphas))
 
+println("Feynman v,w for alphas: ", feynmanvw.(alphas))
+
+mobilityproblem=hcat(alphas, feynmanvw.(alphas), MAPI[:,1])
+println("Specify mobility problem: ",mobilityproblem)
+
+inverse_μ=Hellwarth1999mobilityRHS.(eachrow(mobilityproblem), meff, 300)
+
+μ=sum(inverse_μ)^-1
+@printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
+
 println()
 # A bit cyclical, but this is extrapolating back to if MAPI had a single LO
 # mode, at the point where the Hellwarth1999 averaging approximation puts it.

@@ -88,4 +88,20 @@ function DielectricFromIRmode(IRmode; volume)
 end
 
 
+function Hellwarth1999mobilityRHS( (α, (v,w) ,f) ,effectivemass, T)
+    mb=effectivemass*MassElectron
+    ω=f*1E12*2π
+    βred=ħ*ω/(kB*T)
+    
+    R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
+    b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
+    a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
+    k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
+    K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
+    
+    #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997                                                                             
+    RHS=α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
+    μ=RHS^-1 * (q)/(ω*mb)
 
+    return 1/μ
+end
