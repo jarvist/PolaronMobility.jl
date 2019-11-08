@@ -49,7 +49,7 @@ vol=(6.29E-10)^3
 meff=0.12
 
 ϵ_i=IRtoDielectric(MAPI,vol)
-#ϵ_ired=ϵ_i/ɛ_0
+#ϵ_ired=ϵ_i/ϵ_0
 #ϵ_s=ϵ_ired + ϵ_o
 
 ϵ_s=sum(ϵ_i)+ϵ_o # total (static) dielectric = sum of ionic, and optical

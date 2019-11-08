@@ -11,7 +11,7 @@ Calculate a (partial) dielectric electron-phonon coupling element.
 """
 function frohlichPartial((f, ϵ_mode); ϵ_o,ϵ_s,meff)
     ω=f*1E12*2π
-    α=1/(4*π*ɛ_0) * ϵ_mode/(ϵ_o*ϵ_s) * (q^2/ħ) * sqrt(meff*me/(2*ω*ħ))
+    α=1/(4*π*ϵ_0) * ϵ_mode/(ϵ_o*ϵ_s) * (q^2/ħ) * sqrt(meff*me/(2*ω*ħ))
     return α
 end
 
@@ -35,10 +35,10 @@ function IRtoDielectric(IR,volume)
         ϵ_mode = S / ω^2 / volume
         ϵ_mode /= 3 # take isotropic average = divide by 3
         ϵ+=ϵ_mode
-        println("Mode f= $f S= $S ϵ_mode = $(ϵ_mode/ɛ_0)")
+        println("Mode f= $f S= $S ϵ_mode = $(ϵ_mode/ϵ_0)")
     end
-    println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ/ɛ_0) relative")
-    return ϵ/ɛ_0
+    println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ/ϵ_0) relative")
+    return ϵ/ϵ_0
 end
 
 
@@ -58,9 +58,9 @@ function IRtoalpha(IR; volume, ϵ_o,ϵ_s,meff)
         S=S * q^2 / amu
         ϵ_mode = S / ω^2 / volume
         ϵ_mode /= 3 # take isotropic average = divide by 3
-        ϵ_mode /= ɛ_0 # reduced dielectric constant
+        ϵ_mode /= ϵ_0 # reduced dielectric constant
         ϵ+=ϵ_mode
-        #println("Mode f= $f S= $S ϵ_mode = $(upreferred(ϵ_mode/u"ɛ0"))")
+        #println("Mode f= $f S= $S ϵ_mode = $(upreferred(ϵ_mode/u"ϵ0"))")
         α=frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f,meff)
         α_sum+=α
         if (α>0.1)
@@ -83,7 +83,7 @@ function DielectricFromIRmode(IRmode; volume)
     S=S * q^2 / amu
     ϵ_mode = S / ω^2 / volume
     ϵ_mode /= 3 # take isotropic average = divide by 3
-    ϵ_mode /= ɛ_0 # reduced dielectric
+    ϵ_mode /= ϵ_0 # reduced dielectric
     return ϵ_mode
 end
 
