@@ -80,7 +80,8 @@ A(v,w,β)=3/β*( log(v/w) - 1/2*log(2*π*β) - log(sinh(v*β/2)/sinh(w*β/2)))
 # 62d
 Y(x,v,β)=1/(1-exp(-v*β))*(1+exp(-v*β)-exp(-v*x)-exp(v*(x-β)))
 # 62c integrand
-f(x,v,w,β)=(exp(β-x)+exp(x))/(w^2*x*(1-x/β)+Y(x,v,β)*(v^2-w^2)/v)^(1/2)
+#   Nb: Magic number 1e-10 adds stablity to optimisation; v,w never step -ve
+f(x,v,w,β)=(exp(β-x)+exp(x))/sqrt(1e-10+ w^2*x*(1-x/β)+Y(x,v,β)*(v^2-w^2)/v)
 # 62c
 B(v,w,β,α) = α*v/(sqrt(π)*(exp(β)-1)) * quadgk(x->f(x,v,w,β),0,β/2)[1]
 # 62e
@@ -108,7 +109,7 @@ function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
     upper=[100.0,100.0]
 
     myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed, so Optim can call it
-    
+
     # Now updated to use Optim > 0.15.0 call signature (Julia >0.6 only)
     res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
                  lower, upper, initial, Fminbox( BFGS() ) )
