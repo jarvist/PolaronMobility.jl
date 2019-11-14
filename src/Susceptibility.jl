@@ -34,11 +34,12 @@ function ImX(nurange,v,w,βred,α,ω,mb)
         k(u,a,b,v,nu) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u)*cos(nu*u) # integrand with cos(vu) term, as (47a)
 
         @printf("Numerical integration of FHIP1962(42a): nu=%.2f ",nu)
-        @time n=quadgk(u->k(u,a,b,v,nu),0,Inf,maxevals=10^9,reltol=0.1) # numerical quadrature integration of (2)
+        println("   a: $(a) b:$(b) ")
+        @time n=quadgk(u->k(u,a,b,v,nu),0,Inf,maxevals=10^6,rtol=0.001, order=9) # numerical quadrature integration of (2)
         K=n[1]
         err=n[2]
         @printf(" quadgk: K=%g err=%g\n",K,err)
-
+        
         # Full 47a constructed here
         ImX= 2*α/(3*sqrt(π)) * βred^(3/2) * (sinh(βred*nu/2))/sinh(βred/2) * (v^3/w^3) * K
 
