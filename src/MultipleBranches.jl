@@ -61,7 +61,7 @@ function IRtoalpha(IR; volume, ϵ_o,ϵ_s,meff)
         ϵ_mode /= ϵ_0 # reduced dielectric constant
         ϵ+=ϵ_mode
         #println("Mode f= $f S= $S ϵ_mode = $(upreferred(ϵ_mode/u"ϵ0"))")
-        α=frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f,meff)
+        α=frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f/1E12,meff)
         α_sum+=α
         if (α>0.1)
             println("Notable Mode f= $f    α_partial=$α")

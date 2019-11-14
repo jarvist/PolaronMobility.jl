@@ -80,11 +80,23 @@ inverse_μ=Hellwarth1999mobilityRHS.(eachrow(mobilityproblem), meff, 300)
 
 μ=sum(inverse_μ)^-1
 @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",μ,μ*100^2)
+println()
 
 ħ=1.05457162825e-34
 kB=1.3806504e-23
 
-for T in 100:20:500
+MAPI=[
+      5     20.0
+      0.5   0.67
+     ] # fictious two-frequency MAPI-a-like
+
+splat=DielectricFromIRmode.(eachrow(MAPI), volume=vol)
+println(splat)
+println("Sum of dieletric: ", sum(splat))
+
+f_dielectric=hcat( MAPI[:,1], splat)
+
+for T in 10:1:500
     alphas=frohlichPartial.(eachrow(f_dielectric), ϵ_o = ϵ_o, ϵ_s = ϵ_o+sum(splat), meff=meff)
     βred=ħ*MAPI[:,1]*1E12*2π/(kB*T)
 
@@ -92,7 +104,7 @@ for T in 100:20:500
     inverse_μ=Hellwarth1999mobilityRHS.(eachrow(mobilityproblem), meff, T)
     μ=sum(inverse_μ)^-1
 
-    @printf("\nT=%d μ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",T,μ,μ*100^2)
+    @printf("\nT= %d μ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs",T,μ,μ*100^2)
 end
 
 println()
