@@ -62,13 +62,18 @@ plot( s.nu,s.ImX,label="ImX",
 ω=1
 
 nurange=0.0:0.05:20
+Trange=[8,4,2,1,0.5,0.25,0.125]
 
-for α in [6] #1:1:10
+#using Distributed
+#addprocs(6)
+#@distributed 
+
+for α in [1,2,3,4,5,6,7,8,9,10,12,15,20] #1:1:10
    # athermal action
     v,w = feynmanvw(α)
-    plot(xlab="nu (units Omega)",ylab="Mob", ylims=(0,1.0E12))
+    plot(xlab="nu (units Omega) alpha=$(α)",ylab="Mob", ylims=(0,1.0E12))
 
-    for T in [8,4,2,1,0.5,0.25,0.125]
+    for T in Trange 
         βred=1/T
         @time s=ImX(nurange, v, w, βred,α,ω,mb)
         plot!( s.nu, s.μ, label="T=$(T)")
@@ -76,9 +81,9 @@ for α in [6] #1:1:10
     
     savefigs("Mishchenko-Fig4-AthermalAction_alpha_$(α)")
 
-    plot(xlab="nu (units Omega)",ylab="Mob", ylims=(0,3.0E12))
+    plot(xlab="nu (units Omega) alpha=$(α)",ylab="Mob", ylims=(0,3.0E12))
     
-    for T in [8,4,2,1,0.5,0.25,0.125]
+    for T in Trange 
         βred=1/T
         # Osaka finite temperature action
         v,w=feynmanvw(α, βred, verbose=true) # temperature dependent Action
@@ -89,5 +94,7 @@ for α in [6] #1:1:10
 
     savefigs("Mishchenko-Fig4-OsakaFiniteTemperatureAction_alpha_$(α)")
 end
+
+#wait()
 
 println("That's me!")
