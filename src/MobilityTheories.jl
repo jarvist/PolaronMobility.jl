@@ -135,14 +135,19 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         end
 
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
-        @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
-        @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
-        append!(p.A,A(v,w,βred))
-        append!(p.B,B(v,w,βred,α))
-        append!(p.C,C(v,w,βred))
-        append!(p.F,F(v,w,βred,α))
-
-
+        if (T>0)
+            @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
+            @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
+            append!(p.A,A(v,w,βred))
+            append!(p.B,B(v,w,βred,α))
+            append!(p.C,C(v,w,βred))
+            append!(p.F,F(v,w,βred,α))
+        else # Athermal case; Enthalpy
+            @printf("\n Polaron Enthalpy: F= %f = %f meV \n",F(v,w,α), 1_000*F(v,w,α) * ħ*ω/q)
+        
+            return # return early, as if T=0, all mobility theories = infinite / fall over
+        end
+        
         # FHIP
         #    - low-T mobility, final result of Feynman1962
         # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
