@@ -31,6 +31,14 @@ const me=MassElectron = 9.10938188e-31;                          # kg
 const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2 
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
+# Hold my beer, I'm going to use a Macro.
+macro showprint(ex)
+    println("Executing: ",ex)
+    return :( $ex )
+end
+
+polaronmobility(x...) = PolaronMobility.polaronmobility(x..., verbose=true)
+
 #####
 # Call simulation
 
@@ -39,9 +47,9 @@ const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 # Dielectric consts, from TABLE VII
 # Effective masses from TABLE VI, mh*
 const cm1=2.997e10 # cm-1 to Herz
-CsSnCl=polaronmobility(T, 4.80, 29.4,  243cm1, 0.140) # alpha= 1.386311
-CsSnBr=polaronmobility(T, 5.35, 32.4,  183cm1, 0.082) # alpha= 1.094468 
-CsSnI= polaronmobility(T, 6.05, 48.2,  152cm1, 0.069) # alpha= 1.020355 
+@showprint CsSnCl=polaronmobility(T, 4.80, 29.4,  243cm1, 0.140) # alpha= 1.386311
+@showprint CsSnBr=polaronmobility(T, 5.35, 32.4,  183cm1, 0.082) # alpha= 1.094468 
+@showprint CsSnI= polaronmobility(T, 6.05, 48.2,  152cm1, 0.069) # alpha= 1.020355 
 
 # Ts, βreds, Kμs, Hμs, FHIPμs, vs, ws, ks, Ms, As, Bs, Cs, Fs, Taus
 # CsSnBr3.dat:300 0.877382 511.513 356.358 874.499 8.13686 7.31511 12.6976 0.23729 -3.78992 2.15682 0.84436 0.788735 0.185396
@@ -54,18 +62,18 @@ CsSnI= polaronmobility(T, 6.05, 48.2,  152cm1, 0.069) # alpha= 1.020355
 #effectivemass=0.12 # the bare-electron band effective-mass. 
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-MAPIe=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.12)
-MAPIh=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.15)
+@showprint MAPIe=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.12)
+@showprint MAPIh=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.15)
 
 # CsPbI3: 3.82, 8.27, 2.83 THz (highest freq mode in cubic) 
 #    ^-- v. quick Kmesh=3x3x3 PBESol Calc, JMF 2017-04-12. Files: jarvist@titanium:~/phonopy-work/2017-03-Scott-Distortions/1000-Dielectric/3x3x3-kmesh/
 # Horribly non-converged! 
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
-CsPbI=polaronmobility(T, 6.1,6.1+12.0, 2.57E12, 0.12)
+@showprint CsPbI=polaronmobility(T, 6.1,6.1+12.0, 2.57E12, 0.12)
 
 function SendnerCrosscheck()
-    const cm1=2.997e10 # cm-1 to Herz
+    cm1=2.997e10 # cm-1 to Herz
 
     # Rob's / Sendner's paper - values extracted form IR measures
     # https://doi.org/10.1039%2Fc6mh00275g
@@ -80,9 +88,9 @@ function SendnerCrosscheck()
     # Combined, this reproduces their mobilities, and the internal w and
     # v parameters (again, email from Rob).  
     # For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0
-    RobMAPI=polaronmobility(10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
-    RobMAPBr=polaronmobility(10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
-    RobMAPCl=polaronmobility(10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
+    @showprint RobMAPI=polaronmobility(10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
+    @showprint RobMAPBr=polaronmobility(10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
+    @showprint RobMAPCl=polaronmobility(10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
 
     plot(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
     plot!(RobMAPBr.T,RobMAPBr.Hμ,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
