@@ -1,6 +1,8 @@
-# PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
-# Codes by Jarvist Moore Frost, 2017-2018
-# Calculate Polaron Mobility - by a Osaka/Hellwarth variational solution to the Feynman model
+"""
+PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
+  Codes by Jarvist Moore Frost, 2017-2020
+  Calculate Polaron Mobility - by a Osaka/Hellwarth variational solution to the Feynman model
+"""
 module PolaronMobility
 
 # These codes were developed with Julia 0.5.0 - Julia 0.6.2, and require the Optim and Plots packages.
