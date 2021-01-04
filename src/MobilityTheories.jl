@@ -61,7 +61,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
             v,w=feynmanvw(α,βred, v=v,w=w)
         end
 
-        @printf("\n Polaraon Parameters:  v= %.4f  w= %.4f",v,w)
+        @printf("\n Polaron Parameters:  v= %.4f  w= %.4f",v,w)
 
         # From 1962 Feynman, definition of v and w in terms of the coupled Mass and spring-constant
         # See Page 1007, just after equation (18)
@@ -73,6 +73,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         append!(p.M,M)
 
         @printf("  ||   M=%f  k=%f\t",M,k)
+        @printf("\n Bare-band effective mass: %f Polaron effective mass: %f Polaron mass enhancement: %f%%",effectivemass,effectivemass*(1+M),M*100)
 
         @printf("\n Polaron frequency (SI) v= %.2g Hz  w= %.2g Hz",
                 v*ω /(2*pi),w*ω /(2*pi))
@@ -134,14 +135,19 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         end
 
         # F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a) - Hellwarth 1999
-        @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
-        @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
-        append!(p.A,A(v,w,βred))
-        append!(p.B,B(v,w,βred,α))
-        append!(p.C,C(v,w,βred))
-        append!(p.F,F(v,w,βred,α))
-
-
+        if (T>0)
+            @printf("\n Polaron Free Energy: A= %f B= %f C= %f F= %f",A(v,w,βred),B(v,w,βred,α),C(v,w,βred),F(v,w,βred,α))
+            @printf("\t = %f meV",1000.0 * F(v,w,βred,α) * ħ*ω  / q)
+            append!(p.A,A(v,w,βred))
+            append!(p.B,B(v,w,βred,α))
+            append!(p.C,C(v,w,βred))
+            append!(p.F,F(v,w,βred,α))
+        else # Athermal case; Enthalpy
+            @printf("\n Polaron Enthalpy: F= %f = %f meV \n",F(v,w,α), 1_000*F(v,w,α) * ħ*ω/q)
+        
+            return # return early, as if T=0, all mobility theories = infinite / fall over
+        end
+        
         # FHIP
         #    - low-T mobility, final result of Feynman1962
         # [1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv)
@@ -196,7 +202,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
 
         @printf("\n\t\tGamma0 = %g rad/s = %g /s ",
                 Gamma0, Gamma0/(2*pi))
-        @printf(" \n\t\tTau=1/Gamma0 = %g = %f ps",
+        @printf(" \n\t\tTau=1/Gamma0 = %g s = %f ps",
             2*pi/Gamma0, 2*pi*1E12/Gamma0)
         Eloss=hbar*ω * Gamma0/(2*pi) # Simply Energy * Rate
         @printf("\n\t\tEnergy Loss = %g J/s = %g meV/ps",Eloss,Eloss * 1E3 / (q*1E12) )
