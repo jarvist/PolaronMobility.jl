@@ -19,7 +19,7 @@ energies.
 (The original 1960s work, and thus textbook solutions, often use asymptotic approximations to the integrals, with a more simple athermal action.)   
 The mobility is calculated in three ways:
 1) numerically by integrating the polaron self-energy along the imaginary axis (`Hellwarth1999`)
-2) using the Kadanoff Boltzmann equation approximation (`Kadanoff1963`)
+2) using Kadanoff's Boltzmann equation approximation (`Kadanoff1963`)
 3) using the FHIP low-temperature asymptotic solution (`FHIP`)
 
 These three methods are in approximately descending order of accuracy. 
@@ -42,8 +42,7 @@ is perhaps easiest to read and understand alongside the first paper:
 
 ## Local installation
 
-These codes require Julia >0.6 . They are structured as a full Julia package,
-but and are registered with the central METADATA package repository. 
+These codes require Julia >1.0 . 
 
 To install, type the following at the Julia REPL:
 
