@@ -7,7 +7,7 @@
 
 Codes to implement 'Optical Absorption of Polarons in the
 Feynman-Hellwarth-Iddings-Platzman Approximation',
-https://doi.org/10.1103/PhysRevB.5.2367 ; 
+https://doi.org/10.1103/PhysRevB.5.2367 ;
 
 In particular we are trying to calculate Re[χ] , the real part of the polaron optical absorption.
 # (13) - defn of Re[χ]
@@ -61,7 +61,7 @@ Calculate the absorption coefficient Γ(Ω) for the polaron at finite
 temperatures (equation (11b) in Devreese's et al.) for a given frequency Ω.
 β is the thermodynamic beta. v and w are the variational Polaron
 parameters that minimise the free energy, for the supplied α Frohlich
-coupling. N is the upper limit of a sum within ℑχ(Ω).  
+coupling. N is the upper limit of a sum within ℑχ(Ω).
 """
 function optical_absorption(Ω, β, α, v, w; N=10)
     ((Ω^2 - w^2)^2 / (Ω^5 - Ω^3 * v^2)^2) * ℑχ(Ω, β, α, v, w, N)
@@ -73,7 +73,7 @@ optical_absorption_zero(Ω::Float64, α::Float64, v::Float64, w::Float64, n::Flo
 Calculate the absorption coefficient Γ(Ω) for the polaron at zero-temperature
 (equation (11a) in Devreese's et al.) for a given frequency Ω. v and w are the
 variational Polaron parameters that minimise the free energy, for the supplied
-α Frohlich coupling.  
+α Frohlich coupling.
 n is the index of refraction of the medium.
 """
 function optical_absorption_zero(Ω, α, v, w, n)

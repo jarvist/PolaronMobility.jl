@@ -14,13 +14,13 @@ Susceptibility()=susceptibility([],[],[])
 function ImX(nurange,v,w,βred,α,ω,mb)
 
 Impedance in (47a) from Feynman1962, directly solving freq dep without taking
-Hellwarth1999 limit of v->0 . 
+Hellwarth1999 limit of v->0 .
 
 Calculates a frequency dependent (over range of nu) susceptibility which can be linked back to mobility.
 
-HERE BE DRAGONS! 
+HERE BE DRAGONS!
 Not well tested or validated code; the central numeric integration is highly
-oscillatory and becomes intractable for large nu.  
+oscillatory and becomes intractable for large nu.
 """
 function ImX(nurange,v,w,βred,α,ω,mb)
         @printf("\nAin't no Imaginary Impedance like a Feynman 1962 ImX...\n")
@@ -35,7 +35,7 @@ function ImX(nurange,v,w,βred,α,ω,mb)
 
         @printf("Numerical integration of FHIP1962(42a): nu=%.2f ",nu)
         println("   a: $(a) b:$(b) ")
-       
+
         # This is a simple approximation of part of the
         # https://www.gnu.org/software/gsl/doc/html/integration.html#qawf-adaptive-integration-for-fourier-integrals
         # GSL adaptive method for Fourier integrals
@@ -43,8 +43,8 @@ function ImX(nurange,v,w,βred,α,ω,mb)
         # the roots.
         c=(2*floor(nu)+1)*π/nu
         println("Fourier integral c: $(c)")
-        fourier_range = [ c*i for i in 0:2501 ] 
-        
+        fourier_range = [ c*i for i in 0:2501 ]
+
         # Catch Inf c range
         if nu==0
             fourier_range = [0, Inf]
@@ -52,12 +52,12 @@ function ImX(nurange,v,w,βred,α,ω,mb)
 
         # These params tweaked to get the best behaviour at reproducing
         # Mishchenko-Fig4 in a timely manner.
-        @time n=quadgk(u->k(u,a,b,v,nu),fourier_range... , 
+        @time n=quadgk(u->k(u,a,b,v,nu),fourier_range... ,
                        maxevals=10^6,rtol=0.0001, atol=1e-15, order=7) # numerical quadrature integration of (2)
         K=n[1]
         err=n[2]
         @printf(" quadgk: K=%g err=%g\n",K,err)
-        
+
         if K<err # we've lost control of our errors, due to losing the oscillatory war with nu
             break # --> so give up.
         end
@@ -88,7 +88,7 @@ Details come from Appendix A of Devreese's et al. paper, although they take the
 limit of β -> ∞, whereas here we do not. Likewise, we provide proper treatment
 of any expansions without immediate approximatons (i.e. in Appendix A they
 ignore the even part of the cos^n(vx) expansion without any apparent
-justification). 
+justification).
 """
 
 """
@@ -106,7 +106,7 @@ the SpecialFunctions.jl package (which eventually Overflows), or to arbitrary
 precision with the ArbNumerics.jl package. Change comments where appropriate.
 Set the precision of the ArbReal type with 'setworkingprecision(ArbReal,
 bits=128)'. This needs to be the same precision as BigFloat, set with
-'setprecision(BigFloat, 128)'.  
+'setprecision(BigFloat, 128)'.
 """
 function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
 
@@ -134,7 +134,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
 
     total_sum = BigFloat(0.0)
 
-    for n = 0:Int(N)   
+    for n = 0:Int(N)
         # Infinite summation from the Binomial expansion of (x^2 + a^2
         # - b * cos(v * x))^(-3/2). |b * cos(v * x) / (x^2 + a^2)| < 1 for
         # v > 0 and β > 0.
@@ -171,7 +171,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
                     """
                     For low-ish values of β (~ < 40) and Ω (~ < 50). Integral
                     over cos(yx) / (x^2 + a^2)^(n + 3/2) can be identified with
-                    BesselK functions.  
+                    BesselK functions.
                     """
 
                     total_sum +=
@@ -185,7 +185,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
                     arbitrary precision implementation of BesselK functions by
                     ArbNumerics.jl that is not available in the
                     SpecialFunctions.jl package. Comment above and uncomment
-                    below for higher precision calculations.  
+                    below for higher precision calculations.
                     """
 
                     # Note: May be type issues somewhere resulting in Any types and slowing down code.
@@ -219,7 +219,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
                     """
                     For low-ish values of β (~ < 40) and Ω (~ < 50). Integral
                     over cos(yx) / (x^2 + a^2)^(n + 3/2) can be identified with
-                    BesselK functions.  
+                    BesselK functions.
                     """
 
                     total_sum +=
@@ -233,7 +233,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
                     arbitrary precision implementation of BesselK functions by
                     ArbNumerics.jl that is not available in the
                     SpecialFunctions.jl package. Comment above and uncomment
-                    below for higher precision calculations.  
+                    below for higher precision calculations.
                     """
 
                     # Note: May be type issues somewhere resulting in Any types and slowing down code.
@@ -256,7 +256,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
                     """
                     For low-ish values of β (~ < 40) and Ω (~ < 50). Integral
                     over cos(y_even x) / (x^2 + a^2)^(n + 3/2) can be
-                    identified with BesselK functions.  
+                    identified with BesselK functions.
                     """
 
                     total_sum +=
@@ -270,7 +270,7 @@ function ℑχ(Ω, β, α, v, w, N = 10) # larger N increases accuracy.
                     arbitrary precision implementation of BesselK functions by
                     ArbNumerics.jl that is not available in the
                     SpecialFunctions.jl package. Comment above and uncomment
-                    below for higher precision calculations.  
+                    below for higher precision calculations.
                     """
 
                     # Note: May be type issues somewhere resulting in Any types and slowing down code.
@@ -292,7 +292,7 @@ Calculate the imaginary part of χ(Ω) in a zero temperature approximation
 (equation (16) in Devreese's et al.) for a given frequency Ω. v and w are the
 variational Polaron parameters that minimise the free energy, for the supplied
 α Frohlich coupling. N is the upper limit of a sum that is analytically
-infinite, however most of the information is encapuslated by N < 50.  
+infinite, however most of the information is encapuslated by N < 50.
 """
 function ℑχ_0(Ω, α, v, w, N = 10)
 
@@ -324,7 +324,7 @@ Calculate the moblity μ(Ω) of the polaron at finite temperatues (equation (1)
 in Hellwarth 1999) for a given frequency Ω. β is the thermodynamic beta. v and
 w are the variational polaron parameters that minimise the free energy, for
 the supplied α Frohlich coupling. N is the upper limit of a sum in
-ℑχ(Ω).  
+ℑχ(Ω).
 """
 function polaron_mobility(Ω, β, α, v, w)
     1 / ℑχ(Ω, β, α, v, w)
@@ -337,9 +337,8 @@ polaron_mobility_zero(Ω::Float64, α::Float64, v::Float64, w::Float64, N::Int)
 Calculate the moblity μ(Ω) of the polaron at zero-temperatures (equation (1) in
 Hellwarth 1999) for a given frequency Ω. v and w are the variational polaron
 parameters that minimise the free energy, for the supplied α Frohlich coupling.
-N is the upper limit of a sum in ℑχ(Ω).  
+N is the upper limit of a sum in ℑχ(Ω).
 """
 function polaron_mobility_zero(Ω, α, v, w)
     1 / ℑχ_0(Ω, α, v, w)
 end
-
