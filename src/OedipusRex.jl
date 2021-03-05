@@ -58,22 +58,21 @@ function ℜχ(Ω, α, v, w)
 
     # Infinite summation. Here just limit summation to when next term adds negiglible amount to total sum.
     while abs(next_current) >= abs(total_sum) * 1e-3
-
+        coef = R^n
+        inte = QuadGK.quadgk(x -> integrand(x, n), 0.0, Inf)[1]
         # Calculate nth term of expansion from equation (16).
-        current =
-            -(1 / gamma(n + 3 / 2)) *
-            QuadGK.quadgk(x -> integrand(x, n), 0.0, Inf)[1]
+        current = (-1)^n * (1 / (gamma(n + 3 / 2) * gamma(-n-1/2) * gamma(n + 1))) * inte
 
         # Remember nth term and add it to the total sum.
         next_current = current
-        total_sum += next_current
+        total_sum += next_current * coef
 
         # Go to next term.
         n += 1
     end
 
     # Return the total sum.
-    return total_sum
+    return 2 * α * (v / w)^3 / 3 * total_sum
 end
 
 """
@@ -81,58 +80,23 @@ M(n::Int, x::Float64)
 
     Calculates BesselI[n, x] - StruveL[-n, x] using a series expansion of Gamma functions. n is the order and x the argument to the functions. Adaptive precision is used to produce the correct value, starting at the precision of the input argument x. Used for evaluating ℜχ at finite temperatures.
 """
-function M(n, x)
-
-    # Get starting precision.
-    p = Int64(precision(x))
-    setextrabits(0) # Sets the number of extra bits used to zero.
-    setworkingprecision(ArbReal, bits = p)
-
-    # Initialise n and x as ArbReal types for arbitrary precision.
-    n = ArbReal(n, bits = p)
-    x = ArbReal(Float64(x), bits = p)
-
-    # Initialise the total sum, current sum and k values as ArbReal types.
-    total_sum = ArbReal(0.0, bits = p)
-    next_current = ArbReal(0.0, bits = p) # Used for comparisons for convergence.
-    k = ArbReal(0, bits = p) # Is summed over.
-
-    # Infinite summation. Here just limit summation to when next term adds negiglible amount to total sum.
-    while abs(next_current) >= abs(total_sum) * 1e-8
-
-        # Calculate kth term in expansion in terms of gamma functions at set precision p.
-        current =
-            sign(ArbReal(x, bits = p)) *
-            ArbReal(x / 2, bits = p)^ArbReal(2 * k + n, bits = p) / (
-                ArbNumerics.gamma(ArbReal(k + 1, bits = p)) *
-                ArbNumerics.gamma(ArbReal(n + k + 1, bits = p))
-            ) -
-            ArbNumerics.ArbReal(
-                x / 2,
-                bits = p,
-            )^ArbReal(2 * k - n + 1, bits = p) / (
-                ArbNumerics.gamma(ArbReal(k + 3 / 2, bits = p)) *
-                ArbNumerics.gamma(ArbReal(-n + k + 3 / 2, bits = p))
-            )
-
-        # Remember kth term for convergence comparison and add to total sum.
-        next_current = ArbReal(current, bits = p)
-        total_sum += ArbReal(next_current, bits = p)
-
-        # Check the accuracy of kth term. If the order of the error is within 30 orders of magnitude of the estimated value, start entire summation again with incrementally doubled precision until the error is more than 10^30 smaller than the estimated value. (This could be massively optimised).
-        if floor(log10(abs(ball(total_sum)[1]))) ==
-           floor(log10(abs(ball(total_sum)[2]))) + 30
-            p *= 2
-            setworkingprecision(ArbReal, bits = p)
-            total_sum = ArbReal(0.0, bits = p)
-            next_current = ArbReal(0.0, bits = p)
-            k = ArbReal(-1)
-        end
+function M(n, a, z, k_c)
+    x = ArbReal(a * abs(z))
+    bessel = besseli(ArbReal(n + 1), x)
+    digits = Int64(ceil(log10(abs(bessel)))) + 64
+    setextrabits(0)
+    setworkingprecision(ArbReal, digits = digits)
+    z = ArbReal(z)
+    x = ArbReal(a * abs(z))
+    total_sum = besseli(ArbReal(n + 1), x)
+    current = ArbReal(1.0)
+    k = ArbReal(0)
+    while abs(current) > 1e-128
+        current = (ArbReal(x) / ArbReal(2))^(ArbReal(2) * k - ArbReal(n)) / (gamma(k + ArbReal(3) / ArbReal(2)) * gamma(k - ArbReal(n) + ArbReal(1) / ArbReal(2)))
+        total_sum -= current
         k += ArbReal(1)
     end
-
-    # Return the total value.
-    return total_sum
+    return total_sum * sign(z) * abs(z)^ArbReal(n + 1) * ArbReal(k_c)
 end
 
 """
@@ -155,19 +119,18 @@ function ℜχ(Ω, β, α, v, w)
     b = R * β / sinh(β * v / 2)
 
     # Coefficient independent of summation variables n & k.
-    coefficient = 2 * α * v^3 * β^(3 / 2) / (3 * sqrt(π) * sinh(β / 2) * w^3)
+    coefficient = 2 * α * v^3 * β^(3 / 2) * exp(Ω * β / 2) / (3 * sqrt(π) * sinh(β / 2) * w^3)
 
     # Initialise total value of double summation as a BigFloat.
     total_sum = BigFloat(0.0)
-    next_current = BigFloat(0.0)
+    next_current = BigFloat(1.0)
     n = 0
 
-    while abs(next_current) >= abs(total_sum) * 1e-3 # Infinite summation from the Binomial expansion of (x^2 + a^2 - b * cos(v * x))^(-3/2). |b * cos(v * x) / (x^2 + a^2)| < 1 for v > 0 and β > 0. Here just limit summation to when next term adds negiglible amount to total sum.
-
+    while abs(next_current) > abs(total_sum) * 1e-20 # Infinite summation from the Binomial expansion of (x^2 + a^2 - b * cos(v * x))^(-3/2). |b * cos(v * x) / (x^2 + a^2)| < 1 for v > 0 and β > 0. Here just limit summation to when next term adds negiglible amount to total sum.
         current = BigFloat(0.0)
 
         # Coefficient that depends on n summation variable.
-        n_coefficient = -π * sinh(Ω * β / 2) * (-b)^n / (4 * a)^(n + 1)
+        n_coefficient = -π * (-b)^n * (1 - exp(-Ω * β))  / (4 * a)^(n + 1) / 2
 
         # Finite sum over k for even n from (cos(v * x))^n expansion.
         for k = -1:floor((n - 1) / 2)
@@ -196,33 +159,46 @@ function ℜχ(Ω, β, α, v, w)
 
             # Sum over all arguments with their respective k-dependent coefficients. Function M(n, x) gives 'BesselI[n, x] - StruveL[-n, x]'.
             for (z, k_c) in zip(z_args, k_coeff)
-                current += M(n + 1, a * abs(z)) * sign(z) * abs(z)^(n + 1) * k_c
+                current += M(n, a, z, k_c)
             end
         end
 
+        digits = Int64(ceil(log10(abs(current)))) + 64
+        setextrabits(0)
+        setworkingprecision(ArbReal, digits = digits)
+        current = ArbReal(current)
+
         # Add nth contribution to the total sum.
-        total_sum += n_coefficient * current
+        total_sum += ArbReal(n_coefficient * current)
 
         # Remember nth contribution for convergence comparison.
-        next_current = n_coefficient * current
+        next_current = ArbReal(n_coefficient * current)
 
         # Move to next nth term.
         n += 1
     end
 
+    digits = Int64(ceil(log10(abs(total_sum)))) + 64
+    setextrabits(0)
+    setworkingprecision(ArbReal, digits = digits)
+    total_sum = ArbReal(total_sum)
+
     # Hyperbolic integral that makes up the second term of ℜχ.
     I1 = quadgk(
-        x -> (1 - cosh(Ω * x)) * cosh(x - β / 2) / (a^2 - β^2 / 4 + x * (β - x) - b * cosh(v * (x - β / 2)))^(3 / 2),
-        BigFloat(0),
-        BigFloat(β / 2),
-        maxevals = 10^4,
-        order = 7,
-    )[1]
+        x -> (1 - cosh(Ω * x)) * cosh(x - β / 2)/ exp(Ω * β / 2) / (a^2 - β^2 / 4 + x * (β - x) - b * cosh(v * (x - β / 2)))^(3 / 2),
+        0, β / 2, atol = 1e-20)
+
+    # x, w = gauss(1000, 0, β / 2)
+    # f(x) = (1 - cosh(Ω * x)) * cosh(x - β / 2) / (a^2 - β^2 / 4 + x * (β - x) - b * cosh(v * (x - β / 2)))^(3 / 2)
+
+    # I1 = ArbReal(sum(f.(x) .* w))
+    I1 = ArbReal(I1[1])
+    coefficient = ArbReal(coefficient)
 
     # Return final value obtained from double summation and hyperbolic integral.
-    return coefficient * (total_sum + I1)
+    println("Frequency = $Ω \n Total sum = $(coefficient * total_sum) \n Integral = $(coefficient * I1) \n Difference = $(coefficient * total_sum + coefficient * I1) \n\n")
+    return coefficient * total_sum, coefficient * I1, coefficient * (total_sum + I1)
 end
-
 """
 ----------------------------------------------------------------------
 Polaron absorption coefficient Γ(Ω).
