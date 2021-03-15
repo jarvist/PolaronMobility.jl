@@ -61,7 +61,7 @@ function ℜχ(Ω, α, v, w)
         coef = R^n
         inte = QuadGK.quadgk(x -> integrand(x, n), 0.0, Inf)[1]
         # Calculate nth term of expansion from equation (16).
-        current = (-1)^n * (1 / (gamma(n + 3 / 2) * gamma(-n-1/2) * gamma(n + 1))) * inte
+        current = (-1)^n * (1 / (SpecialFunctions.gamma(n + 3 / 2) * SpecialFunctions.gamma(-n-1/2) * SpecialFunctions.gamma(n + 1))) * inte
 
         # Remember nth term and add it to the total sum.
         next_current = current
@@ -76,171 +76,115 @@ function ℜχ(Ω, α, v, w)
 end
 
 """
-M(n::Int, x::Float64)
+BesselI_minus_StruveL(n::Int, z::Float64)
 
-    Calculates BesselI[n, x] - StruveL[-n, x] using a series expansion of Gamma functions. n is the order and x the argument to the functions. Adaptive precision is used to produce the correct value, starting at the precision of the input argument x. Used for evaluating ℜχ at finite temperatures.
+    Calculates BesselI[n, z] - StruveL[-n, z] using a series expansion of Gamma functions. n is the order and x the argument to the functions. Adaptive precision is used to produce the correct value, starting at the precision of the input argument x. Used for evaluating ℜχ at finite temperatures.
 """
-# function M(n, a, z, k_c)
-#     x = ArbReal(a * abs(z))
-#     bessel = besseli(ArbReal(n + 1), x)
-#     digits = Int64(ceil(log10(abs(bessel)))) + 64
-#     setextrabits(0)
-#     setprecision(ArbReal, digits = digits)
-#     z = ArbReal(z)
-#     x = ArbReal(a * abs(z))
-#     total_sum = besseli(ArbReal(n + 1), x)
-#     current = ArbReal(1.0)
-#     k = ArbReal(0)
-#     while abs(current) > 1e-128
-#         current = (ArbReal(x) / ArbReal(2))^(ArbReal(2) * k - ArbReal(n)) / (gamma(k + ArbReal(3) / ArbReal(2)) * gamma(k - ArbReal(n) + ArbReal(1) / ArbReal(2)))
-#         total_sum -= current
-#         k += ArbReal(1)
-#     end
-#     return total_sum * sign(z) * abs(z)^ArbReal(n + 1) * ArbReal(k_c)
-# end
+function BesselI_minus_StruveL(n, z; prec = 64) # z > 0 & n >= 0
 
-"""
-ℜχ(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64, N::Int)
-
-    Calculate the real part of χ(Ω) at finite temperatures for a given frequency Ω. v and w are the variational Polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
-"""
-# function ℜχ(Ω, β, α, v, w)
-#
-#     # Set arguments to BigFloat precision. Without this the calculations break down due to large values of hyperbolic functions.
-#     Ω = BigFloat(Ω)
-#     β = BigFloat(β)
-#     α = BigFloat(α)
-#     v = BigFloat(v)
-#     w = BigFloat(w)
-#
-#     # Initialise constants.
-#     R = (v^2 - w^2) / (w^2 * v)
-#     a = sqrt(β^2 / 4 + R * β * coth(β * v / 2))
-#     b = R * β / sinh(β * v / 2)
-#
-#     # Coefficient independent of summation variables n & k.
-#     coefficient = 2 * α * v^3 * β^(3 / 2) * exp(Ω * β / 2) / (3 * sqrt(π) * sinh(β / 2) * w^3)
-#
-#     # Initialise total value of double summation as a BigFloat.
-#     total_sum = BigFloat(0.0)
-#     next_current = BigFloat(1.0)
-#     n = 0
-#
-#     while abs(next_current) > abs(total_sum) * 1e-20 # Infinite summation from the Binomial expansion of (x^2 + a^2 - b * cos(v * x))^(-3/2). |b * cos(v * x) / (x^2 + a^2)| < 1 for v > 0 and β > 0. Here just limit summation to when next term adds negiglible amount to total sum.
-#         current = BigFloat(0.0)
-#
-#         # Coefficient that depends on n summation variable.
-#         n_coefficient = -π * (-b)^n * (1 - exp(-Ω * β))  / (4 * a)^(n + 1) / 2
-#
-#         # Finite sum over k for even n from (cos(v * x))^n expansion.
-#         for k = -1:floor((n - 1) / 2)
-#
-#             # Coefficients dependent upon k.
-#             k_coeff = vcat(
-#                 repeat(
-#                     [1 / (SpecialFunctions.gamma(k + 1) * SpecialFunctions.gamma(n - k + 1)),],
-#                     4,
-#                 ),
-#                 repeat(
-#                     [(1 + mod(n, 2)) / SpecialFunctions.gamma(n / 2 + 1)^2,],
-#                     2,
-#                 ),
-#             )
-#
-#             # Arguments of the BesselI - StruveL functions.
-#             z_args = [
-#                 Ω + 1 + v * (n - 2 * k),
-#                 Ω - 1 + v * (n - 2 * k),
-#                 Ω + 1 - v * (n - 2 * k),
-#                 Ω - 1 - v * (n - 2 * k),
-#                 Ω + 1,
-#                 Ω - 1,
-#             ]
-#
-#             # Sum over all arguments with their respective k-dependent coefficients. Function M(n, x) gives 'BesselI[n, x] - StruveL[-n, x]'.
-#             for (z, k_c) in zip(z_args, k_coeff)
-#                 current += M(n, a, z, k_c)
-#             end
-#         end
-#
-#         digits = Int64(ceil(log10(abs(current)))) + 64
-#         setextrabits(0)
-#         setworkingprecision(ArbReal, digits = digits)
-#         current = ArbReal(current)
-#
-#         # Add nth contribution to the total sum.
-#         total_sum += ArbReal(n_coefficient * current)
-#
-#         # Remember nth contribution for convergence comparison.
-#         next_current = ArbReal(n_coefficient * current)
-#
-#         # Move to next nth term.
-#         n += 1
-#     end
-#
-#     digits = Int64(ceil(log10(abs(total_sum)))) + 64
-#     setextrabits(0)
-#     setworkingprecision(ArbReal, digits = digits)
-#     total_sum = ArbReal(total_sum)
-#
-#     # Hyperbolic integral that makes up the second term of ℜχ.
-#     I1 = quadgk(
-#         x -> (1 - cosh(Ω * x)) * cosh(x - β / 2)/ exp(Ω * β / 2) / (a^2 - β^2 / 4 + x * (β - x) - b * cosh(v * (x - β / 2)))^(3 / 2),
-#         0, β / 2, atol = 1e-20)
-#
-#     # x, w = gauss(1000, 0, β / 2)
-#     # f(x) = (1 - cosh(Ω * x)) * cosh(x - β / 2) / (a^2 - β^2 / 4 + x * (β - x) - b * cosh(v * (x - β / 2)))^(3 / 2)
-#
-#     # I1 = ArbReal(sum(f.(x) .* w))
-#     I1 = ArbReal(I1[1])
-#     coefficient = ArbReal(coefficient)
-#
-#     # Return final value obtained from double summation and hyperbolic integral.
-#     println("Frequency = $Ω \n Total sum = $(coefficient * total_sum) \n Integral = $(coefficient * I1) \n Difference = $(coefficient * total_sum + coefficient * I1) \n\n")
-#     return coefficient * total_sum, coefficient * I1, coefficient * (total_sum + I1)
-# end
-
-function BesselI_minus_StruveL(n, x)
-
-    # Get input precision as we'll return answer to this precision.
-    p = Int64(precision(x))
-    setprecision(ArbReal, p + 8)
-
-    # Calculate number of bits needed to fully represent the first term of sum then add input precision to ensure final answer is at least as precise as precision(x).
-    new_p = digits2bits(Int64(ceil(log10(abs(besseli(ArbReal("$n") + 1, ArbReal("$x"))))) + 1)) + 2 * p
-
-    # Set working precision to bits. NB that precision(ArbReal) + 8 = precison(BigFloat).
+    # Initialise precision of ArbReal to prec.
     setextrabits(0)
-    setprecision(BigFloat, new_p)
-    setprecision(ArbReal, new_p)
+    setprecision(ArbReal, prec + 8)
 
-    # Turn inputs and first term (BesselI(n + 1, x)) into ArbReal types because only ArbNumerics allows arbitrary precision bessel calculations.
-    x = ArbReal("$x")
     n = ArbReal("$n")
-    total_sum = ArbReal("$(ArbNumerics.besseli(n + 1, x))")
+    z = ArbReal("$z")
 
-    # Setup summation terms as ArbReal types. NB I set current (as in the current term in the sum) to 1.0 here instead of 0.0 so the while loop starts.
-    current = ArbReal("1.0")
     k = ArbReal("0")
+    result = ArbReal("0.0")
+    err = eps(result)  # Machine accuracy of specified precision prec.
 
-    # Loop over each kth term in the gamma expansion of the Struve L function at negative order -(n + 1), and subtract from besselI(n + 1) term (which was set as the first term of total_sum).
-    while ArbReal("$(abs(current))") > ArbReal("$(10.0^(-p - 8))")
-        current = (ArbReal("$x") / ArbReal("2"))^(ArbReal("2") * ArbReal("$k") - ArbReal("$n")) / (ArbNumerics.gamma(ArbReal("$k") + ArbReal("3") / ArbReal("2")) * ArbNumerics.gamma(ArbReal("$k") - ArbReal("$n") + ArbReal("1") / ArbReal("2")))
-        total_sum = ArbReal("$(total_sum - current)")
-        k = ArbReal("$(k + 1)")
+    while true
+        bessel_term = ArbReal((z / 2)^(2 * k + n) / (ArbNumerics.gamma(k + 1) * ArbNumerics.gamma(k + n + 1)))
+        struve_term = ArbReal((z / 2)^(2 * k - n + 1) / (ArbNumerics.gamma(k + 3//2) * ArbNumerics.gamma(k - n + 3//2)))
+        term = bessel_term - struve_term
+
+        # Break loop if term smaller than accuracy of result.
+        if abs(term) < eps(result)
+            break
+        end
+
+        result += term
+        k += ArbReal("1")
+
+        # Double precision if rounding error in result exceeds accuracy specified by prec.
+        if ball(result)[2] > err
+            setprecision(ArbReal, precision(result) * 2)
+            n = ArbReal("$n")
+            z = ArbReal("$z")
+            k = ArbReal("0")
+            result = ArbReal("0.0")
+        end
     end
-
-    # Change precision back to input precision.
-    setprecision(BigFloat, p)
-    setprecision(ArbReal, p + 8)
-
-    # Return as BigFloat type with precision p.
-    return BigFloat("$total_sum")
+    ArbReal(result, bits = prec + 8)
 end
 
+"""
+Quicknote: this is the expansion of the second diverging integral in ReX. Still WIP.
+"""
+function hyperbolic_integral(Ω, β, α, v, w; prec = 64)
 
-# m = BesselI_minus_StruveL(10, BigFloat("2062.23523"))
-# @show(m)
+    setprecision(BigFloat, prec)
+
+    Ω = BigFloat("$Ω")
+    β = BigFloat("$β")
+    α = BigFloat("$α")
+    v = BigFloat("$v")
+    w = BigFloat("$w")
+
+    # Initialise constants.
+    R = (v^2 - w^2) / (w^2 * v)
+    a = sqrt(β^2 / 4 + R * β * coth(β * v / 2))
+    b = R * β / sinh(β * v / 2)
+
+    coefficient = 2 * α * β^(3 / 2) * v^3 / (3 * sqrt(π) * sinh(β / 2) * w^3)
+
+    n_binomial_coeff_one(n) = -2 * √π / (gamma(-n - 1 / 2) * gamma(n + 1))
+
+    m_binomial_coeff(n, m) = gamma(-n - 1 / 2) / (gamma(m + 1) * gamma(-m - n - 1 / 2))
+
+    n_coefficient(n) = n_binomial_coeff_one(n) * (2 / β)^(2 * n + 2) * (-b)^n
+
+    m_coefficient(n, m) = m_binomial_coeff(n, m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3)
+
+    k_binomial_coeff(n, k) = gamma(n + 1) / (gamma(k + 1) * gamma(n - k + 1))
+
+    n_binomial_coeff_two(n) = 2^n * gamma((n + 1) / 2) / (√π * gamma(n / 2 + 1))
+
+    z_1_args = 1
+    z_2_args = [Ω + 1, Ω - 1]
+    z_3_args(n, k) = [1 + v * (n - 2 * k), 1 - v * (n - 2 * k)]
+    z_4_args(n, k) = [Ω + 1 + v * (n - 2 * k), Ω - 1 + v * (n - 2 * k), Ω + 1 - v * (n - 2 * k), Ω - 1 - v * (n - 2 * k)]
+
+    J(z, t, c, m) = (β * z / 2)^t * (1 + c * exp(-Ω * β)) / ((2 * m + t + 1) * gamma(t + 1))
+
+    total_sum = 0.0
+    for n in 0:1, m in 0:1, t in 0:700
+
+        n_coeff = n_coefficient(n)
+        m_coeff = m_coefficient(n, m)
+
+        for k in 0:Int64(floor((n - 1) / 2))
+
+            k_coeff = k_binomial_coeff(n, k)
+            z_3, z_4 = z_3_args(n, k), z_4_args(n, k)
+
+            integral_3 = sum([2 * J(z, 2 * t, 0, m) * exp(-Ω * β / 2) for z in z_3])
+            integral_4 = sum([J(z, 2 * t, 1, m) - J(z, 2 * t + 1, -1, m) for z in z_4])
+            total_sum += n_coeff * m_coeff * k_coeff * (integral_3 - integral_4 / 2) / 2^n
+        end
+
+        n_bin_coeff_2 = n_binomial_coeff_two(n)
+
+        if mod(n, 2) == 0
+
+            integral_1 = 2 * J(z_1_args, 2 * t, 0, m) * exp(-Ω * β / 2)
+            integral_2 = sum([J(z, 2 * t, 1, m) - J(z, 2 * t + 1, -1, m) for z in z_2_args])
+            total_sum += n_coeff * m_coeff * n_bin_coeff_2 * (integral_1 - integral_2 / 2) / 2^n
+        end
+    end
+
+    return total_sum * exp(Ω * β / 2) / 2
+end
 
 """
 ℜχ(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64, N::Int)
@@ -257,68 +201,78 @@ function ℜχ(Ω, β, α, v, w)
     w = BigFloat("$w")
 
     # Initialise constants.
-    R = BigFloat("$((v^2 - w^2) / (w^2 * v))")
-    a = BigFloat("$(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))")
-    b = BigFloat("$(R * β / sinh(β * v / 2))")
+    R = (v^2 - w^2) / (w^2 * v)
+    a = sqrt(β^2 / 4 + R * β * coth(β * v / 2))
+    b = R * β / sinh(β * v / 2)
 
     # Coefficient independent of summation variables n & k.
-     coefficient = BigFloat("$(2 * α * v^3 * β^(3 / 2) * exp(Ω * β / 2) / (3 * sqrt(π) * sinh(β / 2) * w^3))")
+    coefficient = 2 * α * v^3 * β^(3 / 2) * exp(Ω * β / 2) / (3 * sqrt(π) * sinh(β / 2) * w^3)
 
     # Initialise total value of double summation as a BigFloat.
     total_sum = BigFloat("0.0")
     next_current = BigFloat("1.0")
-    n = BigInt(0)
+    n = BigFloat("0")
 
-    while abs(next_current) > abs(total_sum) * 1e-20 # Infinite summation from the Binomial expansion of (x^2 + a^2 - b * cos(v * x))^(-3/2). |b * cos(v * x) / (x^2 + a^2)| < 1 for v > 0 and β > 0. Here just limit summation to when next term adds negiglible amount to total sum.
+    while n < 11 # Infinite summation from the Binomial expansion of (x^2 + a^2 - b * cos(v * x))^(-3/2). |b * cos(v * x) / (x^2 + a^2)| < 1 for v > 0 and β > 0. Here just limit summation to when next term adds negiglible amount to total sum.
         current = BigFloat("0.0")
 
         # Coefficient that depends on n summation variable.
-        n_coefficient = BigFloat("$(-π * (-b)^n * (1 - exp(-Ω * β))  / (4 * a)^(n + 1) / 2)")
+        n_coefficient = -π * (-b)^n * (1 - exp(-Ω * β))  / (4 * a)^(n + 1) / 2
 
         # Finite sum over k for even n from (cos(v * x))^n expansion.
-        for k = BigInt(-1):BigInt(floor((n - 1) / 2))
+        for k = -1:floor((n - 1) / 2)
 
             # Coefficients dependent upon k.
             k_coeff = vcat(
-                repeat([BigFloat("$(1 / (SpecialFunctions.gamma(k + 1) * SpecialFunctions.gamma(n - k + 1)))")], 4),
-                repeat([BigFloat("$((1 + mod(n, 2)) / SpecialFunctions.gamma(n / 2 + 1)^2)")], 2)
+                repeat(
+                    [1 / (SpecialFunctions.gamma(k + 1) * SpecialFunctions.gamma(n - k + 1))],
+                    4,
+                ),
+                repeat(
+                    [(1 + mod(n, 2)) / SpecialFunctions.gamma(n / 2 + 1)^2],
+                    2,
+                ),
             )
 
             # Arguments of the BesselI - StruveL functions.
             z_args = [
-                BigFloat("$(Ω + 1 + v * (n - 2 * k))"),
-                BigFloat("$(Ω - 1 + v * (n - 2 * k))"),
-                BigFloat("$(Ω + 1 - v * (n - 2 * k))"),
-                BigFloat("$(Ω - 1 - v * (n - 2 * k))"),
-                BigFloat("$(Ω + 1)"),
-                BigFloat("$(Ω - 1)"),
+                Ω + 1 + v * (n - 2 * k),
+                Ω - 1 + v * (n - 2 * k),
+                Ω + 1 - v * (n - 2 * k),
+                Ω - 1 - v * (n - 2 * k),
+                Ω + 1,
+                Ω - 1,
             ]
 
             # Sum over all arguments with their respective k-dependent coefficients. Function M(n, x) gives 'BesselI[n, x] - StruveL[-n, x]'.
             for (z, k_c) in zip(z_args, k_coeff)
-                current = BigFloat("$(current + BesselI_minus_StruveL(BigInt(n), BigFloat("$(a * abs(z))")) * BigFloat("$(sign(z) * abs(z)^(n + 1) * k_c)"))")
+                current += BigFloat("$(BesselI_minus_StruveL(n + 1, a * abs(z); prec = 200))") * sign(z) * abs(z)^(n + 1) * k_c
             end
         end
 
+
         # Add nth contribution to the total sum.
-        total_sum = BigFloat("$(total_sum + n_coefficient * current)")
+        total_sum += n_coefficient * current
 
         # Remember nth contribution for convergence comparison.
-        next_current = BigFloat("$(n_coefficient * current)")
+        next_current = n_coefficient * current
 
         # Move to next nth term.
-        n = BigInt(n + 1)
+        n += 1
     end
 
     # Hyperbolic integral that makes up the second term of ℜχ.
-    I1 = quadgk(
-        x -> BigFloat("$((1 - cosh(Ω * x)) * cosh(x - β / 2)/ exp(Ω * β / 2) / (a^2 - β^2 / 4 + x * (β - x) - b * cosh(v * (x - β / 2)))^(3 / 2))"),
-        BigFloat("0.0"), BigFloat("$(β / 2)"), atol = 1e-8)[1]
+    integrand(x) = (1 - cosh(Ω * β * (1 - x) / 2)) * cosh(x * β / 2) / (a^2 - β^2 * x^2 / 4 - b * cosh(v * β * x / 2))^(3 // 2)
+
+    I1 = β * quadgk(x -> integrand(x), BigFloat("0.0"), BigFloat("1.0"), atol = eps(total_sum))[1] / (2 * exp(Ω * β / 2))
+
+    # I1 = hyperbolic_integral_six(Ω, β, α, v, w; prec = 200) / exp(Ω * β / 2)
 
     # Return final value obtained from double summation and hyperbolic integral.
-    println("Frequency = $Ω \n Total sum = $(coefficient * total_sum) \n Integral = $(coefficient * I1) \n Difference = $(coefficient * total_sum + coefficient * I1) \n\n")
-    return BigFloat("$(coefficient * total_sum)"), BigFloat("$(coefficient * I1)"), BigFloat("$(coefficient * (total_sum + I1))")
+    println("Frequency = $Ω \n Total sum = $(total_sum) \n Integral = $(I1) \n Difference = $(total_sum + I1) \n\n")
+    return total_sum, I1, (total_sum + I1)
 end
+
 
 using ArbNumerics
 using SpecialFunctions
@@ -326,20 +280,21 @@ using QuadGK
 using Plots
 plotly()
 Plots.PlotlyBackend()
-setprecision(256)
-Ω_range = 3.01:0.1:5
-ReX = [ℜχ(Ω, 30, 7, 5.8, 1.6) for Ω in Ω_range]
-ReX1 = [log10(abs(x[1] + x[2])) for x in ReX]
-# ReX2 = [log10(abs(log10(abs(x[2])))) for x in ReX]
-ReX3 = [exp(x[3]) for x in ReX]
-# t1 = [ℑχ(Ω, 3, 7, 5.8, 1.6) for Ω in Ω_range]
+setprecision(BigFloat, 128)
+Ω_range = 12.01:0.1:20
+RealX = [ℜχ(Ω, 4, 7, 5.8, 1.6) for Ω in Ω_range]
+ReX1 = [abs(x[1]) for x in RealX]
+ReX2 = [abs(x[2]) for x in RealX]
+ReX3 = [abs(x[3]) for x in RealX]
 # p = plot(Ω_range, abs.(ReX1), yaxis=:log, label = "Struve expansion", xlabel = "Ω")
 # plot!(p, Ω_range, abs.(ReX2), label = "Hyperbolic int")
 # plot!(p, Ω_range, abs.(ReX3), label = "ReX")
 # display(p)
-q = plot(Ω_range,ReX1, label = "T=0", xlabel = "Ω", ylabel = "ReX")
-# plot!(Ω_range, [exp(ℜχ(Ω, 7, 5.8, 1.6)) for Ω in Ω_range], label="Struve expansion")
-# plot!(Ω_range, ReX3, label="ReX")
+q = plot(Ω_range, ReX1, yaxis = :log, label = "Expansion", xlabel = "Ω", ylabel = "ReX")
+plot!(Ω_range, ReX2, label="Integral")
+plot!(Ω_range, ReX3, label="Sum")
+# plot!(Ω_range, [abs(ℜχ(Ω, 7, 5.8, 1.6)) for Ω in Ω_range], label="Struve expansion")
+
 display(q)
 
 

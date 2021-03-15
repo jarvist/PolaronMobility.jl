@@ -29,16 +29,17 @@ function hyperbolic_integral_two(Ω, β, α, v, w)
 
     integrand(x) = (1 - cosh(Ω * β * (1 - x) / 2)) * cosh(x * β / 2) / (a^2 - β^2 * x^2 / 4 - b * cosh(v * β * x / 2))^(3 // 2)
 
-    integral = quadgk(x -> integrand(x), BigFloat("0.0"), BigFloat("1.0"), atol = err)
+    integral = quadgk(x -> integrand(x), 0.0, 1.0)
 
-    return coefficient * β * integral[1] / 2
+    return coefficient * β * integral[1] / (2 * exp(Ω * β / 2)), β * integral[1] / (2 * exp(Ω * β / 2))
 end
 
-Ω_range = [BigFloat("0.01")]
-β = BigFloat("3.0")
+setprecision(128)
+Ω_range = [BigFloat("12.01")]
+β = BigFloat("4.0")
 α = BigFloat("7.0")
 v = BigFloat("5.8")
 w = BigFloat("1.6")
-# @code_warntype hyperbolic_integral_two(Ω_range, β, α, v, w)
+# @code_warntype hyperboli_integral_two(Ω_range, β, α, v, w)
 @time hyp = hyperbolic_integral_two.(Ω_range, β, α, v, w)
 @show(hyp)

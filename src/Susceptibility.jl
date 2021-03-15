@@ -224,8 +224,13 @@ function ℑχ(Ω, β, α, v, w)
     end
 
     # Return final value obtained from double summation.
-    return coefficient * total_sum
+    return coefficient * total_sum / sinh(Ω * β / 2)
 end
+
+Ω_range = 0.01:0.05:20
+t1 = [ℑχ(Ω, 3, 7, 5.8, 1.6) for Ω in Ω_range]
+p = plot(Ω_range, t1)
+display(p)
 
 """
 ----------------------------------------------------------------------

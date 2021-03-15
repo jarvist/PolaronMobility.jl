@@ -10,7 +10,7 @@ module PolaronMobility
 export Polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
-export ImX
+export ImX, ℑχ, μ
 
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 export Hellwarth1999mobilityRHS
@@ -28,6 +28,10 @@ import QuadGK.quadgk
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
 
+# Extra packages for ℑχ
+using SpecialFunctions
+using ArbNumerics
+
 # Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s
 const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2
@@ -38,12 +42,11 @@ const ϵ_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 const amu = 1.660_539_066_60e-27 # kg
 
 include("types.jl")            # Polaron types
-include("FeynmanTheory.jl")    # Actions + variational functions  
+include("FeynmanTheory.jl")    # Actions + variational functions
 include("HellwarthTheory.jl")  # multimode -> equivalent mode.
-include("MobilityTheories.jl") # Main polaronmobility function 
+include("MobilityTheories.jl") # Main polaronmobility function
 include("Susceptibility.jl")   # ImX calculation
 include("OedipusRex.jl")       # Optical Absorption
 include("MultipleBranches.jl")  # Oct 2019 extension to multiple phonon branches
 
 end # module
-
