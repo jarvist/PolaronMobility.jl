@@ -264,7 +264,7 @@ function ℜχ(Ω, β, α, v, w)
     # Hyperbolic integral that makes up the second term of ℜχ.
     integrand(x) = (1 - cosh(Ω * β * (1 - x) / 2)) * cosh(x * β / 2) / (a^2 - β^2 * x^2 / 4 - b * cosh(v * β * x / 2))^(3 // 2)
 
-    I1 = β * quadgk(x -> integrand(x), BigFloat("0.0"), BigFloat("1.0"), atol = eps(total_sum))[1] / (2 * exp(Ω * β / 2))
+    I1 = β * quadgk(x -> integrand(x), BigFloat("0.0"), BigFloat("1.0"))[1] / (2 * exp(Ω * β / 2))
 
     # I1 = hyperbolic_integral_six(Ω, β, α, v, w; prec = 200) / exp(Ω * β / 2)
 
@@ -273,6 +273,9 @@ function ℜχ(Ω, β, α, v, w)
     return total_sum, I1, (total_sum + I1)
 end
 
+"""
+In-file tests and plotting for ReX
+"""
 
 using ArbNumerics
 using SpecialFunctions
@@ -281,7 +284,7 @@ using Plots
 plotly()
 Plots.PlotlyBackend()
 setprecision(BigFloat, 128)
-Ω_range = 12.01:0.1:20
+Ω_range = 0.01:1:20
 RealX = [ℜχ(Ω, 4, 7, 5.8, 1.6) for Ω in Ω_range]
 ReX1 = [abs(x[1]) for x in RealX]
 ReX2 = [abs(x[2]) for x in RealX]
@@ -296,7 +299,6 @@ plot!(Ω_range, ReX3, label="Sum")
 # plot!(Ω_range, [abs(ℜχ(Ω, 7, 5.8, 1.6)) for Ω in Ω_range], label="Struve expansion")
 
 display(q)
-
 
 """
 ----------------------------------------------------------------------

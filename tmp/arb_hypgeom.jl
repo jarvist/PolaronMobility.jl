@@ -1,9 +1,17 @@
-# arb_hypgeom_1f2.jl
+# arb_hypgeom.jl
 
 module arb_hypgeom
 export one_f_two_fast, one_f_two
 
 using ArbNumerics
+
+"""
+Implementation of the hypergeometric function 1F2 using the expansion:
+
+    1F2(a1; {b1, b2}; z) = ∑_{k=0}^∞ (a1)_k z^k / ((b1)_k ⋅ (b2)_k ⋅ k!)
+
+where (x)_k is the Pochhammer rising factorial = Γ(x+k)/Γ(x) with Γ(x) the Gamma function.
+"""
 
 function one_f_two(a, b, x; prec = 64) # z > 0 & n >= 0
 
@@ -45,6 +53,22 @@ function one_f_two(a, b, x; prec = 64) # z > 0 & n >= 0
     ArbReal(result, bits = prec + 8)
 end
 
+"""
+Implementation of specific 1F2 hypergeometric function used for integrals:
+
+    ∫_0^1 cosh(zx) x^{2m} dx = 1F2(m+1/2; {1/2, m+3/2}; z^2/4)/(2m+1)
+                             = ∑_{t=0}^∞ z^{2t} / ((2t+2m+1)⋅(2t)!)
+
+    ∫_0^1 sinh(zx) x^{2m} dx = z ⋅ 1F2(m+1; {3/2, m+2}; z^2/4)/(2m+2)
+                             = ∑_{t=0}^∞ z^{2t+1} / ((2t+2m+2)⋅(2t+1)!)
+
+which we can combine into a generic summation:
+
+    ∑_{t=0}^∞ z^{2t+h} / ((2t+2m+1+h)⋅(2t+h)!)
+
+which gives the cosh version for h=0 and the sinh version for h=1. This specialised 1F2 converges faster than generic 1F2 algorithm, one_f_two.
+"""
+
 function one_f_two_fast(x, m, h; prec = 64) # z > 0 & n >= 0
 
     # Initialise precision of ArbReal to prec.
@@ -85,9 +109,13 @@ function one_f_two_fast(x, m, h; prec = 64) # z > 0 & n >= 0
     ArbReal(result, bits = prec + 8)
 end
 
-end
+end # end module
 
 ################################################################################
+
+"""
+Some plots and tests of the above functions to check that they produce the correct values to the specified precision.
+"""
 
 # using Plots
 # using QuadGK

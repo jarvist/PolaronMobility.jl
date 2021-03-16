@@ -1,0 +1,3 @@
+"""
+So, ReX = oscillitory integral + hyperbolic integral. I expanded the first integral ages ago, but it was not an arbitrary precision algorithm. I tested solving ReX with this old expansion for the oscillitory integral added to the hyperbolic integral solved by arbitrary precision quadgk, and it still diverged when digits beyond Float64 became important. Thus, the oscillitory integral needs to be rewritten in the arbitrary precision summation algorithm (the algorithm I used for BesselI-StruveL). I will do this here and also test it against brute forcing the integral with arb. prec. quadgk provided quadgk manages to solve this!
+"""
