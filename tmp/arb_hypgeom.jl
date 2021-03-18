@@ -33,7 +33,7 @@ function one_f_two(a, b, x; prec = 64) # z > 0 & n >= 0
         term = ArbReal(risingfact(a, k) * x^k / (prod(risingfact.(b, k)) * ArbNumerics.gamma(k + 1)))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < eps(result)
+        if abs(term) < err
             break
         end
 
@@ -87,7 +87,7 @@ function one_f_two_fast(x, m, h; prec = 64) # z > 0 & n >= 0
         term = ArbReal(x^(2 * k + h) / ((2 * k + 2 * m + 1 + h) * ArbNumerics.gamma(2 * k + 1 + h)))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < eps(result)
+        if abs(term) < err
             break
         end
 

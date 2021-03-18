@@ -3,6 +3,8 @@
 module bessel_minus_struve
 export BesselI_minus_StruveL
 
+using ArbNumerics
+
 """
 Implementation of I[n, z] - L[-n, z] where I[n, z] is the modified Bessel function of the first kind, and L[-n, z] is the modified Struve function. n is an integer ≥ 0 and the order of the functions, and z∈ℜ>0 a positive real argument. Notice the order are opposite signs.
 
@@ -40,7 +42,7 @@ function BesselI_minus_StruveL(n, z; prec = 64) # z > 0 & n >= 0
         term = bessel_term - struve_term
 
         # Break loop if term smaller than accuracy of result. (I.e. indistinguishable at set precison).
-        if abs(term) < eps(result)
+        if abs(term) < err
             break
         end
 

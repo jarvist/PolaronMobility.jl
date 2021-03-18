@@ -79,7 +79,7 @@ function hyperbolic_integral_mexpansion(z, n, β, a, h; prec = 64)
     result = ArbReal("0.0")
     err = eps(result)  # Machine accuracy of specified precision prec.
 
-    m_binomial_coeff(m) = ArbReal("$(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))")
+    m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
 
     if h == 0
         integrand = function (m, t)
@@ -91,13 +91,13 @@ function hyperbolic_integral_mexpansion(z, n, β, a, h; prec = 64)
         end
     end
 
-    integral(m) = ArbReal("$(quadgk(t -> integrand(m, t), 0, 1)[1])")
+    integral(m) = ArbReal(quadgk(t -> integrand(m, t), 0, 1)[1])
 
     while true
-        term = ArbReal("$(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * integral(m))")
+        term = ArbReal(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * integral(m))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < eps(result)
+        if abs(term) < err
             break
         end
 
@@ -115,6 +115,18 @@ function hyperbolic_integral_mexpansion(z, n, β, a, h; prec = 64)
 
             m = ArbReal("0")
             result = ArbReal("0.0")
+
+            m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
+
+            if h == 0
+                integrand = function (m, t)
+                    cosh(z * t) * t^(2 * m)
+                end
+            elseif h == 1
+                integrand = function (m, t)
+                    sinh(z * t) * t^(2 * m)
+                end
+            end
         end
     end
     ArbReal(result, bits = prec + 8)
@@ -150,19 +162,19 @@ function hyperbolic_hypergeom_mexpansion(z, n, β, a, h; prec = 64)
     β = ArbReal("$β")
     a = ArbReal("$a")
 
-    m_binomial_coeff(m) = ArbReal("$(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))")
+    m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
 
-    S(m) = ArbReal("$(arb_hypgeom.one_f_two_fast(z, m, h; prec = prec))")
+    S(m) = ArbReal(arb_hypgeom.one_f_two_fast(z, m, h; prec = prec))
 
     m = ArbReal("0")
     result = ArbReal("0.0")
     err = eps(result)  # Machine accuracy of specified precision prec.
 
     while true
-        term = ArbReal("$(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * S(m))")
+        term = ArbReal(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * S(m))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < eps(result)
+        if abs(term) < err
             break
         end
         result += term
@@ -176,12 +188,12 @@ function hyperbolic_hypergeom_mexpansion(z, n, β, a, h; prec = 64)
             β = ArbReal("$β")
             a = ArbReal("$a")
 
-            m_binomial_coeff(m) = ArbReal("$(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))")
-
-            S(m) = ArbReal("$(arb_hypgeom.one_f_two_fast(z, m, h; prec = (precision(result)-8) * 2))")
-
             m = ArbReal("0")
             result = ArbReal("0.0")
+
+            m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
+
+            S(m) = ArbReal(arb_hypgeom.one_f_two_fast(z, m, h; prec = precision(result)))
         end
     end
     ArbReal(result, bits = prec + 8)
@@ -221,23 +233,23 @@ function hyperbolic_hypergeom_mexpansion2(z, n, β, a, h; prec = 64)
     result = ArbReal("0.0")
     err = eps(result)  # Machine accuracy of specified precision prec.
 
-    m_binomial_coeff(m) = ArbReal("$(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))")
+    m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
 
     if h == 0
         one_f_two = function (m)
-            ArbReal("$(arb_hypgeom.one_f_two(m + 1/2, (1/2, m + 3/2), (z / 2)^2; prec = prec) / (2 * m + 1))")
+            ArbReal(arb_hypgeom.one_f_two(m + 1/2, (1/2, m + 3/2), (z / 2)^2; prec = prec) / (2 * m + 1))
         end
     elseif h == 1
         one_f_two = function (m)
-            ArbReal("$(z * arb_hypgeom.one_f_two(m + 1, (3/2, m + 2), (z / 2)^2; prec = prec) / (2 * m + 2))")
+            ArbReal(z * arb_hypgeom.one_f_two(m + 1, (3/2, m + 2), (z / 2)^2; prec = prec) / (2 * m + 2))
         end
     end
 
     while true
-        term = ArbReal("$(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * one_f_two(m))")
+        term = ArbReal(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * one_f_two(m))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < eps(result)
+        if abs(term) < err
             break
         end
 
@@ -255,6 +267,18 @@ function hyperbolic_hypergeom_mexpansion2(z, n, β, a, h; prec = 64)
 
             m = ArbReal("0")
             result = ArbReal("0.0")
+
+            m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
+
+            if h == 0
+                one_f_two = function (m)
+                    ArbReal(arb_hypgeom.one_f_two(m + 1/2, (1/2, m + 3/2), (z / 2)^2; prec = precision(result)) / (2 * m + 1))
+                end
+            elseif h == 1
+                one_f_two = function (m)
+                    ArbReal(z * arb_hypgeom.one_f_two(m + 1, (3/2, m + 2), (z / 2)^2; prec = precision(result)) / (2 * m + 2))
+                end
+            end
         end
     end
     ArbReal(result, bits = prec + 8)
