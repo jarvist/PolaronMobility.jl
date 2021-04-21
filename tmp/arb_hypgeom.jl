@@ -72,8 +72,9 @@ which gives the cosh version for h=0 and the sinh version for h=1. This speciali
 function one_f_two_fast(x, m, h; prec = 64) # z > 0 & n >= 0
 
     # Initialise precision of ArbReal to prec.
+    p = prec
     setextrabits(0)
-    setprecision(ArbReal, prec + 8)
+    setprecision(ArbReal, p)
 
     x = ArbReal("$x")
     m = ArbReal("$m")
@@ -84,30 +85,46 @@ function one_f_two_fast(x, m, h; prec = 64) # z > 0 & n >= 0
     err = eps(result)  # Machine accuracy of specified precision prec.
 
     while true
+
+        previous_result = result
+
         term = ArbReal(x^(2 * k + h) / ((2 * k + 2 * m + 1 + h) * ArbNumerics.gamma(2 * k + 1 + h)))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < err
+        if abs(term/result) < err
             break
         end
 
         result += term
+        # println("term: k = ", k, "\nterm value: ", ball(ArbReal(term, bits = prec)), "\ncumulant result: ", ball(ArbReal(result, bits = prec)), "\n")
         k += ArbReal("1")
 
         # Double precision if rounding error in result exceeds accuracy specified by prec.
-        if ball(result)[2] > err
-            setprecision(ArbReal, precision(result) * 2)
-
+        if radius(result) > err
+            p += precision(result)
+            setprecision(ArbReal, p)
+            # println("Not precise enough. Error = ", abs(radius(result)/midpoint(result)), " > ", err, ". Increasing precision to ", p, " bits.\n")
             x = ArbReal("$x")
             m = ArbReal("$m")
             h = ArbReal("$h")
 
-            k = ArbReal("0")
-            result = ArbReal("0.0")
+            k = ArbReal("$(k - 1)")
+            result = ArbReal("$previous_result")
         end
     end
-    ArbReal(result, bits = prec + 8)
+    # println("x: ", ArbReal(x, bits = prec), ". Final result: ", ArbReal(result, bits = prec))
+    ArbReal(result, bits = prec)
 end
+
+# β = ArbReal("2.0")
+# α = ArbReal("7.0")
+# v = ArbReal("5.8")
+# w = ArbReal("1.6")
+# R = ArbReal((v^2 - w^2) / (w^2 * v))
+# a = ArbReal(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))
+# z = ArbReal("90.61")
+# m = ArbReal("1.0")
+# c = one_f_two_fast(z, m, 0; prec = 64)
 
 end # end module
 

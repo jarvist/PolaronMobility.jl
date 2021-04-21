@@ -7,6 +7,13 @@ include("arb_hypgeom.jl")
 import .arb_hypgeom
 using ArbNumerics
 
+function arb_binomial(x, y)
+    x = ArbReal("$x")
+    y = ArbReal("$y")
+    one = ArbReal("1")
+    ArbNumerics.gamma(x + one) / (ArbNumerics.gamma(y + one) * ArbNumerics.gamma(x - y + one))
+end
+
 """
 This function implements the binomial expansion of the denominator of the integrals:
 
@@ -29,49 +36,64 @@ function hypergeom_exp(z, n, β, a, h; prec = 64)
 # h = 0 gives cosh, h = 1 gives sinh.
 
     # Initialise precision of ArbReal to prec.
+    p = prec
     setextrabits(0)
-    setprecision(ArbReal, prec + 8)
+    setprecision(ArbReal, p)
 
     z = ArbReal("$z")
     n = ArbReal("$n")
     β = ArbReal("$β")
     a = ArbReal("$a")
 
-    m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
-
-    S(m) = ArbReal(arb_hypgeom.one_f_two_fast(z, m, h; prec = prec))
+    S(m) = arb_hypgeom.one_f_two_fast(z, m, h; prec = p)
 
     m = ArbReal("0")
     result = ArbReal("0.0")
-    err = eps(result)  # Machine accuracy of specified precision prec.
+    err =  eps(result)  # Machine accuracy of specified precision prec.
 
     while true
-        term = ArbReal(m_binomial_coeff(m) * (-1)^m * (β / (2 * a))^(2 * n + 2 * m + 3) * S(m))
+
+        previous_result = result
+
+        term = ArbReal(β * arb_binomial(-n - 3/2, m) * (-1)^m * (β / (2 * a))^(2 * m) * S(m) / a^(n + 2))
 
         # Break loop if term smaller than accuracy of result.
-        if abs(term) < err
+        if abs(term/result) < err
             break
         end
         result += term
+        # println("term: m = ", m, "\nterm value: ", ball(ArbReal(term, bits = prec)), "\ncumulant result: ", ball(ArbReal(result, bits = prec)), "\n")
         m += ArbReal("1")
 
         # Double precision if rounding error in result exceeds accuracy specified by prec.
-        if ball(result)[2] > err
-            setprecision(ArbReal, precision(result) * 2)
+        if radius(result) > err
+            p += precision(result)
+            setprecision(ArbReal, p)
+            # println("Not precise enough. Error = ", abs(radius(result)/midpoint(result)), " > ", err, ". Increasing precision to ", p, " bits.\n")
+
             n = ArbReal("$n")
             z = ArbReal("$z")
             β = ArbReal("$β")
             a = ArbReal("$a")
 
-            m = ArbReal("0")
-            result = ArbReal("0.0")
+            m = ArbReal("$(m - 1)")
+            result = ArbReal("$previous_result")
 
-            m_binomial_coeff(m) = ArbReal(ArbNumerics.gamma(-n - 1//2) / (ArbNumerics.gamma(m + 1) * ArbNumerics.gamma(-n - m - 1//2)))
-
-            S(m) = ArbReal(arb_hypgeom.one_f_two_fast(z, m, h; prec = precision(result)))
+            S(m) = arb_hypgeom.one_f_two_fast(z, m, h; prec = p)
         end
     end
-    ArbReal(result, bits = prec + 8)
+    # println("z: ", ArbReal(z, bits = prec), ". Final result: ", ArbReal(result, bits = prec))
+    ArbReal(result, bits = prec)
 end
+
+# β = ArbReal("2.0")
+# α = ArbReal("7.0")
+# v = ArbReal("5.8")
+# w = ArbReal("1.6")
+# R = ArbReal((v^2 - w^2) / (w^2 * v))
+# a = ArbReal(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))
+# z = ArbReal("90.61")
+# n = ArbReal("12.0")
+# c = hypergeom_exp(z, n, β, a, 0; prec = 64)
 
 end # end module

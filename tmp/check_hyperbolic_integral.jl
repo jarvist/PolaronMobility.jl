@@ -1,11 +1,13 @@
 # check_hyperbolic_integrals.jl
 
-module check_hyperbolic_integral
-export hyperbolic_integral_one, hyperbolic_integral_two, hyperbolic_integral_three, hyperbolic_integral_four, hyperbolic_integralfive, hyperbolic_integral_six
+# module check_hyperbolic_integral
+# export hyperbolic_integral_one, hyperbolic_integral_two, hyperbolic_integral_three, hyperbolic_integral_four, hyperbolic_integralfive, hyperbolic_integral_six
 
 using QuadGK
 using Plots
 using SpecialFunctions
+plotly()
+Plots.PlotlyBackend()
 
 """
 This file tests a mathematical expansion of the integral:
@@ -312,26 +314,26 @@ function hyperbolic_integral_six(Ω, β, α, v, w; prec = 64)
     return coefficient * total_sum * exp(Ω * β / 2) / 2
 end
 
-end # end of module
+# end # end of module
 
 """
 Plotting of the above six functions to compare them. They should all produce the same graph (which they do).
 """
-# Ω_range = 0.01:0.1:20
-# @time hyper_int_1 = [-(hyperbolic_integral_one(Ω, 2, 7, 5.8, 1.6)) for Ω in Ω_range]
-# @time hyper_int_2 = [-(hyperbolic_integral_two(Ω, 2, 7, 5.8, 1.6)) for Ω in Ω_range]
-# @time hyper_int_3 = [-(hyperbolic_integral_three(Ω, 2, 7, 5.8, 1.6)) for Ω in Ω_range]
-# @time hyper_int_4 = [-(hyperbolic_integral_four(Ω, 2, 7, 5.8, 1.6)) for Ω in Ω_range]
-# @time hyper_int_5 = [-(hyperbolic_integral_five(Ω, 2, 7, 5.8, 1.6)) for Ω in Ω_range]
-# @time hyper_int_6 = [-(hyperbolic_integral_six(Ω, 2, 7, 5.8, 1.6)) for Ω in Ω_range]
-#
-# p = plot(Ω_range, hyper_int_1, yaxis=:log, label = "hyper_int_1")
-# plot!(Ω_range, hyper_int_2, label = "hyper_int_2")
-# plot!(Ω_range, hyper_int_3, label = "hyper_int_3")
-# plot!(Ω_range, hyper_int_4, label = "hyper_int_4")
-# plot!(Ω_range, hyper_int_5, label = "hyper_int_5")
-# plot!(Ω_range, hyper_int_6, label = "hyper_int_6")
-# display(p)
+Ω_range = 0.01:0.1:20
+@time hyper_int_1 = [hyperbolic_integral_one(Ω, 10, 7, 5.8, 1.6) for Ω in Ω_range]
+@time hyper_int_2 = [hyperbolic_integral_two(Ω, 10, 7, 5.8, 1.6) for Ω in Ω_range]
+@time hyper_int_3 = [hyperbolic_integral_three(Ω, 10, 7, 5.8, 1.6) for Ω in Ω_range]
+@time hyper_int_4 = [hyperbolic_integral_four(Ω, 10, 7, 5.8, 1.6) for Ω in Ω_range]
+@time hyper_int_5 = [hyperbolic_integral_five(Ω, 10, 7, 5.8, 1.6) for Ω in Ω_range]
+@time hyper_int_6 = [hyperbolic_integral_six(Ω, 10, 7, 5.8, 1.6) for Ω in Ω_range]
+
+p = plot(Ω_range, abs.(hyper_int_1), yaxis=:log, label = "hyper_int_1")
+plot!(Ω_range,  abs.(hyper_int_2), label = "hyper_int_2")
+plot!(Ω_range,  abs.(hyper_int_3), label = "hyper_int_3")
+plot!(Ω_range,  abs.(hyper_int_4), label = "hyper_int_4")
+plot!(Ω_range,  abs.(hyper_int_5), label = "hyper_int_5")
+plot!(Ω_range,  abs.(hyper_int_6), label = "hyper_int_6")
+display(p)
 
 """
 Mini tests of some individual parts of the above six functions. Such as the coshine product expansion, the 1F2 hypergeometric function, etc.
