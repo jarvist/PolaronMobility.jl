@@ -7,7 +7,9 @@ include("arb_hypgeom.jl")
 import .arb_hypgeom
 using ArbNumerics
 
-function arb_binomial(x, y)
+function arb_binomial(x, y; prec = 64)
+    setextrabits(0)
+    setprecision(ArbReal, prec)
     x = ArbReal("$x")
     y = ArbReal("$y")
     one = ArbReal("1")
@@ -45,29 +47,21 @@ function hypergeom_exp(z, n, β, a, h; prec = 64)
     β = ArbReal("$β")
     a = ArbReal("$a")
 
-    S(m) = arb_hypgeom.one_f_two_fast(z, m, h; prec = p)
-
     m = ArbReal("0")
     result = ArbReal("0.0")
-    err =  eps(result)  # Machine accuracy of specified precision prec.
+    term = ArbReal("1.0")
+    err = eps(result)  # Machine accuracy of specified precision prec.
 
-    while true
+    while abs(midpoint(term)) > err * abs(midpoint(result))
 
-        previous_result = result
-
-        term = ArbReal(β * arb_binomial(-n - 3/2, m) * (-1)^m * (β / (2 * a))^(2 * m) * S(m) / a^(n + 2))
-
-        # Break loop if term smaller than accuracy of result.
-        if abs(term/result) < err
-            break
-        end
+        term = ArbReal(β * arb_binomial(-n - 3/2, m; prec = p) * (-1)^m * (β / (2 * a))^(2 * m) * arb_hypgeom.one_f_two_fast(z, m, h; prec = p) / a^(n + 2))
         result += term
         # println("term: m = ", m, "\nterm value: ", ball(ArbReal(term, bits = prec)), "\ncumulant result: ", ball(ArbReal(result, bits = prec)), "\n")
         m += ArbReal("1")
 
         # Double precision if rounding error in result exceeds accuracy specified by prec.
-        if radius(result) > err
-            p += precision(result)
+        if radius(result) > err * abs(midpoint(result))
+            p *= 2
             setprecision(ArbReal, p)
             # println("Not precise enough. Error = ", abs(radius(result)/midpoint(result)), " > ", err, ". Increasing precision to ", p, " bits.\n")
 
@@ -76,10 +70,9 @@ function hypergeom_exp(z, n, β, a, h; prec = 64)
             β = ArbReal("$β")
             a = ArbReal("$a")
 
-            m = ArbReal("$(m - 1)")
-            result = ArbReal("$previous_result")
-
-            S(m) = arb_hypgeom.one_f_two_fast(z, m, h; prec = p)
+            m = ArbReal("0")
+            result = ArbReal("0.0")
+            term = ArbReal("1.0")
         end
     end
     # println("z: ", ArbReal(z, bits = prec), ". Final result: ", ArbReal(result, bits = prec))
@@ -94,6 +87,6 @@ end
 # a = ArbReal(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))
 # z = ArbReal("90.61")
 # n = ArbReal("12.0")
-# c = hypergeom_exp(z, n, β, a, 0; prec = 64)
-
+# @time c = hypergeom_exp(z, n, β, a, 0; prec = 64)
+# @show(c)
 end # end module

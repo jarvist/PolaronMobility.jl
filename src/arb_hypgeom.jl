@@ -82,34 +82,26 @@ function one_f_two_fast(x, m, h; prec = 64) # z > 0 & n >= 0
 
     k = ArbReal("0")
     result = ArbReal("0.0")
+    term = ArbReal("1.0")
     err = eps(result)  # Machine accuracy of specified precision prec.
 
-    while true
-
-        previous_result = result
-
+    while abs(midpoint(term)) > err * abs(midpoint(result))
         term = ArbReal(x^(2 * k + h) / ((2 * k + 2 * m + 1 + h) * ArbNumerics.gamma(2 * k + 1 + h)))
-
-        # Break loop if term smaller than accuracy of result.
-        if abs(term/result) < err
-            break
-        end
-
         result += term
         # println("term: k = ", k, "\nterm value: ", ball(ArbReal(term, bits = prec)), "\ncumulant result: ", ball(ArbReal(result, bits = prec)), "\n")
-        k += ArbReal("1")
+        k += 1
 
         # Double precision if rounding error in result exceeds accuracy specified by prec.
-        if radius(result) > err
-            p += precision(result)
+        if radius(result) > err * abs(midpoint(result))
+            p *= 2
             setprecision(ArbReal, p)
             # println("Not precise enough. Error = ", abs(radius(result)/midpoint(result)), " > ", err, ". Increasing precision to ", p, " bits.\n")
             x = ArbReal("$x")
             m = ArbReal("$m")
             h = ArbReal("$h")
-
-            k = ArbReal("$(k - 1)")
-            result = ArbReal("$previous_result")
+            k = ArbReal("0")
+            result = ArbReal("0.0")
+            term = ArbReal("1.0")
         end
     end
     # println("x: ", ArbReal(x, bits = prec), ". Final result: ", ArbReal(result, bits = prec))
@@ -124,7 +116,8 @@ end
 # a = ArbReal(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))
 # z = ArbReal("90.61")
 # m = ArbReal("1.0")
-# c = one_f_two_fast(z, m, 0; prec = 64)
+# @time c = one_f_two_fast(z, m, 0; prec = 64)
+# @show(c)
 
 end # end module
 

@@ -31,51 +31,44 @@ function BesselI_minus_StruveL(n, z, a; prec = 64) # z > 0 & n >= 0
     z = ArbReal("$z")
     a = ArbReal("$a")
 
-    k = ArbReal("0")
+    k = ArbReal("0.0")
     result = ArbReal("0.0")
     term = ArbReal("1.0")
-    err =  eps(result)  # Machine accuracy of specified precision = prec.
+    err = eps(result)  # Machine accuracy of specified precision = prec.
 
-    while abs(ArbReal(term, bits = prec)) > err * abs(ArbReal(result, bits = prec))
-
-        previous_result = result
-
-        bessel_term = ArbReal((abs(z) * a / 2)^(2 * k + n + 1) / (ArbNumerics.gamma(k + 1) * ArbNumerics.gamma(k + n + 2)))
-
-        struve_term = ArbReal((abs(z) * a / 2)^(2 * k - n) / (ArbNumerics.gamma(k + 3//2) * ArbNumerics.gamma(k - n + 1//2)))
-
-        term = ArbReal((√π * ArbNumerics.gamma(-n - 1/2) * (abs(z) / 2)^n * z / 2) * (bessel_term - struve_term))
-
+    while abs(midpoint(term)) > err * abs(midpoint(result))
+        term = ArbReal((abs(z) * a / 2)^(2 * k + n + 1) / (ArbNumerics.gamma(k + 1) * ArbNumerics.gamma(k + n + 2)) - (abs(z) * a / 2)^(2 * k - n) / (ArbNumerics.gamma(k + 3//2) * ArbNumerics.gamma(k - n + 1//2)))
         result += term
-        println("term: k = ", k, "\nterm value: ", ball(term), "\ncumulant result: ", ball(result), "\n")
-        k += ArbReal("1")
-
+        # println("term: k = ", k, "\nterm value: ", ball(term), "\ncumulant result: ", ball(result), "\n")
+        k += 1
         # Double precision if rounding error in result exceeds accuracy specified by prec.
-        while radius(result) > ArbReal("$err")
-            p += precision(result)
+        while radius(result) > err * abs(midpoint(result))
+            p *= 2
             setprecision(ArbReal, p)
             # variables have to be re-parsed into the higher precision ArbReal type.
-            println("Not precise enough. Error = ", radius(result), " > ", ArbReal("$err"), ". Increasing precision to ", p, " bits.\n")
+            # println("Not precise enough. Error = ", radius(result), " > ", ArbReal("$err"), ". Increasing precision to ", p, " bits.\n")
             n = ArbReal("$n")
             z = ArbReal("$z")
             a = ArbReal("$a")
-
-            k = ArbReal("$(k - 1)")
-            result = ArbReal("$previous_result")
+            k = ArbReal("0")
+            result = ArbReal("0.0")
+            term = ArbReal("1.0")
         end
     end
-    println("z: ", ArbReal(z, bits = prec), ". Final result: ", ArbReal(result, bits = prec))
-    ArbReal(result, bits = prec) # return to specified precision.
+    # println("z: ", ArbReal(z, bits = prec), ". Final result: ", ArbReal(result, bits = prec))
+    ArbReal(result * √π * ArbNumerics.gamma(-n - 1/2) * (abs(z) / 2)^n * z / 2, bits = prec) # return to specified precision.
 end
+# @time bsi = BesselI_minus_StruveL(3, 55, 1)
+# @show(bsi)
 
-β = ArbReal("2.0")
-α = ArbReal("7.0")
-v = ArbReal("5.8")
-w = ArbReal("1.6")
-R = ArbReal((v^2 - w^2) / (w^2 * v))
-a = ArbReal(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))
-z = ArbReal("90.61")
-n = ArbReal("12.0")
-c = BesselI_minus_StruveL(n, z, a; prec = 24)
+# β = ArbReal("2.0")
+# α = ArbReal("7.0")
+# v = ArbReal("5.8")
+# w = ArbReal("1.6")
+# R = ArbReal((v^2 - w^2) / (w^2 * v))
+# a = ArbReal(sqrt(β^2 / 4 + R * β * coth(β * v / 2)))
+# z = ArbReal("90.61")
+# n = ArbReal("12.0")
+# c = BesselI_minus_StruveL(n, z, a; prec = 24)
 
 end # end of module
