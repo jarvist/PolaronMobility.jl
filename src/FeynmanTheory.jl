@@ -37,32 +37,57 @@ F(v,w,α)=(3/(4*v))*(v-w)^2-AF(v,w,α)
 
 # Let's wrap the Feynman athermal variation approximation in a simple function
 """
-    feynmanvw(α; v=7.0, w=6.0)
+    feynmanvw(α; v = 0.0, w = 0.0)
 
     Calculate v and w variational polaron parameters,
     for the supplied α Frohlich coupling.
     This version uses the original athermal action (Feynman 1955).
 	Returns v,w.
 """
-function feynmanvw(α; v=7.0, w=6.0) # v,w defaults
-    initial=[v,w]
-    # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
-    lower=[0.1,0.1]
-    upper=[1000.0,1000.0]
+function feynmanvw(α; v = 0.0, w = 0.0) # v, w defaults
 
-    myf(x) = F(x[1],x[2],α) # Wraps the function so just the two variational params are exposed, so that Optim can call it
+    # Intial guess for v and w.
+    if v == 0.0 || w == 0.0 # Default values to start with. Generates a random float between 1.0 and 11.0
+        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
+    else
+        initial = [v, w]
+    end
 
-    # Now updated to use Optim.jl > 0.15.0 call signature (Julia >0.6 only)
-    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
-                 lower, upper, initial, Fminbox( BFGS() ) )
-    # specify Optim.jl optimizer. This is doing all the work.
+    # Limits of the optimisation.
+    lower = [0.0, 0.0]
+    upper = [Inf, Inf]
 
-    v,w=Optim.minimizer(res)
+    # Osaka Free Energy function to minimise.
+    f(x) = F(x[1], x[2], α)
 
-    return v,w
+    # Use Optim to optimise the free energy function w.r.t v and w.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS()),
+    )
+
+    # Get v and w values that minimise the free energy.
+    v, w = Optim.minimizer(solution)
+
+    # If optimisation does not converge or if v ≤ w, pick new random starting guesses for v and w between 1.0 and 11.0. Repeat until the optimisation converges with v > w.
+    while Optim.converged(solution) == false || v <= w
+        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
+        solution = Optim.optimize(
+            Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+            lower,
+            upper,
+            initial,
+            Fminbox(BFGS()),
+        )
+        v, w = Optim.minimizer(solution)
+    end
+
+    # Return variational parameters that minimise the free energy.
+    return v, w
 end
-
-
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
 
@@ -93,38 +118,55 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
 
 """
-    feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false)
+    feynmanvw(α, βred; v = 0.0, w = 0.0)
 
     Calculate v and w variational polaron parameters, for the supplied
     α Frohlich coupling and βred reduced thermodynamic temperature.
     This uses the Osaka finite temperature action, as presented in Hellwarth
-    and Biaggio 1999.  
-    Returns v,w.
+    and Biaggio 1999.
+    Returns v, w.
 """
-function feynmanvw(α, βred; v=7.1, w=6.5, verbose::Bool=false) # v,w defaults
-    # Initial v,w to use
-    initial=[v,w]
-    # Main use of these bounds is stopping v or w going negative, at which you get a NaN error as you are evaluating log(-ve Real)
-    lower=[0.1,0.1]
-    upper=[100.0,100.0]
+function feynmanvw(α, βred; v = 0.0, w = 0.0) # v, w defaults
 
-    myf(x) = F(x[1],x[2],βred,α) # Wraps the function so just the two variational params are exposed, so Optim can call it
-
-    # Now updated to use Optim > 0.15.0 call signature (Julia >0.6 only)
-    res=optimize(OnceDifferentiable(myf, initial; autodiff = :forward), 
-                 lower, upper, initial, Fminbox( BFGS() ) )
-    # specify Optim.jl optimizer. This is doing all the work.
-
-    if Optim.converged(res) == false
-        print("\tWARNING: Failed to converge to v,w soln? : ",Optim.converged(res) )
+    # Intial guess for v and w.
+    if v == 0.0 || w == 0.0 # Default values to start with. Generates a random float between 1.0 and 11.0
+        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
+    else
+        initial = [v, w]
     end
 
-    if verbose # pretty print Optim solution
-        println()
-        show(res)
+    # Limits of the optimisation.
+    lower = [0.0, 0.0]
+    upper = [Inf, Inf]
+
+    # Osaka Free Energy function to minimise.
+    f(x) = F(x[1], x[2], βred, α)
+
+    # Use Optim to optimise the free energy function w.r.t v and w.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS()),
+    )
+
+    # Get v and w values that minimise the free energy.
+    v, w = Optim.minimizer(solution)
+
+    # If optimisation does not converge or if v ≤ w, pick new random starting guesses for v and w between 1.0 and 11.0. Repeat until the optimisation converges with v > w.
+    while Optim.converged(solution) == false || v <= w
+        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
+        solution = Optim.optimize(
+            Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+            lower,
+            upper,
+            initial,
+            Fminbox(BFGS()),
+        )
+        v, w = Optim.minimizer(solution)
     end
 
-    v,w=Optim.minimizer(res)
-    return v,w
+    # Return variational parameters that minimise the free energy.
+    return v, w
 end
-
