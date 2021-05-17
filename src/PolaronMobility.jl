@@ -10,7 +10,7 @@ module PolaronMobility
 export Polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
-export ImX, ℑχ, μ
+export χ, χ_dc, μ_ac, μ_dc
 
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 export Hellwarth1999mobilityRHS
@@ -27,10 +27,6 @@ import QuadGK.quadgk
 
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
-
-# Extra packages for ℑχ
-using SpecialFunctions
-using ArbNumerics
 
 # Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s
