@@ -5,9 +5,10 @@
 frohlichPartial((f, ϵ_mode); ϵ_o,ϵ_s,meff)
 
 Calculate a (partial) dielectric electron-phonon coupling element.
+f - frequency of mode in THz
+ϵ_mode - this mode's contribution to dielectric
 ϵ_o - optical dielectric
 ϵ_s - total static dielectric contribution
-ϵ_mode - this mode's contribution to dielectric
 """
 function frohlichPartial((f, ϵ_mode); ϵ_o,ϵ_s,meff)
     ω=f*1E12*2π
@@ -19,15 +20,18 @@ end
 frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f,meff) = frohlichPartial((f, ϵ_mode), ϵ_o=ϵ_o,ϵ_s=ϵ_s,meff=meff)
 
 rows(M::Matrix) = map(x->reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1])
+
 """
-IRtoDielectric(IR,V)
+IRtoDielectric(IRmodes,volume)
 
 From absolute value of IR activities of phonon modes, generate a per-mode
-contribution to the low-frequencydielectric constant.
+contribution to the low-frequency dielectric constant.
+
+IRmodes are tuples f,S with Frequency in THz; InfraRed activity in e^2 amu^-1
 """
-function IRtoDielectric(IR,volume)
+function IRtoDielectric(IRmodes,volume)
     ϵ=0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
-    for r in rows(IR)
+    for r in rows(IRmodes)
         f,S=r # frequency in THz; activity in e^2 amu^-1
         f=f * 1E12 #* THz
         ω=2π * f
@@ -75,9 +79,11 @@ end
 DieletricFromIRmode(IRmode)
 
 Calculate dielectric from an individual mode.
+
+IRmode is a tuple f,S with Frequency in THz; InfraRed activity in e^2 amu^-1
 """
 function DielectricFromIRmode(IRmode; volume)
-    f,S=IRmode # Assumes Frequency in THz; activity in e^2 amu^-1
+    f,S=IRmode # Assumes Frequency in THz; InfraRed activity in e^2 amu^-1
     f*=1E12 # convert to Hz from THz
     ω=2π * f
     S=S * q^2 / amu
@@ -278,8 +284,11 @@ function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs
     return F / eV * 1e3 # change to meV
 end
 
-"Multiple branch variation"
+"""
+function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 1)
 
+Multiple branch variational theory.
+"""
 function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 1) # N number of v and w params
 
     # Intial guess for v and w.
@@ -313,3 +322,4 @@ function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 
     # Return variational parameters that minimise the free energy.
     return var_params
 end
+
