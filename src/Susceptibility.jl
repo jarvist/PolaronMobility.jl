@@ -102,7 +102,7 @@ function χ(Ω, β, α, v, w)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(x) = (1 - exp(-1im * Ω * x)) * imag(S(x))
-    QuadGK.quadgk(x -> integrand(x), 0.0, Inf)[1]
+    quadgk(x -> integrand(x), 0.0, Inf)[1]
 end
 
 """

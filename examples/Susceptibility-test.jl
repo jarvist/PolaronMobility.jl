@@ -23,7 +23,7 @@ mb=MAPIe.mb[1]
 
 nu=0:0.1:40
 println("Integrating ImX for nu=$nu range...")
-s=ImX(nu, v, w, βred,α,ω,mb)
+s=PolaronMobility.ImX(nu, v, w, βred,α,ω,mb)
 
 println("Loading Plots for plotting...")
 using Plots
