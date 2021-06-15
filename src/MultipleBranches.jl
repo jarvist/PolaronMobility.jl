@@ -323,3 +323,46 @@ function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 
     return var_params
 end
 
+
+"""
+function multi_susceptibility(Ω, β::Array, α::Array, v, w, f::Array)
+
+    Calculate polaron complex susceptibility inclusive of multiple phonon branches j, each with frequency f[j] (THz).
+    α is an array of decomposed Frohlich alphas, one for each phonon frequency f[j].
+    β is an array of reduced thermodynamic betas, one for each phonon frequency f[j].
+    Ω is the frequency (THz) of applied electric field.
+    v and w are variational parameters that minimise the polaron free energy for the system.
+
+Multiple branch conmplex susceptibility.
+"""
+function multi_susceptibility(Ω, β, α, v, w, f)
+
+    # FHIP1962, page 1011, eqn (47c).
+    R = (v^2 - w^2) / (w^2 * v)
+
+    # FHIP1962, page 1009, eqn (35c).
+    D(x, β) = w^2 / v^2 * (R * (1 - cos(v * x)) * coth(β * v / 2) + x^2 / β - 1im * (R * sin(v * x) + x))
+
+    # FHIP1962, page 1009, eqn (36).
+    S(x, α, β) = 2 * α / (3 * √π) * (exp(1im * x) + 2 * cos(x) / (exp(β) - 1)) / (D(x, β))^(3 / 2)
+
+    # FHIP1962, page 1009, eqn (35a). Scale Frequency Ω by phonon branch frequency f_j.
+    integrand(x, α, β, f) = (1 - exp(-1im * Ω * x / f)) * imag(S(x, α, β)) / Ω * f
+
+    susceptibility = 0.0
+    for j in 1:length(f) # sum over phonon branches
+        susceptibility += QuadGK.quadgk(x -> integrand(x, α[j], β[j], f[j]), 0.0, Inf)[1]
+        println("$Ω, $j, $(β[j]), $(α[j]), $χ")
+    end
+    return susceptibility
+end
+
+"""
+function multi_conductivity(susceptibility)
+
+    Transforms complex susceptibility into the complex conductivity.
+"""
+function multi_conductivity(susceptibility)
+    σ = 1im * (1 - √(1 + susceptibility))
+    return σ
+end
