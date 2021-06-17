@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.7
+# v0.14.8
 
 using Markdown
 using InteractiveUtils
@@ -13,8 +13,11 @@ Pkg.activate("../")
 # ╔═╡ 66923a50-0fa8-11eb-1547-cf8e289818b0
 using Revise
 
-# ╔═╡ 93125894-0fa8-11eb-0ff6-211feff97889
+# ╔═╡ 3f9bdb02-7028-449b-93fc-01c4d3632db4
 using PolaronMobility
+
+# ╔═╡ 2024f235-aca8-427b-8579-2c869a0ba901
+using QuadGK
 
 # ╔═╡ f0529460-0fa8-11eb-1bec-1feb30645d42
 using Plots
@@ -171,7 +174,7 @@ begin
 	@gp :- "set xlabel 'Frequency (THz)' "
 	@gp :- "set ylabel 'σ' "
 	
-	Gnuplot.save("/home/jarvist/complex_conductivity_MAPI.gp")
+	Gnuplot.save("~/complex_conductivity_MAPI.gp")
 	Gnuplot.save(term="pngcairo size 1024,768 fontscale 2 pointscale 2 linewidth 2", output="~/complex_conductivity_MAPI.png")
 
 end
@@ -190,10 +193,101 @@ begin
 end
 
 # ╔═╡ 1880d08f-f808-4690-8ad1-af1616cda0bf
+# Multiple branch free energy optimisation
 
+# ╔═╡ e39b7ce9-5396-4065-ba6a-eac83e626794
+MAPI= [
+# 96.20813558773261 0.4996300522819191
+# 93.13630357703363 1.7139631746083817
+# 92.87834578121567 0.60108592692181
+# 92.4847918585963 0.0058228799414729
+# 92.26701437594754 0.100590086574602
+# 89.43972834606603 0.006278895133832249
+# 46.89209141511332 0.2460894564364346
+# 46.420949316788 0.14174282581124137
+# 44.0380222871706 0.1987196948553428
+# 42.89702947649343 0.011159939465770681
+# 42.67180170168193 0.02557751102757614
+# 41.46971205834201 0.012555230726601503
+# 37.08982543385215 0.00107488277468418
+# 36.53555265689563 0.02126940080871224
+# 30.20608114002676 0.009019481779712388
+# 27.374810898415028 0.03994453721421388
+# 26.363055017011728 0.05011922682554448
+# 9.522966890022039 0.00075631870522737
+4.016471586720514 0.08168931020200264
+3.887605410774121 0.006311654262282101
+3.5313112232401513 0.05353548710183397
+2.755392921480459 0.021303020776321225
+2.4380741812443247 0.23162784335484837
+2.2490917637719408 0.2622203718355982
+2.079632190634424 0.23382298607799906
+2.0336707697261187 0.0623239656843172
+1.5673011873879714 0.0367465760261409
+1.0188379384951798 0.0126328938653956
+1.0022960504442775 0.006817361620021601
+0.9970130778462072 0.0103757951973341
+0.9201781906386209 0.01095811116040592
+0.800604081794174 0.0016830270365341532
+0.5738689505255512 0.00646428491253749
+# 0.022939578929507105 8.355742795827834e-06   # Acoustic modes!
+# 0.04882611767873102 8.309858592685e-06
+# 0.07575149723846182 2.78248540373041e-05
+]
 
-# ╔═╡ ccab0b3e-c9f7-4081-b037-290eaf44292f
+# ╔═╡ 3f2969ce-53c4-44ce-b442-c6c1e4c8e63c
+v_params, w_params = PolaronMobility.multi_variation(10, 4.5, 0.12, (6.29e-10)^3, MAPI; N = 1)
 
+# ╔═╡ 9f8e375a-e45d-430e-89f0-e62573f2f45b
+F_j = [PolaronMobility.multi_free_energy(v_params[j, :], w_params[j, :], 10, 4.5, 0.12, (6.29e-10)^3, MAPI, j) for j in 1:length(MAPI[:, 1])] 
+
+# ╔═╡ b0fc3a52-b4da-4ac4-a36e-e6229cd1f20e
+F_total = sum(F_j)
+
+# ╔═╡ d36a215e-9411-4332-82cf-caa87a56c7f4
+# multiple branch susceptibility and conductivity
+
+# ╔═╡ c2e007f4-dac0-4be5-ab55-10186fb34d61
+phonon_mode_freqs = MAPI[:, 1]
+
+# ╔═╡ ecd96809-9808-46fa-9405-884aeb8c7e6e
+ir_activities = MAPI[:, 2]
+
+# ╔═╡ f0d30402-ee5f-4cf9-b4bd-af35a102f71d
+ϵ_ionic = [PolaronMobility.ϵ_ionic_mode(f, r, (6.29e-10)^3) for (f, r) in zip(phonon_mode_freqs, ir_activities)]
+
+# ╔═╡ e2faa878-0ad1-42f7-99e8-53699c1c3468
+ϵ_total = sum(ϵ_ionic)
+
+# ╔═╡ 2d161b89-5594-4601-bb8e-c1748ade6269
+α_j = [PolaronMobility.frohlich_α_j(4.5, ϵ_i, ϵ_total, f, 0.12) for (ϵ_i, f) in zip(ϵ_ionic, phonon_mode_freqs)]
+
+# ╔═╡ 928e7f3b-6eab-4081-94bf-a4fa3a953f35
+α_eff = sum(α_j)
+
+# ╔═╡ 1dd3fcda-6818-4601-9fa4-7b75a07ee8d8
+βr = [ħ * 2π * 1e12 * f / kB / 10 for f in phonon_mode_freqs]
+
+# ╔═╡ 9b410a25-1c09-4bcb-b06d-63c928ab5bbc
+Ω_range = 0.01:0.01:3.50
+
+# ╔═╡ c69faa18-759e-465c-b720-d8c6d429780d
+χ = [PolaronMobility.multi_susceptibility(Ω, βr, α_j, v_params, w_params, phonon_mode_freqs) for Ω in Ω_range]
+
+# ╔═╡ e052454b-f885-4d76-8eb1-baedeff24e1e
+begin
+	χ_plot = plot(Ω_range, imag.(χ), xlabel = "Frequency (THz)", ylabel = "χ", label = "Imχ")
+	plot!(χ_plot, Ω_range, real.(χ), label = "Reχ")
+end
+
+# ╔═╡ dbe241ba-5b5c-45d0-9d63-3ccefc82766f
+σ_new = [PolaronMobility.multi_conductivity(χ[Ω], phonon_mode_freqs) for Ω in 1:length(χ)]
+
+# ╔═╡ ec793073-968b-447b-a445-9182f1cfdf0f
+begin
+	σ_plot = plot(Ω_range, real.(σ_new), xlabel = "Frequency (THz)", ylabel = "σ", label = "Reσ")
+	plot!(σ_plot, Ω_range, imag.(σ_new), label = "Imσ")
+end
 
 # ╔═╡ Cell order:
 # ╠═d263806b-0851-4854-ba06-df1071b3d38b
@@ -201,7 +295,8 @@ end
 # ╠═66923a50-0fa8-11eb-1547-cf8e289818b0
 # ╠═8336bf6e-0fa8-11eb-1f48-37cfe47a6d0f
 # ╠═8ae04a5a-0fa8-11eb-2821-8dc46ee73269
-# ╠═93125894-0fa8-11eb-0ff6-211feff97889
+# ╠═3f9bdb02-7028-449b-93fc-01c4d3632db4
+# ╠═2024f235-aca8-427b-8579-2c869a0ba901
 # ╠═8b357378-449b-45cb-aa8e-fa2a5bf5feed
 # ╠═c3fd3779-7c5c-4370-8378-66c4b0d963af
 # ╠═386fd0a4-0faa-11eb-14e3-a3cdf3f3cb5d
@@ -239,4 +334,20 @@ end
 # ╠═cdba35db-b258-433c-9387-42b505e2efb4
 # ╠═e0c76116-8c8a-4053-86c7-2f7c48f808bf
 # ╠═1880d08f-f808-4690-8ad1-af1616cda0bf
-# ╠═ccab0b3e-c9f7-4081-b037-290eaf44292f
+# ╠═e39b7ce9-5396-4065-ba6a-eac83e626794
+# ╠═3f2969ce-53c4-44ce-b442-c6c1e4c8e63c
+# ╠═9f8e375a-e45d-430e-89f0-e62573f2f45b
+# ╠═b0fc3a52-b4da-4ac4-a36e-e6229cd1f20e
+# ╠═d36a215e-9411-4332-82cf-caa87a56c7f4
+# ╠═c2e007f4-dac0-4be5-ab55-10186fb34d61
+# ╠═ecd96809-9808-46fa-9405-884aeb8c7e6e
+# ╠═f0d30402-ee5f-4cf9-b4bd-af35a102f71d
+# ╠═e2faa878-0ad1-42f7-99e8-53699c1c3468
+# ╠═2d161b89-5594-4601-bb8e-c1748ade6269
+# ╠═928e7f3b-6eab-4081-94bf-a4fa3a953f35
+# ╠═1dd3fcda-6818-4601-9fa4-7b75a07ee8d8
+# ╠═9b410a25-1c09-4bcb-b06d-63c928ab5bbc
+# ╠═c69faa18-759e-465c-b720-d8c6d429780d
+# ╠═e052454b-f885-4d76-8eb1-baedeff24e1e
+# ╠═dbe241ba-5b5c-45d0-9d63-3ccefc82766f
+# ╠═ec793073-968b-447b-a445-9182f1cfdf0f
