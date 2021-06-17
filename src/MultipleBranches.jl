@@ -158,8 +158,8 @@ MAPI= [
 "Multiple branches frohlich α"
 
 function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mode
-    ω_ν = 2π * phonon_mode_freq * 1e12 # angular phonon freq in Hz
-    ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_ν^2 * amu) # single ionic mode
+    ω_j = 2π * phonon_mode_freq * 1e12 # angular phonon freq in Hz
+    ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_j^2 * amu) # single ionic mode
     return ϵ_mode / ϵ_0 # normalise with 1 / (4π ϵ_0)
 end
 
@@ -184,7 +184,7 @@ function effective_freqs(freqs_and_ir_activity, num_var_params) #PCA Algorithm
 end
 
 function frohlich_α_ν(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) # Frohlich alpha decomposed into phonon branch contributions
-    Ry = eV^4 * m_e / (2 * ħ^2) # Rydberg energy
+    Ry = eV^4 * me / (2 * ħ^2) # Rydberg energy
     ω = 2π * 1e12 * phonon_mode_freq # angular phonon freq (Hz)
     ϵ_static = ϵ_total + ϵ_optic # static dielectric. Calculate here instead of input so that ionic modes properly normalised.
     return (m_eff * Ry / (ħ * ω))^(1 / 2) * ϵ_ionic / (4π * ϵ_0) / (ϵ_optic * ϵ_static) # 1 / (4π ϵ_0) dielectric normalisation
@@ -231,13 +231,18 @@ function D_ν(τ, β, v, w) # log of dynamic structure factor for polaron
     return D
 end
 
-function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs_and_ir_activity)
+function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs_and_ir_activity, phonon_branch)
 
+    setprecision(BigFloat, 32) # Speed up. Stops potential overflows.
+
+    # Extract phonon frequencies and ir activities.
     phonon_freqs = freqs_and_ir_activity[:, 1]
     ir_activity = freqs_and_ir_activity[:, 2]
 
     num_of_branches = length(phonon_freqs)
+    j = phonon_branch # jth phonon branch
     
+    # total dielectric contribution from all phonon branches (used as a normalisation)
     ϵ_tot = ϵ_total(freqs_and_ir_activity, volume)
 
     # Generalisation of B i.e. Equation 62c in Hellwarth.
@@ -266,21 +271,21 @@ function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs
         3 / β * s / num_of_branches
     end
 
-    F = 0.0
-    for j in 1:length(phonon_freqs) # sum over phonon branches
-        ω = 2π * 1e12 * phonon_freqs[j]
-        β = ħ * ω / (k_B * T) # reduced thermodynamic beta
-        ϵ_ionic = ϵ_ionic_mode(phonon_freqs[j], ir_activity[j], volume)
-        α = frohlich_α_ν(ϵ_optic, ϵ_ionic, ϵ_tot, phonon_freqs[j], m_eff)
-        # println("α = $α, β = $β, f = $(phonon_freqs[j]), ")
-        # print("F0 = $(log_Z_0(β, ω, v_params .* ω, w_params .* ω) / β), ")
-        # print("<S0> = $(S_0(β, ω, v_params .* ω, w_params .* ω) / β), ")
-        # print("<S> = $(S(β, α, ω, v_params .* ω, w_params .* ω) / β), ")
-        # println("F = $(-log_Z_0(β, ω, v_params .* ω, w_params .* ω) / β - S(β, α, ω, v_params .* ω, w_params .* ω) / β + S_0(β, ω, v_params .* ω, w_params .* ω) / β)")
-        # F = -(A + B + C) in Hellwarth.
-        F -= (S(β, α, v_params, w_params) + S_0(β, v_params, w_params) + log_Z_0(β, v_params, w_params)) * ħ * ω # × ħω branch phonon energy
-    end
-    println(v_params[1], w_params[1], F / eV * 1e3)
+    ω = 2π * 1e12 * phonon_freqs[j] # angular phonon freq im 2π Hz
+    β = BigFloat(ħ * ω / (kB * T)) # reduced thermodynamic beta
+    ϵ_ionic = ϵ_ionic_mode(phonon_freqs[j], ir_activity[j], volume) # ionic dielectric contribution for current phonon branch
+    α = frohlich_α_ν(ϵ_optic, ϵ_ionic, ϵ_tot, phonon_freqs[j], m_eff) # decomposed alpha for current phonon branch
+
+    # Print out data.
+    # println("α = $α, β = $β, f = $(phonon_freqs[j]), ")
+    # print("F0 = $(log_Z_0(β, ω, v_params .* ω, w_params .* ω) / β), ")
+    # print("<S0> = $(S_0(β, ω, v_params .* ω, w_params .* ω) / β), ")
+    # print("<S> = $(S(β, α, ω, v_params .* ω, w_params .* ω) / β), ")
+    # println("F = $(-log_Z_0(β, ω, v_params .* ω, w_params .* ω) / β - S(β, α, ω, v_params .* ω, w_params .* ω) / β + S_0(β, ω, v_params .* ω, w_params .* ω) / β)")
+    
+    # F = -(A + B + C) in Hellwarth.
+    F = -(S(β, α, v_params, w_params) + S_0(β, v_params, w_params) + log_Z_0(β, v_params, w_params)) * ħ * ω # × ħω branch phonon energy
+    
     return F / eV * 1e3 # change to meV
 end
 
@@ -291,36 +296,58 @@ Multiple branch variational theory.
 """
 function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 1) # N number of v and w params
 
+    setprecision(BigFloat, 32) # Speed up. Stops potential overflows.
+
+    # Number of phonon branches.
+    M = length(freqs_and_ir_activity[:, 1])
+
+    # Initialise MxN matrices for v and w parameters. M is number of phonon branches. N is number of variational parameters (v & w) per branch.
+    v_params = Matrix{Float64}(undef, M, N)
+    w_params = Matrix{Float64}(undef, M, N)
+
     # Intial guess for v and w.
-    initial = sort(rand(2 * N)) .* 4.0 .+ 1.0 # initial guess around 4
+    initial = sort(rand(2 * N)) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
 
     # Limits of the optimisation.
     lower = repeat([0.1], 2 * N) 
     upper = repeat([100], 2 * N)
 
-    # Osaka Free Energy function to minimise.
-    f(x) = multi_free_energy([x[2 * n] for n in 1:Int(N)], [x[2 * n - 1] for n in 1:Int(N)], T, ϵ_optic, m_eff, volume, freqs_and_ir_activity)
+    for j in 1:M # sum over phonon branches
 
-    # Use Optim to optimise the free energy function w.r.t v and w.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-        # Optim.Options(time_limit = 10.0),
-    )
+        # Osaka Free Energy function to minimise.
+        f(x) = multi_free_energy([x[2 * n] for n in 1:Int(N)], [x[2 * n - 1] for n in 1:Int(N)], T, ϵ_optic, m_eff, volume, freqs_and_ir_activity, j)
 
-    # Get v and w params that minimised free energy.
-    var_params = Optim.minimizer(solution)
+        # Use Optim to optimise the free energy function w.r.t v and w.
+        solution = Optim.optimize(
+            Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+            lower,
+            upper,
+            initial,
+            Fminbox(BFGS()),
+            # Optim.Options(time_limit = 10.0),
+        )
 
-    # If v ≤ w quit as negative mass.
-    if any(sort([var_params[2 * n] for n in 1:Int(N)]) .<= sort([var_params[2 * n - 1] for n in 1:Int(N)]))
-        var_params = "v_i <= w_i"
+        # Get v and w params that minimised free energy.
+        var_params = Optim.minimizer(solution)
+
+        # If v ≤ w quit as negative mass.
+        if any(sort([var_params[2 * n] for n in 1:Int(N)]) .<= sort([var_params[2 * n - 1] for n in 1:Int(N)]))
+            return "v_i <= w_i"
+        end
+
+        # Intialise next guess of v and w to be their values for the current phonon branch. (quicker convergence)
+        initial = sort(var_params)
+
+        # Update matrices for v and w parameters.
+        v_params[j, :] .= [var_params[2 * n] for n in 1:N]
+        w_params[j, :] .= [var_params[2 * n - 1] for n in 1:N]
+
+        # Show current v and w that minimise jth phonon branch.
+        println(var_params)
     end
 
     # Return variational parameters that minimise the free energy.
-    return var_params
+    return v_params, w_params
 end
 
 
@@ -338,21 +365,23 @@ Multiple branch conmplex susceptibility.
 function multi_susceptibility(Ω, β, α, v, w, f)
 
     # FHIP1962, page 1011, eqn (47c).
-    R = (v^2 - w^2) / (w^2 * v)
+    R(v, w) = (v^2 - w^2) / (w^2 * v)
 
     # FHIP1962, page 1009, eqn (35c).
-    D(x, β) = w^2 / v^2 * (R * (1 - cos(v * x)) * coth(β * v / 2) + x^2 / β - 1im * (R * sin(v * x) + x))
+    D(x, β, v, w) = w^2 / v^2 * (R * (1 - cos(v * x)) * coth(β * v / 2) + x^2 / β - 1im * (R * sin(v * x) + x))
 
     # FHIP1962, page 1009, eqn (36).
-    S(x, α, β) = 2 * α / (3 * √π) * (exp(1im * x) + 2 * cos(x) / (exp(β) - 1)) / (D(x, β))^(3 / 2)
+    S(x, α, β, v, w) = 2 * α / (3 * √π) * (exp(1im * x) + 2 * cos(x) / (exp(β) - 1)) / (D(x, β, v, w))^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a). Scale Frequency Ω by phonon branch frequency f_j.
-    integrand(x, α, β, f) = (1 - exp(-1im * Ω * x / f)) * imag(S(x, α, β)) / Ω * f
+    integrand(x, α, β, f, v, w) = (1 - exp(-1im * Ω * x / f)) * imag(S(x, α, β, v, w)) / Ω
 
     susceptibility = 0.0
     for j in 1:length(f) # sum over phonon branches
-        susceptibility += QuadGK.quadgk(x -> integrand(x, α[j], β[j], f[j]), 0.0, Inf)[1]
-        println("$Ω, $j, $(β[j]), $(α[j]), $χ")
+        susceptibility += QuadGK.quadgk(x -> integrand(x, α[j], β[j], f[j], v[j], w[j]), 0.0, Inf)[1]
+
+        # Print data for current branch
+        # println("$Ω, $j, $(β[j]), $(α[j]), $(v[j]), $(w[j]), $susceptibility")
     end
     return susceptibility
 end
@@ -363,6 +392,6 @@ function multi_conductivity(susceptibility)
     Transforms complex susceptibility into the complex conductivity.
 """
 function multi_conductivity(susceptibility)
-    σ = 1im * (1 - √(1 + susceptibility))
+    σ = 1im * (1 - sqrt(1 + susceptibility))
     return σ
 end
