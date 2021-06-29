@@ -362,26 +362,26 @@ function multi_susceptibility(Ω, β::Array, α::Array, v, w, f::Array)
 
 Multiple branch complex susceptibility.
 """
-function multi_susceptibility(Ω, β, α, v, w, f)
+function multi_impedence(Ω, β, α, v, w, f, m_eff)
 
-    Ω_j = [Ω / i for i in f]
-
-    P(x) = 1 / (exp(x) - 1)
+    m_e = 9.10938188e-31; # Electron Mass (kg)
+    eV = 1.602176487e-19; # Electron Volt (kg m^2 s^{-2})
 
     # FHIP1962, page 1009, eqn (36).
-    S(t, β_j, v_j, w_j) = cos(t - 1im * β_j / 2) / sinh(β_j / 2) / D_ν(-1im * t, β_j, v_j, w_j)^(3 / 2)
+    S(t, β_j, v_j, w_j) = cos(t - 1im * β_j / 2) / sinh(β_j / 2) / D_ν(1im * t, β_j, v_j, w_j)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a). Scale Frequency Ω by phonon branch frequency f_j.
-    integrand(t, β_j, v_j, w_j, Ω_j) = (1 - exp(-1im * Ω_j * t)) * imag(S(t, β_j, v_j, w_j)) / Ω_j
+    integrand(t, β_j, v_j, w_j, Ω, ω_j) = (1 - exp(1im * Ω * t / ω_j)) * imag(S(t, β_j, v_j, w_j))
 
-    susceptibility = 0.0
+    impedence = 1im * Ω * 2π
     for j in 1:length(f) # sum over phonon branches
-        susceptibility += α[j] * 2π * quadgk(t -> integrand(t, β[j], v[j], w[j], Ω_j[j]), 0.0, Inf)[1] / (6 * π^(3 / 2)) / f[j]
-
+        impedence += 1im * (2 * α[j] * f[j] * quadgk(t -> integrand(t, β[j], v[j], w[j], Ω * 2π, 1), 0.0, Inf)[1] / (3 * √π * Ω))
         # Print data for current branch
-        println("$Ω_j, $j, $(β[j]), $(α[j]), $(v[j]), $(w[j]), $susceptibility")
+        # println("$j, $(f[j])")
+        # println("$Ω, $j, $(β[j]), $(α[j]), $(f[j]), $(v[j]), $(w[j]), $(impedence)")
     end
-    return susceptibility
+    println("$Ω")
+    return impedence / (eV^2 / m_e / m_eff * 1e12 * 2π / 100^2)
 end
 
 """
@@ -389,10 +389,7 @@ function multi_conductivity(susceptibility)
 
     Transforms complex susceptibility into the complex conductivity.
 """
-function multi_conductivity(χ, f)
-    conductivity = 0.0
-    for j in 1:length(f) # sum over phonon branches
-        conductivity += 1im * f[j] * (1 - sqrt(1 + χ)) / length(f)
-    end
-    return conductivity
+function multi_conductivity(Ω, z)
+
+    -1 ./ z
 end
