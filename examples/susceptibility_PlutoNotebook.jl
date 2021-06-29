@@ -236,7 +236,7 @@ MAPI= [
 ]
 
 # ╔═╡ 3f2969ce-53c4-44ce-b442-c6c1e4c8e63c
-v_params, w_params = PolaronMobility.multi_variation(10, 4.5, 0.12, (6.29e-10)^3, MAPI; N = 1)
+v_params, w_params = PolaronMobility.multi_variation(0.01, 4.5, 0.12, (6.29e-10)^3, MAPI; N = 1)
 
 # ╔═╡ 9f8e375a-e45d-430e-89f0-e62573f2f45b
 F_j = [PolaronMobility.multi_free_energy(v_params[j, :], w_params[j, :], 10, 4.5, 0.12, (6.29e-10)^3, MAPI, j) for j in 1:length(MAPI[:, 1])] 
@@ -266,28 +266,34 @@ ir_activities = MAPI[:, 2]
 α_eff = sum(α_j)
 
 # ╔═╡ 1dd3fcda-6818-4601-9fa4-7b75a07ee8d8
-βr = [ħ * 2π * 1e12 * f / kB / 10 for f in phonon_mode_freqs]
+βr = [ħ * 2π * 1e12 * f / kB / 40 for f in phonon_mode_freqs]
 
 # ╔═╡ 9b410a25-1c09-4bcb-b06d-63c928ab5bbc
-Ω_range = 0.01:0.01:3.50
+Ω_range = 0.01:0.01:2.5
+
+# ╔═╡ d20fd376-b5a6-48ce-9380-fccf420bdddd
+Plots.PyPlotBackend()
 
 # ╔═╡ c69faa18-759e-465c-b720-d8c6d429780d
-χ = [PolaronMobility.multi_susceptibility(Ω, βr, α_j, v_params, w_params, phonon_mode_freqs) for Ω in Ω_range]
+χ = [PolaronMobility.multi_impedence(Ω, βr, α_j, v_params, w_params, phonon_mode_freqs, 0.12) for Ω in Ω_range]
 
 # ╔═╡ e052454b-f885-4d76-8eb1-baedeff24e1e
 begin
-	χ_plot = plot(Ω_range, imag.(χ), xlabel = "Frequency (THz)", ylabel = "χ", label = "Imχ")
-	plot!(χ_plot, Ω_range, real.(χ), label = "Reχ")
+	χ_plot = plot(Ω_range, (imag.(χ)), xlabel = "Frequency (THz)", ylabel = "z", label = "Imz", minorgrid = true, markershape = :circle)
+	plot!(χ_plot, Ω_range, (real.(χ)), label = "Rez", markershape = :circle)
 end
 
 # ╔═╡ dbe241ba-5b5c-45d0-9d63-3ccefc82766f
-σ_new = [PolaronMobility.multi_conductivity(χ[Ω], phonon_mode_freqs) for Ω in 1:length(χ)]
+σ_new = PolaronMobility.multi_conductivity(Ω_range, χ)
 
 # ╔═╡ ec793073-968b-447b-a445-9182f1cfdf0f
 begin
-	σ_plot = plot(Ω_range, real.(σ_new), xlabel = "Frequency (THz)", ylabel = "σ", label = "Reσ")
-	plot!(σ_plot, Ω_range, imag.(σ_new), label = "Imσ")
+	σ_plot = plot(Ω_range, (real.(σ_new)), xlabel = "Frequency (THz)", ylabel = "σ", label = "Reσ", legend = :bottomright, minorgrid = true, markershape = :circle)
+	plot!(σ_plot, Ω_range, (imag.(σ_new)), label = "Imσ", markershape = :circle)
 end
+
+# ╔═╡ 36f09479-cf29-4a0f-9f97-81169abbcd9b
+σ_abs_plot = plot(Ω_range, (sqrt.(abs.(σ_new))), xlabel = "Frequency (THz)", ylabel = "abs(σ)", legend = false, minorgrid = true, markershape = :circle)
 
 # ╔═╡ Cell order:
 # ╠═d263806b-0851-4854-ba06-df1071b3d38b
@@ -347,7 +353,9 @@ end
 # ╠═928e7f3b-6eab-4081-94bf-a4fa3a953f35
 # ╠═1dd3fcda-6818-4601-9fa4-7b75a07ee8d8
 # ╠═9b410a25-1c09-4bcb-b06d-63c928ab5bbc
+# ╠═d20fd376-b5a6-48ce-9380-fccf420bdddd
 # ╠═c69faa18-759e-465c-b720-d8c6d429780d
 # ╠═e052454b-f885-4d76-8eb1-baedeff24e1e
 # ╠═dbe241ba-5b5c-45d0-9d63-3ccefc82766f
 # ╠═ec793073-968b-447b-a445-9182f1cfdf0f
+# ╠═36f09479-cf29-4a0f-9f97-81169abbcd9b
