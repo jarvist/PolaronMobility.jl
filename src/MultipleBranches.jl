@@ -111,50 +111,6 @@ function Hellwarth1999mobilityRHS( (α, (v,w) ,f) ,effectivemass, T)
     return 1/μ
 end
 
-"""
-Brad's multiple phonon branch α, free energy and minimisation functions.
-wip.
-"""
-
-MAPI= [
-# 96.20813558773261 0.4996300522819191
-# 93.13630357703363 1.7139631746083817
-# 92.87834578121567 0.60108592692181
-# 92.4847918585963 0.0058228799414729
-# 92.26701437594754 0.100590086574602
-# 89.43972834606603 0.006278895133832249
-# 46.89209141511332 0.2460894564364346
-# 46.420949316788 0.14174282581124137
-# 44.0380222871706 0.1987196948553428
-# 42.89702947649343 0.011159939465770681
-# 42.67180170168193 0.02557751102757614
-# 41.46971205834201 0.012555230726601503
-# 37.08982543385215 0.00107488277468418
-# 36.53555265689563 0.02126940080871224
-# 30.20608114002676 0.009019481779712388
-# 27.374810898415028 0.03994453721421388
-# 26.363055017011728 0.05011922682554448
-# 9.522966890022039 0.00075631870522737
-4.016471586720514 0.08168931020200264
-3.887605410774121 0.006311654262282101
-3.5313112232401513 0.05353548710183397
-2.755392921480459 0.021303020776321225
-2.4380741812443247 0.23162784335484837
-2.2490917637719408 0.2622203718355982
-2.079632190634424 0.23382298607799906
-2.0336707697261187 0.0623239656843172
-1.5673011873879714 0.0367465760261409
-1.0188379384951798 0.0126328938653956
-1.0022960504442775 0.006817361620021601
-0.9970130778462072 0.0103757951973341
-0.9201781906386209 0.01095811116040592
-0.800604081794174 0.0016830270365341532
-0.5738689505255512 0.00646428491253749
-# 0.022939578929507105 8.355742795827834e-06   # Acoustic modes!
-# 0.04882611767873102 8.309858592685e-06
-# 0.07575149723846182 2.778248540373041e-05
-]
-
 "Multiple branches frohlich α"
 
 function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mode
@@ -221,7 +177,7 @@ function C_ij(i, j, v, w) # generalised Feynman C variational parameter (inclusi
     return C
 end
 
-function D_ν(τ, β, v, w) # log of dynamic structure factor for polaron 
+function D_j(τ, β, v, w) # log of dynamic structure factor for polaron 
     D = τ * (1 - τ / β)
     for i in 1:length(v)
         if v[i] != w[i]
@@ -231,7 +187,7 @@ function D_ν(τ, β, v, w) # log of dynamic structure factor for polaron
     return D
 end
 
-function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs_and_ir_activity, phonon_branch)
+function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs_and_ir_activity)
 
     setprecision(BigFloat, 32) # Speed up. Stops potential overflows.
 
@@ -240,53 +196,52 @@ function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs
     ir_activity = freqs_and_ir_activity[:, 2]
 
     num_of_branches = length(phonon_freqs)
-    j = phonon_branch # jth phonon branch
     
     # total dielectric contribution from all phonon branches (used as a normalisation)
     ϵ_tot = ϵ_total(freqs_and_ir_activity, volume)
 
     # Generalisation of B i.e. Equation 62c in Hellwarth.
-    S_integrand(τ, β, v, w) = cosh(β / 2 - τ) / (sinh(β / 2) * sqrt(abs(D_ν(τ, β, v, w))))
-    S(β, α, v, w) = α / √π * quadgk(τ -> S_integrand(τ, β, v, w), 0.0, β / 2)[1]
+    B_j_integrand(τ, β, v, w) = cosh(β / 2 - abs(τ)) / (sinh(β / 2) * sqrt(D_j(abs(τ), β, v, w)))
+    B_j(β, α, v, w) = α / √π * quadgk(τ -> B_j_integrand(τ, β, v, w), 0.0, β / 2)[1]
 
     # Generalisation of C i.e. Equation 62e in Hellwarth.
-    function S_0(β, v, w)
+    function C_j(β, v, w)
         s = 0.0
         for i in 1:length(v)
             for j in 1:length(v)
                 s += C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2)  - 2 / (β * v[j]))
             end
         end
-        3 * s / num_of_branches 
+        3 * s / num_of_branches
     end
 
     # Generalisation of A i.e. Equation 62b in Hellwarth.
-    function log_Z_0(β, v, w)
+    function A_j(β, v, w)
         s = -log(2π * β) / 2
         for i in 1:length(v)
             if v[i] != w[i]
-                s += log(v[i] / w[i]) -log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
+                s += log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
             end
         end
         3 / β * s / num_of_branches
     end
-
-    ω = 2π * 1e12 * phonon_freqs[j] # angular phonon freq im 2π Hz
-    β = BigFloat(ħ * ω / (kB * T)) # reduced thermodynamic beta
-    ϵ_ionic = ϵ_ionic_mode(phonon_freqs[j], ir_activity[j], volume) # ionic dielectric contribution for current phonon branch
-    α = frohlich_α_j(ϵ_optic, ϵ_ionic, ϵ_tot, phonon_freqs[j], m_eff) # decomposed alpha for current phonon branch
-
-    # Print out data.
-    # println("α = $α, β = $β, f = $(phonon_freqs[j]), ")
-    # print("F0 = $(log_Z_0(β, ω, v_params .* ω, w_params .* ω) / β), ")
-    # print("<S0> = $(S_0(β, ω, v_params .* ω, w_params .* ω) / β), ")
-    # print("<S> = $(S(β, α, ω, v_params .* ω, w_params .* ω) / β), ")
-    # println("F = $(-log_Z_0(β, ω, v_params .* ω, w_params .* ω) / β - S(β, α, ω, v_params .* ω, w_params .* ω) / β + S_0(β, ω, v_params .* ω, w_params .* ω) / β)")
-    
-    # F = -(A + B + C) in Hellwarth.
-    F = -(S(β, α, v_params, w_params) + S_0(β, v_params, w_params) + log_Z_0(β, v_params, w_params)) * ħ * ω # × ħω branch phonon energy
-    
-    return F / eV * 1e3 # change to meV
+	
+	F = 0.0
+	for j in 1:num_of_branches
+		ω_j = 2π * 1e12 * phonon_freqs[j] # angular phonon freq im 2π Hz
+		β_j = BigFloat(ħ * ω_j / (k_B * T)) # reduced thermodynamic beta
+		ϵ_ionic_j = ϵ_ionic_mode(phonon_freqs[j], ir_activity[j], volume) # ionic dielectric contribution for current phonon branch
+		α_j = frohlich_α_j(ϵ_optic, ϵ_ionic_j, ϵ_tot, phonon_freqs[j], m_eff) # decomposed alpha for current phonon branch
+		F += -(B_j(β_j, α_j, v_params, w_params) + C_j(β_j, v_params, w_params) + A_j(β_j, v_params, w_params)) * ω_j # × ħω branch phonon energy
+        println("Free energy:\n
+                Phonon freq: ", phonon_freqs[j], "\n 
+                β: ", β_j, "\n
+                ϵ_ionic: ", ϵ_ionic_j, "\n
+                α_j: ", α_j, "\n")
+    end
+		
+    println("Total free energy: ", F * ħ / eV * 1e3, " meV")
+    return F * ħ / eV * 1e3 # change to meV
 end
 
 """
@@ -294,102 +249,113 @@ function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 
 
 Multiple branch variational theory.
 """
-function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; N = 1) # N number of v and w params
+function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; initial_vw = false, N = 1) # N number of v and w params
 
     setprecision(BigFloat, 32) # Speed up. Stops potential overflows.
 
-    # Number of phonon branches.
-    M = length(freqs_and_ir_activity[:, 1])
+    if initial_vw isa Bool
+		# Intial guess for v and w.
+    	initial = sort(rand(2 * N)) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
+		
+		# Limits of the optimisation.
+		lower = repeat([0.1], 2 * N)
+		upper = repeat([60.0], 2 * N)
+	else
+		# Intial guess for v and w.
+		initial = sort(vcat(initial_vw...))
+		
+		# Limits of the optimisation.
+		lower = repeat([0.1], 2 * N)
+		upper = repeat([60.0], 2 * N)
+	end
+	
+	println("Initial guess: ", initial)
 
-    # Initialise MxN matrices for v and w parameters. M is number of phonon branches. N is number of variational parameters (v & w) per branch.
-    v_params = Matrix{Float64}(undef, M, N)
-    w_params = Matrix{Float64}(undef, M, N)
+	# Osaka Free Energy function to minimise.
+	f(x) = multi_free_energy([x[2 * n] for n in 1:Int(N)], [x[2 * n - 1] for n in 1:Int(N)], T, ϵ_optic, m_eff, volume, freqs_and_ir_activity)
 
-    # Intial guess for v and w.
-    initial = sort(rand(2 * N)) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
+	# Use Optim to optimise the free energy function w.r.t v and w.
+	solution = Optim.optimize(
+		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+		lower,
+		upper,
+		initial,
+		Fminbox(BFGS()),
+		Optim.Options(time_limit = 20.0),
+	)
 
-    # Limits of the optimisation.
-    lower = repeat([0.1], 2 * N) 
-    upper = repeat([200.0], 2 * N)
+	# Get v and w params that minimised free energy.
+	var_params = Optim.minimizer(solution)
 
-    for j in 1:M # sum over phonon branches
+	# Update matrices for v and w parameters.
+	v_params = [var_params[2 * n] for n in 1:N]
+	w_params = [var_params[2 * n - 1] for n in 1:N]
 
-        # Osaka Free Energy function to minimise.
-        f(x) = multi_free_energy([x[2 * n] for n in 1:Int(N)], [x[2 * n - 1] for n in 1:Int(N)], T, ϵ_optic, m_eff, volume, freqs_and_ir_activity, j)
-
-        # Use Optim to optimise the free energy function w.r.t v and w.
-        solution = Optim.optimize(
-            Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-            lower,
-            upper,
-            initial,
-            Fminbox(BFGS()),
-            # Optim.Options(time_limit = 10.0),
-        )
-
-        # Get v and w params that minimised free energy.
-        var_params = Optim.minimizer(solution)
-
-        # If v ≤ w quit as negative mass.
-        # if any(sort([var_params[2 * n] for n in 1:Int(N)]) .<= sort([var_params[2 * n - 1] for n in 1:Int(N)]))
-        #     return "v_i <= w_i"
-        # end
-
-        # Intialise next guess of v and w to be their values for the current phonon branch. (quicker convergence)
-        initial = sort(var_params)
-
-        # Update matrices for v and w parameters.
-        v_params[j, :] .= [var_params[2 * n] for n in 1:N]
-        w_params[j, :] .= [var_params[2 * n - 1] for n in 1:N]
-
-        # Show current v and w that minimise jth phonon branch.
-        println(var_params)
-    end
+	# Show current v and w that minimise jth phonon branch.
+	println("Variational parameters: ", var_params)
 
     # Return variational parameters that minimise the free energy.
     return v_params, w_params
 end
 
-
 """
-function multi_susceptibility(Ω, β::Array, α::Array, v, w, f::Array)
+function multi_memory_function(ν, β::Array, α::Array, v, w, ω::Array, m_eff)
 
-    Calculate polaron complex susceptibility inclusive of multiple phonon branches j, each with frequency f[j] (THz).
-    α is an array of decomposed Frohlich alphas, one for each phonon frequency f[j].
-    β is an array of reduced thermodynamic betas, one for each phonon frequency f[j].
-    Ω is the frequency (THz) of applied electric field.
+    Calculate polaron complex memory function inclusive of multiple phonon branches j, each with angular frequency ω[j] (rad THz).
+    α is an array of decomposed Frohlich alphas, one for each phonon frequency ω[j].
+    β is an array of reduced thermodynamic betas, one for each phonon frequency ω[j].
+    ν is the frequency (THz) of applied electric field.
     v and w are variational parameters that minimise the polaron free energy for the system.
+    m_eff is the conduction band mass of the particle (typically electron / hole)
 
-Multiple branch complex susceptibility.
+Multiple phonon complex memory function.
 """
-function multi_impedence(Ω, β, α, v, w, f, m_eff)
-
-    m_e = 9.10938188e-31; # Electron Mass (kg)
-    eV = 1.602176487e-19; # Electron Volt (kg m^2 s^{-2})
+function multi_memory_function(ν, β, α, v, w, ω, m_eff)
 
     # FHIP1962, page 1009, eqn (36).
-    S(t, β_j, v_j, w_j) = cos(t - 1im * β_j / 2) / sinh(β_j / 2) / D_ν(1im * t, β_j, v_j, w_j)^(3 / 2)
+    S(t, β) = cos(t - 1im * β / 2) / sinh(β / 2) / D_j(-1im * t, β, v, w)^(3 / 2)
 
-    # FHIP1962, page 1009, eqn (35a). Scale Frequency Ω by phonon branch frequency f_j.
-    integrand(t, β_j, v_j, w_j, Ω, ω_j) = (1 - exp(1im * Ω * t / ω_j)) * imag(S(t, β_j, v_j, w_j))
+    # FHIP1962, page 1009, eqn (35a).
+    integrand(t, β, ν) = (1 - exp(1im * 2π * ν * t)) * imag(S(t, β))
 
-    impedence = 1im * Ω * 2π
+    memory = 0.0
+
     for j in 1:length(f) # sum over phonon branches
-        impedence += 1im * (2 * α[j] * f[j] * quadgk(t -> integrand(t, β[j], v[j], w[j], Ω * 2π, 1), 0.0, Inf)[1] / (3 * √π * Ω))
-        # Print data for current branch
-        # println("$j, $(f[j])")
-        # println("$Ω, $j, $(β[j]), $(α[j]), $(f[j]), $(v[j]), $(w[j]), $(impedence)")
+        println("Photon frequency = $ν, Phonon mode frequency = $(ω[j] / 2π)")
+        memory += 2 * α[j] * ω[j]^2 * quadgk(t -> integrand(t, β[j], ν / ω[j]), 0.0, Inf)[1] / (3 * √π * 2π * ν)
     end
-    println("$Ω")
-    return impedence / (eV^2 / m_e / m_eff * 1e12 * 2π / 100^2)
+
+    println("Memory function: ", memory)
+    return memory
 end
 
 """
-function multi_conductivity(susceptibility)
+function multi_conductivity(ν, β::Array, α::Array, v, w, ω::Array, m_eff)
 
-    Transforms complex susceptibility into the complex conductivity.
+    Calculate polaron complex conductivity inclusive of multiple phonon branches j, each with angular frequency ω[j] (rad THz).
+    α is an array of decomposed Frohlich alphas, one for each phonon frequency ω[j].
+    β is an array of reduced thermodynamic betas, one for each phonon frequency ω[j].
+    ν is the frequency (THz) of applied electric field.
+    v and w are variational parameters that minimise the polaron free energy for the system.
+    m_eff is the conduction band mass of the particle (typically electron / hole)
+
+Multiple phonon complex memory function.
 """
-function multi_conductivity(Ω, z)
+function multi_conductivity(ν, β, α, v, w, ω, m_eff)
 
-    -1 ./ z
+	# FHIP1962, page 1009, eqn (36).
+    S(t, β) = cos(t - 1im * β / 2) / sinh(β / 2) / D_j(-1im * t, β, v, w)^(3 / 2)
+
+    # FHIP1962, page 1009, eqn (35a).
+    integrand(t, β, ν) = (1 - exp(1im * 2π * ν * t)) * imag(S(t, β))
+
+    impedence = 0.0
+
+	for j in 1:length(ω)
+		println("Photon frequency = $ν, Phonon mode frequency = $(ω[j] / 2π)")
+		impedence += -1im * 2π * ν / length(ω) + 1im * 2 * α[j] * ω[j]^2 * quadgk(t -> integrand(t, β[j], ν / ω[j]), 0.0, Inf)[1] / (3 * √π * 2π * ν)
+	end
+
+	conductivity = 1 / impedence * eV * 100^2 / (m_eff * m_e * 1e12)
+    println("Multiple complex conductivity: ", conductivity, " cm^2/Vs")
 end
