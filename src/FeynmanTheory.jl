@@ -29,7 +29,7 @@ end
 # Set up equations for the polaron free energy, which we will variationally improve upon
 
 # Integrand of (31) in Feynman I (Feynman 1955, Physical Review, "Slow electrons...")
-fF(τ,v,w)=(w^2 * τ + (v^2-w^2)/v*(1-exp(-v*τ)))^-0.5 * exp(-τ)
+fF(τ,v,w)=(abs(w^2 * τ + (v^2-w^2)/v*(1-exp(-v*τ))))^-0.5 * exp(-τ)
 # (31) in Feynman I
 AF(v,w,α)=π^(-0.5) * α*v * quadgk(τ->fF(τ,v,w),0,Inf)[1]
 # (33) in Feynman I
@@ -48,14 +48,14 @@ function feynmanvw(α; v = 0.0, w = 0.0) # v, w defaults
 
     # Intial guess for v and w.
     if v == 0.0 || w == 0.0 # Default values to start with. Generates a random float between 1.0 and 11.0
-        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
+        initial = sort(rand(2), rev=true) .* 3.0 .+ 1.0
     else
         initial = [v, w]
     end
 
     # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [Inf, Inf]
+    lower = [1.0, 1.0]
+    upper = [5.0, 5.0]
 
     # Osaka Free Energy function to minimise.
     f(x) = F(x[1], x[2], α)
@@ -119,7 +119,7 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 
 """
     feynmanvw(α, βred; v = 0.0, w = 0.0)
-
+-
     Calculate v and w variational polaron parameters, for the supplied
     α Frohlich coupling and βred reduced thermodynamic temperature.
     This uses the Osaka finite temperature action, as presented in Hellwarth
@@ -130,14 +130,14 @@ function feynmanvw(α, βred; v = 0.0, w = 0.0) # v, w defaults
 
     # Intial guess for v and w.
     if v == 0.0 || w == 0.0 # Default values to start with. Generates a random float between 1.0 and 11.0
-        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
+        initial = sort(rand(2), rev=true) .* 3.0 .+ 1.0
     else
         initial = [v, w]
     end
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
-    upper = [Inf, Inf]
+    upper = [100.0, 100.0]
 
     # Osaka Free Energy function to minimise.
     f(x) = F(x[1], x[2], βred, α)
@@ -153,19 +153,6 @@ function feynmanvw(α, βred; v = 0.0, w = 0.0) # v, w defaults
 
     # Get v and w values that minimise the free energy.
     v, w = Optim.minimizer(solution)
-
-    # If optimisation does not converge or if v ≤ w, pick new random starting guesses for v and w between 1.0 and 11.0. Repeat until the optimisation converges with v > w.
-    while Optim.converged(solution) == false || v <= w
-        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
-        solution = Optim.optimize(
-            Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-            lower,
-            upper,
-            initial,
-            Fminbox(BFGS()),
-        )
-        v, w = Optim.minimizer(solution)
-    end
 
     # Return variational parameters that minimise the free energy.
     return v, w
