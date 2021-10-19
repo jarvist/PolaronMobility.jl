@@ -11,7 +11,7 @@ export Polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export χ, χ_dc, μ_ac, μ_dc
-export multi_free_energy, multi_variation, multi_susceptibility, multi_conductivity
+export ϵ_ionic_mode, frohlich_α_j, multi_free_energy, multi_variation, multi_memory_function, multi_conductivity
 
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 export Hellwarth1999mobilityRHS

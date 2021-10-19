@@ -229,15 +229,11 @@ function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs
 	F = 0.0
 	for j in 1:num_of_branches
 		ω_j = 2π * 1e12 * phonon_freqs[j] # angular phonon freq im 2π Hz
-		β_j = BigFloat(ħ * ω_j / (k_B * T)) # reduced thermodynamic beta
+		β_j = ħ * ω_j / (kB * T) # reduced thermodynamic beta
 		ϵ_ionic_j = ϵ_ionic_mode(phonon_freqs[j], ir_activity[j], volume) # ionic dielectric contribution for current phonon branch
 		α_j = frohlich_α_j(ϵ_optic, ϵ_ionic_j, ϵ_tot, phonon_freqs[j], m_eff) # decomposed alpha for current phonon branch
 		F += -(B_j(β_j, α_j, v_params, w_params) + C_j(β_j, v_params, w_params) + A_j(β_j, v_params, w_params)) * ω_j # × ħω branch phonon energy
-        println("Free energy:\n
-                Phonon freq: ", phonon_freqs[j], "\n 
-                β: ", β_j, "\n
-                ϵ_ionic: ", ϵ_ionic_j, "\n
-                α_j: ", α_j, "\n")
+        println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
     end
 		
     println("Total free energy: ", F * ħ / eV * 1e3, " meV")
@@ -280,8 +276,8 @@ function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; init
 		lower,
 		upper,
 		initial,
-		Fminbox(BFGS()),
-		Optim.Options(time_limit = 20.0),
+		Fminbox(LBFGS()),
+		#Optim.Options(time_limit = 20.0),
 	)
 
 	# Get v and w params that minimised free energy.
@@ -320,7 +316,7 @@ function multi_memory_function(ν, β, α, v, w, ω, m_eff)
 
     memory = 0.0
 
-    for j in 1:length(f) # sum over phonon branches
+    for j in 1:length(ω) # sum over phonon branches
         println("Photon frequency = $ν, Phonon mode frequency = $(ω[j] / 2π)")
         memory += 2 * α[j] * ω[j]^2 * quadgk(t -> integrand(t, β[j], ν / ω[j]), 0.0, Inf)[1] / (3 * √π * 2π * ν)
     end
@@ -356,6 +352,7 @@ function multi_conductivity(ν, β, α, v, w, ω, m_eff)
 		impedence += -1im * 2π * ν / length(ω) + 1im * 2 * α[j] * ω[j]^2 * quadgk(t -> integrand(t, β[j], ν / ω[j]), 0.0, Inf)[1] / (3 * √π * 2π * ν)
 	end
 
-	conductivity = 1 / impedence * eV * 100^2 / (m_eff * m_e * 1e12)
+	conductivity = 1 / impedence * eV * 100^2 / (m_eff * me * 1e12)
     println("Multiple complex conductivity: ", conductivity, " cm^2/Vs")
+    return conductivity
 end

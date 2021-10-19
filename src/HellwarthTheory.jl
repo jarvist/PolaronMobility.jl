@@ -40,7 +40,7 @@ function HellwarthAScheme(phonon_modes; T = 295)
 	phonon_mode_freqs = phonon_modes[:, 1]
 	ir_activities = phonon_modes[:, 2]
 	
-	condition(f) = coth(π * f * 1e12 * ħ / (k_B * T)) / f - sum(ir_activities .* coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (k_B * T)) ./ phonon_mode_freqs) / sum(ir_activities)
+	condition(f) = coth(π * f * 1e12 * ħ / (kB * T)) / f - sum(ir_activities .* coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (kB * T)) ./ phonon_mode_freqs) / sum(ir_activities)
 	
 	minimum_frequency = minimum(phonon_mode_freqs)
 	maximum_frequency = maximum(phonon_mode_freqs)
