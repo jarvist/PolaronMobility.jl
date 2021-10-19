@@ -184,10 +184,10 @@ m_pol_z_athermal_weak = m_z .* (1 .+ α_z ./ 6 .+ 0.025 .* α_z.^2) .* Ha .* Boh
 m_pol_perp_athermal_weak = m_perp .* (1 .+ α_perp ./ 6 .+ 0.025 .* α_z.^2) .* Ha .* Bohr^2 ./ ħ^2 .* me
 
 # ╔═╡ 5c7a55b2-66c1-41cf-87ab-10da25d0ac74
-size_z_athermal_weak = sqrt.(2 .* ħ ./ (3 .* α_z .* m_z .* 2π .* phonon_freqs .* me))./ Bohr
+size_z_athermal_weak = 3 .* sqrt.(6 .* ħ ./ (α_z .* m_z .* 2π .* phonon_freqs .* me)) ./ 4 ./ Bohr
 
 # ╔═╡ d578cf35-9e3d-49fe-b69a-1fffd1fa34ce
-size_perp_athermal_weak = sqrt.(2 .* ħ ./ (3 .* α_perp .* m_perp .* 2π .* phonon_freqs .* me))./ Bohr
+size_perp_athermal_weak = 3 .* sqrt.(6 .* ħ ./ (α_perp .* m_perp .* 2π .* phonon_freqs .* me)) ./ 4 ./ Bohr
 
 # ╔═╡ b0b563e3-7e38-46cd-a895-2ab8dbba11e1
 # Frohlich Weak Limit
@@ -253,7 +253,7 @@ m_pol_perp_athermal_strong = m_perp .* (1 .+ α_perp.^4 .* 0.0202) .* Ha .* Bohr
 size_z_athermal_strong = 3 .* α_z .* sqrt.(π * ħ ./ (m_z .* me .* 2π .* phonon_freqs)) ./ 2 ./ Bohr
 
 # ╔═╡ 6ba5d70f-2bd5-4594-a9ed-71923c5e39b0
-size_perp_athermal_strong = 3 .* α_perp .* sqrt.(π * ħ ./ (m_perp .* me .* 2π .* phonon_freqs)) ./ 2 ./ Bohr
+size_perp_athermal_strong = 3 ./ α_perp .* sqrt.(π * ħ ./ (m_perp .* me .* 2π .* phonon_freqs)) ./ 2 ./ Bohr
 
 # ╔═╡ 34ab5243-9f7c-4250-a698-b8c54b6bcf49
 # Frohlich Strong Limit
