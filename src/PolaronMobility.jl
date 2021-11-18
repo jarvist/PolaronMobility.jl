@@ -19,10 +19,8 @@ export Hellwarth1999mobilityRHS
 
 ##### load in library routines... #####
 # stdlib
-if VERSION > v"0.7.0-DEV.2005"
-    using LinearAlgebra
-    using Printf
-end
+using LinearAlgebra
+using Printf
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
 
