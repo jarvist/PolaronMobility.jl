@@ -93,7 +93,7 @@ function DielectricFromIRmode(IRmode; volume)
     return ϵ_mode
 end
 
-function Hellwarth1999mobilityRHS( (α, (v,w) ,f) ,effectivemass, T)
+function Hellwarth1999mobilityRHS( (α, (v,w) ,f) , effectivemass, T)
     mb=effectivemass*MassElectron
     ω=f*1E12*2π
     βred=ħ*ω/(kB*T)
@@ -112,7 +112,6 @@ function Hellwarth1999mobilityRHS( (α, (v,w) ,f) ,effectivemass, T)
 end
 
 "Multiple branches frohlich α"
-
 function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mode
     ω_j = 2π * phonon_mode_freq * 1e12 # angular phonon freq in Hz
     ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_j^2 * amu) # single ionic mode
@@ -356,3 +355,4 @@ function multi_conductivity(ν, β, α, v, w, ω, m_eff)
     println("Multiple complex conductivity: ", conductivity, " cm^2/Vs")
     return conductivity
 end
+
