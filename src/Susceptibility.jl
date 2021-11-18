@@ -87,7 +87,9 @@ Memory Function.
 """
 χ(Ω::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the memory function χ(Ω) of the polaron at finite temperatures (equation (35a) in FHIP 1962) for a given frequency Ω. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the memory function χ(Ω) of the polaron at finite temperatures (equation (35a)
+    in FHIP 1962) for a given frequency Ω. v and w are the variational polaron parameters
+    that minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function χ(Ω, β, α, v, w)
 
@@ -108,7 +110,9 @@ end
 """
 χ(Ω::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the memory function χ(Ω) of the polaron at zero-temperatures (equation (35a) in FHIP 1962) for a given frequency Ω. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the memory function χ(Ω) of the polaron at zero-temperatures (equation (35a)
+    in FHIP 1962) for a given frequency Ω. v and w are the variational polaron parameters
+    that minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function χ(Ω, α, v, w)
 
@@ -129,7 +133,9 @@ end
 """
 χ_dc(β::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the memory function lim(Ω → 0){χ(Ω) / Ω} of the polaron at finite temperatures (equation (35a) in FHIP 1962) at zero frequency. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the memory function lim(Ω → 0){χ(Ω) / Ω} of the polaron at finite temperatures
+    (equation (35a) in FHIP 1962) at zero frequency. v and w are the variational polaron
+    parameters that minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function χ_dc(β, α, v, w)
 
@@ -159,7 +165,10 @@ The Moblity of the Polaron.
 """
 μ_ac(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the ac moblity μ(Ω) of the polaron at finite temperatues (equation (46) in FHIP 1962) for a given frequency Ω. β is the thermodynamic beta. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the ac moblity μ(Ω) of the polaron at finite temperatues (equation (46) in
+    FHIP 1962) for a given frequency Ω. β is the thermodynamic beta. v and w are the
+    variational polaron parameters that minimise the free energy, for the supplied
+    α Frohlich coupling.  
 """
 function μ_ac(Ω, β, α, v, w)
     Ω / imag(χ(Ω, β, α, v, w))
@@ -168,7 +177,9 @@ end
 """
 μ_ac(Ω::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the ac moblity μ(Ω) of the polaron at zero-temperatures (equation (46) in FHIP 1962) for a given frequency Ω. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the ac moblity μ(Ω) of the polaron at zero-temperatures (equation (46) in FHIP
+    1962) for a given frequency Ω. v and w are the variational polaron parameters that
+    minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function μ_ac(Ω, α, v, w)
     Ω / imag(χ(Ω, α, v, w))
@@ -177,18 +188,23 @@ end
 """
 μ_dc(β::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the dc moblity μ(β) of the polaron at finite temperatures (equation (46) in FHIP 1962) at zero frequenc. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the dc moblity μ(β) of the polaron at finite temperatures (equation (46) in
+    FHIP 1962) at zero frequenc. v and w are the variational polaron parameters that
+    minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function μ_dc(β, α, v, w)
     1 / imag(χ_dc(β, α, v, w))
 end
 
 """
-NOTE: Old code, kept in-case the special functions expansion of Imχ has any future uses. This code, as well as the expansion for Reχ have been replaced with the χ function above.
+NOTE: Old code, kept in-case the special functions expansion of Imχ has any future uses.
+This code, as well as the expansion for Reχ have been replaced with the χ function above.
 
 ℑχ(Ω::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the imaginary part of χ(Ω) in a zero temperature approximation (equation (16) in Devreese's et al.) for a given frequency Ω. v and w are the variational Polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the imaginary part of χ(Ω) in a zero temperature approximation (equation (16)
+    in Devreese's et al.) for a given frequency Ω. v and w are the variational Polaron
+    parameters that minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function ℑχ(Ω, α, v, w)
 
@@ -225,7 +241,10 @@ end
 """
 ℑχ(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the imaginary part of χ(Ω) at finite temperature using an infinite expansion of BesselK functions (see Appendix A in Devreese's et al.), for a given frequency Ω. β is the thermodynamic beta. v and w are the variational Polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
+    Calculate the imaginary part of χ(Ω) at finite temperature using an infinite expansion
+    of BesselK functions (see Appendix A in Devreese's et al.), for a given frequency Ω.
+    β is the thermodynamic beta. v and w are the variational Polaron parameters that
+    minimise the free energy, for the supplied α Frohlich coupling.  
 """
 function ℑχ(Ω, β, α, v, w)
 
@@ -323,3 +342,4 @@ function ℑχ(Ω, β, α, v, w)
     # Return final value obtained from double summation.
     return coefficient * total_sum
 end
+
