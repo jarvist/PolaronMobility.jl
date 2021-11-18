@@ -28,26 +28,32 @@ end
 # More complex scheme, involving thermodynamic Beta
 # Hellwarth(50), RHS
 """
-	HellwarthAScheme(phonon_modes, T=295)
+HellwarthAScheme(phonon_modes; T=295, convergence=1e-6)
 
     Multiple phonon mode reduction to a single effective frequency.
 	Temperature dependent, defaults to T = 295 K.
 
+    Solved iteratively by bisection until Δfreq<convergence.
+
     Follows Hellwarth et al. 1999 PRB 'A' scheme, Eqn 50 RHS.
 """
-function HellwarthAScheme(phonon_modes; T = 295)
+function HellwarthAScheme(phonon_modes; T = 295, convergence=1e-6)
 	   
 	phonon_mode_freqs = phonon_modes[:, 1]
 	ir_activities = phonon_modes[:, 2]
 	
-	condition(f) = coth(π * f * 1e12 * ħ / (kB * T)) / f - sum(ir_activities .* coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (kB * T)) ./ phonon_mode_freqs) / sum(ir_activities)
+	condition(f) = coth(π * f * 1e12 * ħ / (kB * T)) / f 
+        - sum(ir_activities .* 
+              coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (kB * T)) ./ phonon_mode_freqs) 
+        / sum(ir_activities)
 	
+    # Solve by bisection
 	minimum_frequency = minimum(phonon_mode_freqs)
 	maximum_frequency = maximum(phonon_mode_freqs)
 	middle_frequency = (maximum_frequency + minimum_frequency) / 2
 	print("\n")
 			
-	while (maximum_frequency - minimum_frequency) / 2 > 1e-6
+	while (maximum_frequency - minimum_frequency) / 2 > convergence
 		
 		if sign(condition(middle_frequency)) == sign(condition(minimum_frequency))
 			minimum_frequency = middle_frequency
