@@ -85,11 +85,12 @@ Memory Function.
 """
 
 """
-χ(Ω::Float64, α::Float64, v::Float64, w::Float64)
+χ(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64)
 
     Calculate the memory function χ(Ω) of the polaron at finite temperatures (equation (35a)
-    in FHIP 1962) for a given frequency Ω. v and w are the variational polaron parameters
-    that minimise the free energy, for the supplied α Frohlich coupling.  
+    in FHIP 1962) for a given frequency Ω. β is the thermodynamic beta. v and w are the
+    variational polaron parameters that minimise the free energy, for the supplied
+    α Frohlich coupling.  
 """
 function χ(Ω, β, α, v, w)
 

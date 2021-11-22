@@ -44,23 +44,15 @@ F(v,w,α)=(3/(4*v))*(v-w)^2-AF(v,w,α)
     This version uses the original athermal action (Feynman 1955).
 	Returns v,w.
 """
-function feynmanvw(α; v = 0.0, w = 0.0) # v, w defaults
-
-    # Intial guess for v and w.
-    if v == 0.0 || w == 0.0 # Default values to start with. Generates a random float between 1.0 and 11.0
-        initial = sort(rand(2), rev=true) .* 3.0 .+ 1.0
-    else
-        initial = [v, w]
-    end
-
+function feynmanvw(α; v = 3.0, w = 3.0) # v, w defaults
     # Limits of the optimisation.
-    lower = [1.0, 1.0]
-    upper = [5.0, 5.0]
+    lower = [0.0, 0.0]
+    upper = [Inf, Inf]
 
-    # Osaka Free Energy function to minimise.
+    # Feynman 1955 athermal action 
     f(x) = F(x[1], x[2], α)
 
-    # Use Optim to optimise the free energy function w.r.t v and w.
+    # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
         Optim.OnceDifferentiable(f, initial; autodiff = :forward),
         lower,
