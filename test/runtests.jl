@@ -3,11 +3,7 @@ push!(LOAD_PATH,"../src/") # load module from local directory
 using PolaronMobility
 using Printf # used for some stdout
 
-if VERSION < v"0.7.0-DEV.2005"
-    using Base.Test
-else
-    using Test
-end
+using Test
 
 @testset "PolaronMobility" begin
 

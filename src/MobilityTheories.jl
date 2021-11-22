@@ -1,9 +1,7 @@
 # MobilityTheories.jl
 
 """
-    polaronmobility(Trange,
-                    ε_Inf, ε_S, freq, effectivemass;
-                    verbose::Bool=false)
+polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
 
     Solves the Feynman polaron problem variationally with finite temperature
     Osaka energies.  From the resulting v, and w parameters, calculates polaron
