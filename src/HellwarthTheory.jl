@@ -44,8 +44,7 @@ function HellwarthAScheme(phonon_modes; T = 295, convergence=1e-6)
 	
 	condition(f) = coth(π * f * 1e12 * ħ / (kB * T)) / f 
         - sum(ir_activities .* 
-              coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (kB * T)) ./ phonon_mode_freqs) 
-        / sum(ir_activities)
+              coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (kB * T)) ./ phonon_mode_freqs) / sum(ir_activities)
 	
     # Solve by bisection
 	minimum_frequency = minimum(phonon_mode_freqs)
