@@ -223,3 +223,4 @@ optical_absorption(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64
 # function optical_absorption(Ω, β, α, v, w)
 #     ((Ω^2 - w^2)^2 / (Ω^5 - Ω^3 * v^2)^2) * imag(χ(Ω, β, α, v, w)[1])
 # end
+

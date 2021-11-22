@@ -157,3 +157,4 @@ function feynmanvw(α, βred; v = 0.0, w = 0.0) # v, w defaults
     # Return variational parameters that minimise the free energy.
     return v, w
 end
+
