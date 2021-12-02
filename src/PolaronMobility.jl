@@ -10,7 +10,8 @@ module PolaronMobility
 export Polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
-export χ, χ_dc, μ_ac, μ_dc
+export polaron_memory_function  # Polaron memory functions
+export optical_absorption       # Polaron optical absorption
 export ϵ_ionic_mode, frohlich_α_j, multi_free_energy, multi_variation, multi_memory_function, multi_conductivity
 
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
@@ -33,13 +34,13 @@ const eV = const q = const ElectronVolt = 1.602176487e-19;                      
 const me=MassElectron = 9.10938188e-31;                          # kg
 const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
 const ϵ_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
-
 const amu = 1.660_539_066_60e-27 # kg
 
 include("types.jl")            # Polaron types
 include("FeynmanTheory.jl")    # Actions + variational functions
 include("HellwarthTheory.jl")  # multimode -> equivalent mode.
 include("MobilityTheories.jl") # Main polaronmobility function
+include("MemoryFunction.jl")   # Memory function X calculation.
 include("Susceptibility.jl")   # ImX calculation
 include("OedipusRex.jl")       # Optical Absorption
 include("MultipleBranches.jl")  # Oct 2019 extension to multiple phonon branches
