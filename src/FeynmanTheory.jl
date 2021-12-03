@@ -48,6 +48,7 @@ function feynmanvw(α; v = 3.0, w = 3.0) # v, w defaults
     # Limits of the optimisation.
     lower = [0.0, 0.0]
     upper = [Inf, Inf]
+    initial = [v, w]
 
     # Feynman 1955 athermal action 
     f(x) = F(x[1], x[2], α)
