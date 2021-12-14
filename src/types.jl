@@ -46,13 +46,13 @@ struct NewPolaron
     M      # Fictitious particle (multiples of m_e) (kg)
     F      # Free energy (meV)
     Ω      # Electric field frequencies (multiples of phonon frequency ω) (s^-1)
-    Z      # Complex impedence (cm^2/Vs)
-    σ      # Complex conductivity (cm^-1)
+    Z      # Complex impedence (V/A)
+    σ      # Complex conductivity (A/V)
     μ      # Mobility (cm^2/Vs)
 end
 
 # Broadcast Polaron data.
 function Base.show(io::IO, x::NewPolaron)
     flush(stdout)
-    print(io, "---------------------- \n Polaron Information: \n----------------------\n", "α = ", round(x.α, digits = 3), "\nT = ", round.(x.T, digits = 3), " K \nβ = ", round.(x.β, digits = 3), "\nv = ", round.(x.v, digits = 3), " s^-1\nw = ", round.(x.w, digits = 3), " s^-1\nκ = ", round.(x.κ, digits = 3), " kg/s^2\nM = ", round.(x.M, digits = 3), " kg\nF = ", round.(x.F, digits = 3), " meV\nΩ = ", round.(Float64.(x.Ω), digits = 3),  " s^-1\nZ = ", x.Z .|> y -> round.(ComplexF64.(y), digits = 3), " cm^2/Vs\nσ = ", x.σ .|> y -> round.(ComplexF64.(y), digits = 3), " cm^-1\nμ = ", round.(Float64.(x.μ), digits = 3))
+    print(io, "---------------------- \n Polaron Information: \n----------------------\n", "α = ", round(x.α, digits = 3), "\nT = ", round.(x.T, digits = 3), " K \nβ = ", round.(x.β, digits = 3), "\nv = ", round.(x.v, digits = 3), "\nw = ", round.(x.w, digits = 3), "\nκ = ", round.(x.κ, digits = 3), " kg/s²\nM = ", round.(x.M, digits = 3), " kg\nF = ", round.(x.F, digits = 3), " meV\nΩ = ", round.(Float64.(x.Ω), digits = 3),  " THz\nZ = ", x.Z .|> y -> round.(ComplexF64.(y), digits = 3), " V/A\nσ = ", x.σ .|> y -> round.(ComplexF64.(y), digits = 3), " A/V\nμ = ", round.(Float64.(x.μ), digits = 3), " cm²/Vs")
 end
