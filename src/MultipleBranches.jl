@@ -134,7 +134,7 @@ function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mod
     ω_j = 2π * phonon_mode_freq * 1e12 
 
     # Dielectric contribution from a single ionic phonon mode
-    ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_j^2 * amu)
+    ϵ_mode = eV^2 * ir_activity^2 / (3 * volume * ω_j^2 * amu)
 
     # Normalise ionic dielectric contribution with 1 / (4π ϵ_0) (NB: the 4π has been pre-cancelled)
     return ϵ_mode / ϵ_0 
@@ -145,7 +145,7 @@ end
 
     Calculate the total ionic contribution to the dielectric function from all phonon modes.
 
-     - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
+     - freqs_and_ir_activity is a matrix containexing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
      - volume is the volume of the unit cell of the material in m^3.
 """
 function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to dielectric
@@ -213,7 +213,7 @@ frohlich_α_j(ϵ_optic::Float64, ϵ_ionic::Float64, ϵ_total::Float64, phonon_mo
      - phonon_mode_freq is the frequency of the phonon mode (THz).
      - m_eff is the band mass of the electron (in units of electron mass m_e)
 """
-function frohlich_α_j(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) 
+function frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) 
 
     # The Rydberg energy unit
     Ry = eV^4 * me / (2 * ħ^2)
@@ -247,12 +247,12 @@ This section of the code is dedicated to calculating the polaron free energy, ge
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-function κ_i(i, v, w)
+@noinline function κ_i(i, v, w)
     κ = v[i]^2 - w[i]^2
     if length(v) > 1
-        for j in 1:length(v)
+        @simd for j in 1:length(v)
             if j != i
-                κ *= (v[j]^2 - w[i]^2) / (w[j]^2 - w[i]^2)
+                @inbounds κ *= (v[j]^2 - w[i]^2) / (w[j]^2 - w[i]^2)
             end
         end
     end
@@ -268,12 +268,12 @@ h_i(i::Integer, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-function h_i(i, v, w)
+@noinline function h_i(i, v, w)
     h = v[i]^2 - w[i]^2
     if length(v) > 1
-        for j in 1:length(v)
+        @simd for j in 1:length(v)
             if j != i
-                h *= (w[j]^2 - v[i]^2) / (v[j]^2 - v[i]^2)
+                @inbounds h *= (w[j]^2 - v[i]^2) / (v[j]^2 - v[i]^2)
             end
         end
     end
@@ -289,7 +289,7 @@ C_ij(i::Integer, j::Integer, v::Array{Float64}(undef, 1), w::Array{Float64}(unde
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-function C_ij(i, j, v, w)
+@noinline function C_ij(i, j, v, w)
     C = w[i] * κ_i(i, v, w) * h_i(j, v, w) / (4 * (v[j]^2 - w[i]^2))
     return C
 end
@@ -304,12 +304,27 @@ D_j(τ::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(und
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-function D_j(τ, β, v, w)
+@noinline function D_j(τ, β, v, w)
     D = τ * (1 - τ / β)
-    for i in 1:length(v)
-        if v[i] != w[i]
-        D += (h_i(i, v, w) / v[i]^2) * (2 * sinh(v[i] * τ / 2) * sinh(v[i] * (β - τ) / 2) / (v[i] * sinh(v[i] * β / 2)) - τ * (1 - τ / β))
-        end
+    @simd for i in 1:length(v)
+        @inbounds D += (h_i(i, v, w) / v[i]^2) * (2 * sinh(v[i] * τ / 2) * sinh(v[i] * (β - τ) / 2) / (v[i] * sinh(v[i] * β / 2)) - τ * (1 - τ / β))
+    end
+    return D
+end
+
+"""
+D_j(τ::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+
+    Calculates the recoil function that approximates the exact influence (recoil effects) of the phonon bath on the electron with the influence of the harmonicly coupled fictitious masses on the electron. It appears in the exponent of the intermediate scattering function. This function works at zero temperature.
+
+     - τ is the imaginary time variable.
+     - v is an one-dimensional array of the v variational parameters.
+     - w is an one-dimensional array of the w variational parameters.
+"""
+@noinline function D_j(τ, v, w)
+    D = τ
+    @simd for i in 1:length(v)
+        @inbounds D += (h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ)
     end
     return D
 end
@@ -324,9 +339,24 @@ B_j(α::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(und
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-function B_j(α, β, v, w)
-    B_integrand(τ) = cosh(β / 2 - abs(τ)) / (sinh(β / 2) * sqrt(D_j(abs(τ), β, v, w)))
-    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, β / 2)[1]
+@noinline function B_j(α, β, v, w; rtol = 1e-3)
+    B_integrand(τ) = cosh(β / 2 - abs(τ)) / (sinh(β / 2) * sqrt(abs(D_j(abs(τ), β, v, w))))
+    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, β / 2, rtol = rtol)[1]
+    return B
+end
+
+"""
+B_j(α::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+
+    Generalisation of the B function from Equation 62c in Biaggio and Hellwarth [] to zero temperature. This is the expected value of the exact action <S_j> taken w.r.t trial action, given for the `jth` phonon mode.
+
+     - α is the partial dielectric electron-phonon coupling parameter for the `jth` phonon mode.
+     - v is an one-dimensional array of the v variational parameters.
+     - w is an one-dimensional array of the w variational parameters.
+"""
+@noinline function B_j(α, v, w; rtol = 1e-3)
+    B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
+    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf, rtol = rtol)[1]
     return B
 end
 
@@ -340,17 +370,35 @@ C_j(β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Fl
      - w is an one-dimensional array of the w variational parameters.
      - n is the total number of phonon modes.
 """
-function C_j(β, v, w, n)
-
+@noinline function C_j(β, v, w, n)
     s = 0.0
-
     # Sum over the contributions from each fictitious mass.
-    for i in 1:length(v)
-        for j in 1:length(v)
-            s += C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2)  - 2 / (β * v[j]))
+    @simd for i in 1:length(v)
+        @simd for j in 1:length(v)
+            @inbounds s += C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2)  - 2 / (β * v[j]))
         end
     end
+    # Divide by the number of phonon modes to give an average contribution per phonon mode.
+    return 3 * s / n
+end
 
+"""
+C_j(v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
+
+    Generalisation of the C function from Equation 62e in Biaggio and Hellwarth [] but to zero temperaure. This is the expected value of the trial action <S_0> taken w.r.t trial action.
+
+     - v is an one-dimensional array of the v variational parameters.
+     - w is an one-dimensional array of the w variational parameters.
+     - n is the total number of phonon modes.
+"""
+@noinline function C_j(v, w, n)
+    s = 0.0
+    # Sum over the contributions from each fictitious mass.
+    @simd for i in 1:length(v)
+        @simd for j in 1:length(v)
+            @inbounds s += C_ij(i, j, v, w) / (v[j] * w[i])
+        end
+    end
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     return 3 * s / n
 end
@@ -365,68 +413,60 @@ A_j(β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Fl
      - w is an one-dimensional array of the w variational parameters.
      - n is the total number of phonon modes.
 """
-function A_j(β, v, w, n)
-
+@noinline function A_j(β, v, w, n)
     s = -log(2π * β) / 2
-
     # Sum over the contributions from each fictitious mass.
-    for i in 1:length(v)
+    @simd for i in 1:length(v)
         if v[i] != w[i]
-            s += log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
+            @inbounds s += log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
         end
     end
-
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     3 / β * s / n
 end
 
 """
-multi_free_energy(v_params::Array{Float64}(undef, 1), w_params::Array{Float64}(undef, 1), T::Float64, ϵ_optic::Float64, m_eff::Float64, volume::Float64, freqs_and_ir_activity::Matrix{Float64})
+A_j(v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
+
+    Generalisation of the A function from Equation 62b in Biaggio and Hellwarth [] but to zero temperature. This is the ground-state energy of the trial model.
+
+     - v is an one-dimensional array of the v variational parameters.
+     - w is an one-dimensional array of the w variational parameters.
+     - n is the total number of phonon modes.
+"""
+@noinline function A_j(v, w, n)
+    s = 0.0
+    @simd for i in 1:length(v)
+        @inbounds s += v[i] - w[i]
+    end
+    return -3 * s / (2 * n)
+end
+
+"""
+free_energy(v, w, α, β; ω = 1.0)
 
     Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. This generalises Osaka's free energy expression (below Equation (22) in []).
 
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
-     - T is the environment temperature in kelvin (K).
+     - β is the thermodynamic temperature.
      - ϵ_optic is the optical dielectric constant of the material.
      - m_eff is the band mass of the electron (in units of electron mass m_e) .
      - volume is the volume of the unit cell of the material in m^3.
      - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
 """
-function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs_and_ir_activity)
-
-    # Speed up. Stops potential overflows.
-    setprecision(BigFloat, 32) 
-
-    # Extract phonon modes frequencies and ir activities.
-    phonon_freqs = freqs_and_ir_activity[:, 1]
-    ir_activity = freqs_and_ir_activity[:, 2]
+@noinline function F(v, w, α, β; ω = 1.0, rtol = rtol)
 
     # Total number of phonon modes / branches.
-    num_of_branches = length(phonon_freqs)
-    
-    # Total ionic dielectric contribution from all phonon modes (used as a normalisation).
-    ϵ_tot = ϵ_total(freqs_and_ir_activity, volume)
+    num_of_modes = length(ω)
 
     F = 0.0
 
     # Sum over the phonon modes.
-	for j in 1:num_of_branches
-
-        # Angular phonon frequency of the phonon mode (rad Hz).
-		ω_j = 2π * 1e12 * phonon_freqs[j]
-
-        # Reduced thermodynamic temperature of the phonon mode (unitless).
-		β_j = ħ * ω_j / (kB * T) 
-
-        # The ionic contribution to the dielectric function from the phonon mode.
-		ϵ_ionic_j = ϵ_ionic_mode(phonon_freqs[j], ir_activity[j], volume)
-
-        # The partial dielectric electron-phonon coupling parameter of the phonon mode.
-		α_j = frohlich_α_j(ϵ_optic, ϵ_ionic_j, ϵ_tot, phonon_freqs[j], m_eff) 
+	@simd for j in 1:num_of_modes
 
         # Add contribution to the total free energy from the phonon mode.
-		F += -(B_j(β_j, α_j, v_params, w_params) + C_j(β_j, v_params, w_params, num_of_branches) + A_j(β_j, v_params, w_params)) * ħ * ω_j
+		@inbounds F += -(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_of_modes) + A_j(β[j], v, w, num_of_modes)) * ω[j]
         
         # Prints out the frequency, reduced thermodynamic temperature, ionic dielectric and partial coupling for the phonon mode.
         # println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
@@ -436,54 +476,77 @@ function multi_free_energy(v_params, w_params, T, ϵ_optic, m_eff, volume, freqs
     # println("Total free energy: ", F * ħ / eV * 1e3, " meV")
 
     # Free energy in units of meV
-    return F / eV * 1e3 
+    return F
 end
 
 """
-multi_variation(T::Float64, ϵ_optic::Float64, m_eff::Float64, volume::Float64, freqs_and_ir_activity::Matrix{Float64}; initial_vw::{Bool, Array{Float64}(undef, 1)}, N::Integer)
+F(v, w, α; ω)
+
+    Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. This generalises Osaka's free energy expression (below Equation (22) in []).
+
+        - α is the Frohlich alpha parameter.
+        - ω is a vector containing the phonon mode frequencies (in THz).
+        - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
+"""
+@noinline function F(v, w, α; ω = 1.0, rtol = 1e-3)
+
+    # Total number of phonon modes / branches.
+    num_of_branches = length(ω)
+
+    F = 0.0
+
+    # Sum over the phonon modes.
+	@simd for j in 1:num_of_branches
+
+        # Add contribution to the total free energy from the phonon mode.
+		@inbounds F += -(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_of_branches) + A_j(v, w, num_of_branches)) * ω[j]
+        
+        # Prints out the frequency, reduced thermodynamic temperature, ionic dielectric and partial coupling for the phonon mode.
+        # println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
+    end
+	
+    # print out the total polaron free energy from all phonon modes.
+    # println("Total free energy: ", F * ħ / eV * 1e3, " meV")
+
+    # Free energy in units of meV
+    return F
+end
+
+"""
+feynmanvw(α::Vector{Real}, β::Vector{Real}; v::Real, w::Real, ω::Vector{Real}, N::Integer)
 
     Minimises the multiple phonon mode free energy function for a set of v_p and w_p variational parameters.
     The variational parameters follow the inequality: v_1 > w_1 > v_2 > w_2 > ... > v_N > w_N.
 
-     - T is the environment temperature in kelvin (K).
-     - ϵ_optic is the optical dielectric constant of the material.
-     - m_eff is the band mass of the electron (in units of electron mass m_e) .
-     - volume is the volume of the unit cell of the material in m^3.
-     - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
-     - initial_vw determines if the function should start with a random initial set of variational parameters (Bool input) or a given set of variational parameter values (one dimensional array).
+     - β is the thermodynamic temperature.
+     - α is the Frohlich alpha parameter.
+     - ω is a vecotr containing the phonon mode frequencies (in THz).
+     - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
      - N specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
 """
-function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; initial_vw = false, N = 1) # N number of v and w params
+function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false) # N number of v and w params
 
-    # Speed up. Stops potential overflows.
-    setprecision(BigFloat, 32) 
+    if N != length(v) != length(w)
+        return error("The number of variational parameters v & w must be equal to N.")
+    end
 
     # Use a random set of N initial v and w values.
-    if initial_vw isa Bool
-
+    if v == 0.0 || w == 0.0
 		# Intial guess for v and w parameters.
-    	initial = sort(rand(2 * N)) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
-		
-		# Limits of the optimisation.
-		lower = repeat([0.1], 2 * N)
-		upper = repeat([60.0], 2 * N)
-
-    # Use the N given initial v and w values.
+    	initial = sort(rand(2 * N), rev=true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
 	else
+        initial = vcat(v, w)
+    end
 
-		# Intial guess for v and w.
-		initial = sort(vcat(initial_vw...))
-		
-		# Limits of the optimisation.
-		lower = repeat([0.1], 2 * N)
-		upper = repeat([60.0], 2 * N)
-	end
-	
+    # Limits of the optimisation.
+    lower = fill(0.0, 2 * N)
+    upper = fill(100.0, 2 * N)
+
     # Print out the initial v and w values.
-	println("Initial guess: ", initial)
+	# println("Initial guess: ", initial)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_free_energy([x[2 * n] for n in 1:Int(N)], [x[2 * n - 1] for n in 1:Int(N)], T, ϵ_optic, m_eff, volume, freqs_and_ir_activity)
+	f(x) = F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
@@ -491,108 +554,68 @@ function multi_variation(T, ϵ_optic, m_eff, volume, freqs_and_ir_activity; init
 		lower,
 		upper,
 		initial,
-		Fminbox(LBFGS()),
-		# Optim.Options(time_limit = 20.0), # Set time limit for asymptotic convergence if needed.
+		Fminbox(BFGS()),
+		Optim.Options(f_reltol = rtol, x_reltol = rtol, show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
 	)
 
 	# Extract the v and w parameters that minimised the free energy.
-	var_params = Optim.minimizer(solution)
+	var_params = sort(Optim.minimizer(solution), rev = true)
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	v_params = [var_params[2 * n] for n in 1:N]
-	w_params = [var_params[2 * n - 1] for n in 1:N]
+	v = [var_params[2 * n - 1] for n in 1:N]
+	w = [var_params[2 * n] for n in 1:N]
 
 	# Print the variational parameters that minimised the free energy.
-	println("Variational parameters: ", var_params)
+	# println("Variational parameters: ", var_params)
 
     # Return the variational parameters that minimised the free energy.
-    return v_params, w_params
+    return v, w
 end
 
-"""
-----------------------------------------------------------------------
-Multiple Branch Polaron Memory Function and Complex Conductivity
-----------------------------------------------------------------------
-
-This section of the code is dedicated to calculating the polaron memory function and complex conductivity, generalised from FHIP's expression to the case where multiple phonon modes are present in the material.
-"""
-
-"""
-function multi_memory_function(Ω::Float64, β::Array{Float64}(undef, 1), α::Array{Float64}(undef, 1), v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), ω::Array{Float64}(undef, 1), m_eff::Float64)
-
-    Calculate polaron complex memory function inclusive of multiple phonon branches j, each with angular frequency ω[j] (rad THz).
-
-     - Ω is the frequency (THz) of applied electric field.
-     - β is an array of reduced thermodynamic betas, one for each phonon frequency ω[j]. 
-     - α is an array of decomposed Frohlich alphas, one for each phonon frequency ω[j]. 
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - m_eff is the is the conduction band mass of the particle (typically electron / hole, in units of electron mass m_e).
-"""
-function multi_memory_function(Ω, β, α, v, w, ω, m_eff)
-
-    # FHIP1962, page 1009, eqn (36).
-    S(t, β) = cos(t - 1im * β / 2) / sinh(β / 2) / D_j(-1im * t, β, v, w)^(3 / 2)
-
-    # FHIP1962, page 1009, eqn (35a).
-    integrand(t, β, ν) = (1 - exp(1im * 2π * ν * t)) * imag(S(t, β))
-
-    memory = 0.0
-
-    # Sum over the phonon modes.
-    for j in 1:length(ω) 
-        
-        # print out the current photon frequency and phonon mode frequency (THz).
-        # println("Photon frequency = $ν, Phonon mode frequency = $(ω[j] / 2π)")
-
-        # Add the contribution to the memory function from the `jth` phonon mode.
-        memory += 2 * α[j] * ω[j]^2 * quadgk(t -> integrand(t, β[j], ν / ω[j]), 0.0, Inf)[1] / (3 * √π * 2π * ν)
+function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false) # N number of v and w params
+ 
+    if N != length(v) != length(w)
+        return error("The number of variational parameters v & w must be equal to N.")
     end
 
-    # Print out the value of the memory function.
-    # println("Memory function: ", memory)
+    # Use a random set of N initial v and w values.
+    if v == 0.0 || w == 0.0
+		# Intial guess for v and w parameters.
+    	initial = sort(rand(2 * N), rev = true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
+	else
+        initial = vcat(v, w)
+    end
 
-    return memory
+    # Limits of the optimisation.
+    lower = fill(0.0, 2 * N)
+    upper = fill(100.0, 2 * N)
+
+    # Print out the initial v and w values.
+	# println("Initial guess: ", initial)
+
+	# The multiple phonon mode free energy function to minimise.
+	f(x) = F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
+
+	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+	solution = Optim.optimize(
+		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+		lower,
+		upper,
+		initial,
+		Fminbox(BFGS()),
+		Optim.Options(f_reltol = rtol, x_reltol = rtol, show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
+	)
+
+	# Extract the v and w parameters that minimised the free energy.
+	var_params = sort(Optim.minimizer(solution), rev = true)
+
+	# Separate the v and w parameters into one-dimensional arrays (vectors).
+	v = [var_params[2 * n - 1] for n in 1:N]
+	w = [var_params[2 * n] for n in 1:N]
+
+	# Print the variational parameters that minimised the free energy.
+	# println("Variational parameters: ", var_params)
+
+    # Return the variational parameters that minimised the free energy.
+    return v, w
 end
-
-"""
-function multi_conductivity(Ω::Float64, β::Array{Float64}(undef, 1), α::Array{Float64}(undef, 1), v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), ω::Array{Float64}(undef, 1), m_eff::Float64)
-
-    Calculate polaron complex conductivity inclusive of multiple phonon branches j, each with angular frequency ω[j] (rad THz).
-
-     - Ω is the frequency (THz) of applied electric field.
-     - β is an array of reduced thermodynamic betas, one for each phonon frequency ω[j]. 
-     - α is an array of decomposed Frohlich alphas, one for each phonon frequency ω[j]. 
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - m_eff is the is the conduction band mass of the particle (typically electron / hole, in units of electron mass m_e).
-"""
-function multi_conductivity(ν, β, α, v, w, ω, m_eff)
-
-	# FHIP1962, page 1009, eqn (36).
-    S(t, β) = cos(t - 1im * β / 2) / sinh(β / 2) / D_j(-1im * t, β, v, w)^(3 / 2)
-
-    # FHIP1962, page 1009, eqn (35a).
-    integrand(t, β, ν) = (1 - exp(1im * 2π * ν * t)) * imag(S(t, β))
-
-    impedence = 0.0
-
-    # Sum over the phonon modes.
-	for j in 1:length(ω)
-
-        # print out the current photon frequency and phonon mode frequency (THz).
-		# println("Photon frequency = $ν, Phonon mode frequency = $(ω[j] / 2π)")
-
-        # Add the contribution to the complex impedence from the `jth` phonon mode.
-		impedence += -1im * 2π * ν / length(ω) + 1im * 2 * α[j] * ω[j]^2 * quadgk(t -> integrand(t, β[j], ν / ω[j]), 0.0, Inf)[1] / (3 * √π * 2π * ν)
-	end
-
-    # Conductivity is the reciprocal of the impedence. 
-	conductivity = 1 / impedence * eV * 100^2 / (m_eff * me * 1e12)
-
-    # Print out the value of the complex conductivity.
-    # println("Multiple complex conductivity: ", conductivity, " cm^2/Vs")
-
-    return conductivity
-end
-
