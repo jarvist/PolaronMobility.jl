@@ -7,15 +7,15 @@ module PolaronMobility
 
 # These codes were developed with Julia 0.5.0 - Julia 0.6.2, and require the Optim and Plots packages.
 
-export Polaron # Type to hold the data
+export Polaron, NewPolaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export polaron_memory_function  # Polaron memory functions
 export optical_absorption       # Polaron optical absorption
-export ϵ_ionic_mode, frohlich_α_j, multi_free_energy, multi_variation, multi_memory_function, multi_conductivity
-
+export ϵ_ionic_mode, frohlich_α_j
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 export Hellwarth1999mobilityRHS
+export make_polaron
 
 
 ##### load in library routines... #####
