@@ -455,7 +455,7 @@ free_energy(v, w, α, β; ω = 1.0)
      - volume is the volume of the unit cell of the material in m^3.
      - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
 """
-@noinline function F(v, w, α, β; ω = 1.0, rtol = 1e-3)
+@noinline function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3)
 
     # Total number of phonon modes / branches.
     num_of_modes = length(ω)
@@ -488,7 +488,7 @@ F(v, w, α; ω)
         - ω is a vector containing the phonon mode frequencies (in THz).
         - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
 """
-@noinline function F(v, w, α; ω = 1.0, rtol = 1e-3)
+@noinline function multi_F(v, w, α; ω = 1.0, rtol = 1e-3)
 
     # Total number of phonon modes / branches.
     num_of_branches = length(ω)
@@ -546,7 +546,7 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
 	# println("Initial guess: ", initial)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
@@ -594,7 +594,7 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
 	# println("Initial guess: ", initial)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
