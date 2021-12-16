@@ -276,7 +276,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
     else
         ω = 2π .* phonon_freq
         ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
-        α = [frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
+        α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
     end
 
     # Prepare empty arrays for different temperatures.
@@ -317,7 +317,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
             M[t, :] = M_t
 
             # Evaluate free energy at zero temperature. NB: Enthalpy.
-            F_t = F(v_t, w_t, α; ω = ω, rtol = rtol) * 1000 * ħ / eV * 1e12
+            F_t = multi_F(v_t, w_t, α; ω = ω, rtol = rtol) * 1000 * ħ / eV * 1e12
             FE[t] = F_t
 
             # Evaluate the mobility.
@@ -394,7 +394,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
             M[t, :] = M_t
 
             # Evaluate free energy at finite temperature.
-            F_t = F(v_t, w_t, α, β_t; ω = ω, rtol = rtol) * 1000 * ħ / eV * 1e12
+            F_t = multi_F(v_t, w_t, α, β_t; ω = ω, rtol = rtol) * 1000 * ħ / eV * 1e12
             FE[t] = F_t
 
             # Evaluate the mobility.

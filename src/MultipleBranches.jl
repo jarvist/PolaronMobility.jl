@@ -213,7 +213,7 @@ frohlich_α_j(ϵ_optic::Float64, ϵ_ionic::Float64, ϵ_total::Float64, phonon_mo
      - phonon_mode_freq is the frequency of the phonon mode (THz).
      - m_eff is the band mass of the electron (in units of electron mass m_e)
 """
-function frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) 
+function multi_frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) 
 
     # The Rydberg energy unit
     Ry = eV^4 * me / (2 * ħ^2)
