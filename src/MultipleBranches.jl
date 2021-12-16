@@ -455,7 +455,7 @@ free_energy(v, w, α, β; ω = 1.0)
      - volume is the volume of the unit cell of the material in m^3.
      - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
 """
-@noinline function F(v, w, α, β; ω = 1.0, rtol = rtol)
+@noinline function F(v, w, α, β; ω = 1.0, rtol = 1e-3)
 
     # Total number of phonon modes / branches.
     num_of_modes = length(ω)
