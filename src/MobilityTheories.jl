@@ -272,7 +272,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
     # If ir_activity is given (an array) then multiple phonon modes are present.
     if N_modes == 1
         ω = 2π * phonon_freq
-        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
+        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq * 1e12, m_eff)
     else
         ω = 2π .* phonon_freq
         ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
