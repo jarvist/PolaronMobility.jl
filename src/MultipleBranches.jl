@@ -134,7 +134,7 @@ function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mod
     ω_j = 2π * phonon_mode_freq * 1e12 
 
     # Dielectric contribution from a single ionic phonon mode
-    ϵ_mode = eV^2 * ir_activity^2 / (3 * volume * ω_j^2 * amu)
+    ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_j^2 * amu)
 
     # Normalise ionic dielectric contribution with 1 / (4π ϵ_0) (NB: the 4π has been pre-cancelled)
     return ϵ_mode / ϵ_0 
