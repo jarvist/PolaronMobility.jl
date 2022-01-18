@@ -48,16 +48,16 @@ phonon_freq = MAPI[:, 1]
 ir_activity = MAPI[:, 2]
 ϵ_static = 24.1
 
-# Ionic dielectric
+# Ionic dielectric and decomposed alpha
+
+ω = 2π .* phonon_freq
+ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
+
+α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
 
 @testset "Ionic dielectric and decomposed alphas" begin
 
-    ω = 2π .* phonon_freq
-    ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
-
     @test ϵ_ionic ≈ [0.2999680470756664, 0.0247387647244569, 0.2543132184018061, 0.16621617310133838, 2.3083204422506296, 3.0707979601813267, 3.2026782087486407, 0.892674135624958, 0.8861579096771846, 0.7209278375756829, 0.40199759805819046, 0.6183279038315278, 0.7666391525823296, 0.1555444994147378, 1.1627710200840813] rtol = 1e-3
-
-    α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
 
     @test α ≈ [0.03401013445306177, 0.002850969846883158, 0.03075081562607006, 0.02275292381052607, 0.33591418423943553, 0.46526818717696034, 0.5046331098089347, 0.14223560721522646, 0.16083871312929882, 0.1622911897190622, 0.09123913334086006, 0.14070972715961402, 0.18159786148348117, 0.039500396977008016, 0.3487735470060312] rtol = 1e-3
 
@@ -73,15 +73,15 @@ end
 
 # Variations
 
+v_0, w_0 = variation(α; v = 0.0, w = 0.0, ω = ω) # Athermal
+
+β = [i .* ħ / (kB * 300) * 1e12 for i in ω]
+v, w = variation(α, β; v = 0.0, w = 0.0, ω = ω) # Thermal
+
 @testset "Multiple mode variations" begin
     
-    v_0, w_0 = variation(α; v = 0.0, w = 0.0, ω = ω) # Athermal
-
     @test v_0 ≈ [3.292283619446986] rtol = 1e-3
     @test w_0 ≈ [2.679188425097246] rtol = 1e-3
-
-    β = [i .* ħ / (kB * 300) * 1e12 for i in ω]
-    v, w = variation(α, β; v = 0.0, w = 0.0, ω = ω) # Thermal
     
     @test v ≈ [35.19211042393129] rtol = 1e-3
     @test w ≈ [32.454157668863225] rtol = 1e-3
@@ -93,13 +93,13 @@ end
 
 # Energies
 
+E = multi_F(v_0, w_0, α; ω = ω) * 1000 * ħ / eV * 1e12 # Enthalpy
+
+F = multi_F(v, w, α, β; ω = ω) * 1000 * ħ / eV * 1e12 # Free energy
+
 @testset "Multiple mode energies" begin
     
-    E = multi_F(v_0, w_0, α; ω = ω) * 1000 * ħ / eV * 1e12 # Enthalpy
-
     @test E ≈ -19.50612170650821 rtol = 1e-3
-
-    F = multi_F(v, w, α, β; ω = ω) * 1000 * ħ / eV * 1e12 # Free energy
 
     @test F ≈ -42.79764110613318 rtol = 1e-3
 
@@ -110,10 +110,10 @@ end
 
 # Mobility
 
+μ = polaron_mobility(β, α, v, w; ω = ω) * eV / (1e12 * me * m_eff) * 100^2
+
 @testset "Multiple mode mobility" begin
     
-    μ = polaron_mobility(β, α, v, w; ω = ω) * eV / (1e12 * me * m_eff) * 100^2
-
     @test μ ≈ 160.50844330430286 rtol = 1e-3
 
     println("\nMobility at 300K: $μ")
@@ -121,13 +121,13 @@ end
 
 # Impedence 
 
+Z_dc = polaron_complex_impedence(0, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # DC limit
+
+Z = polaron_complex_impedence(50, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # AC limit
+
 @testset "Multiple mode impedence" begin
-    
-    Z_dc = polaron_complex_impedence(0, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # DC limit
 
     @test Z_dc ≈ 0.04822198080982958 + 0.0im rtol = 1e-3
-
-    Z = polaron_complex_impedence(50, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # AC limit
 
     @test Z ≈ 0.01559778628790277 + 0.003142574011406571im rtol = 1e-3
 
@@ -138,13 +138,13 @@ end
 
 # Conductivity
 
+σ_dc = polaron_complex_conductivity(0, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # DC limit
+
+σ = polaron_complex_conductivity(50, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # AC limit
+
 @testset "Multiple mode conductivity" begin
     
-    σ_dc = polaron_complex_conductivity(0, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # DC limit
-
     @test σ_dc ≈ 5.783096153975994e-6 - 0.0im rtol = 1e-3
-
-    σ = polaron_complex_conductivity(50, β, α, v, w; ω = ω) / sqrt(ε_0 * ϵ_optic) / c # AC limit
 
     @test σ ≈ 1.7181529791577786e-5 - 3.4616597511081827e-6im rtol = 1e-3
 
@@ -155,8 +155,10 @@ end
 
 # Single Mode Tests
 
+Hellwarth_B_freq = HellwarthBScheme(hcat(phonon_freq, ir_activity))
+
 @testset "Hellwarth effective frequency" begin
-    Hellwarth_B_freq = HellwarthBScheme(hcat(phonon_freq, ir_activity))
+    
     @test Hellwarth_B_freq ≈ 2.25 rtol = 1e-3
 end 
 
