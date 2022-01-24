@@ -765,7 +765,7 @@ save_polaron(p::NewPolaron, prefix)
 
 Saves data from 'polaron' into file "prefix".
 This is a .jdl file for storing the polaron data whilst preserving types. Allows for saving multidimensional arrays that sometimes arise in the polaron data.
-Each parameter in the NewPolaron type is saved as a dictionary entry. E.g. NewPolaron.α is saved under JLD.load("$prefix.jld")["alpha"].
+Each parameter in the NewPolaron type is saved as a dictionary entry. E.g. NewPolaron.α is saved under JLD.load("prefix.jld")["alpha"].
 """
 function save_polaron(polaron::NewPolaron, prefix)
 
