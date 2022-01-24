@@ -513,7 +513,7 @@ F(v, w, α; ω)
 end
 
 """
-feynmanvw(α::Vector{Real}, β::Vector{Real}; v::Real, w::Real, ω::Vector{Real}, N::Integer)
+variation(α::Vector{Real}, β::Vector{Real}; v::Real, w::Real, ω::Vector{Real}, N::Integer)
 
     Minimises the multiple phonon mode free energy function for a set of v_p and w_p variational parameters.
     The variational parameters follow the inequality: v_1 > w_1 > v_2 > w_2 > ... > v_N > w_N.

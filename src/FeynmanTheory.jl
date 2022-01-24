@@ -11,17 +11,17 @@ frohlichalpha(ε_Inf,ε_S,freq,m_eff)
     http://dx.doi.org/10.1103/PhysRev.97.660
 
 """
-function frohlichalpha(ε_optic,ε_static,freq,m_eff)
-    ω=freq*2*pi #frequency to angular velocity
+function frohlichalpha(ϵ_optic, ϵ_static, freq, m_eff)
+    ω = 2π * freq * 1e12 # frequency to angular velocity
     # Note: we need to add a 4*pi factor to the permitivity of freespace.
     # This gives numeric agreement with literature values.  This is required as
     # the contemporary 1950s and 1960s literature implicitly used atomic units,
     # where the electric constant ^-1 has this factor baked in, k_e=1/(4πϵ_0).
-    α= 0.5/(4*π*ε_0) *              # Units: m/F
-       (1/ε_optic - 1/ε_static) *   # Units: none
-       (q^2/(hbar*ω)) *             # Units: F
-       sqrt(2*me*m_eff*ω/ħ)         # Units: 1/m
-    return (α)
+    α = 0.5 / (4 * π * ϵ_0) *           # Units: m/F
+       (1 / ϵ_optic - 1 / ϵ_static) *   # Units: none
+       (eV^2 / (ħ * ω)) *               # Units: F
+       sqrt(2 * me * m_eff * ω / ħ)    # Units: 1/m
+    return α
 end
 
 #####
@@ -111,31 +111,23 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
 
 """
-    feynmanvw(α, βred; v = 0.0, w = 0.0)
--
-    Calculate v and w variational polaron parameters, for the supplied
-    α Frohlich coupling and βred reduced thermodynamic temperature.
-    This uses the Osaka finite temperature action, as presented in Hellwarth
-    and Biaggio 1999.
-    Returns v, w.
+    feynmanvw(α; v = 0.0, w = 0.0)
+
+    Calculate v and w variational polaron parameters,
+    for the supplied α Frohlich coupling.
+    This version uses the original athermal action (Feynman 1955).
+	Returns v,w.
 """
-function feynmanvw(α, βred; v = 0.0, w = 0.0) # v, w defaults
-
-    # Intial guess for v and w.
-    if v == 0.0 || w == 0.0 # Default values to start with. Generates a random float between 1.0 and 11.0
-        initial = sort(rand(2), rev=true) .* 3.0 .+ 1.0
-    else
-        initial = [v, w]
-    end
-
+function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
     # Limits of the optimisation.
     lower = [0.0, 0.0]
-    upper = [100.0, 100.0]
+    upper = [Inf, Inf]
+    initial = [v, w]
 
-    # Osaka Free Energy function to minimise.
-    f(x) = F(x[1], x[2], βred, α)
+    # Feynman 1955 athermal action 
+    f(x) = F(x[1], x[2], β, α)
 
-    # Use Optim to optimise the free energy function w.r.t v and w.
+    # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
         Optim.OnceDifferentiable(f, initial; autodiff = :forward),
         lower,
@@ -150,4 +142,3 @@ function feynmanvw(α, βred; v = 0.0, w = 0.0) # v, w defaults
     # Return variational parameters that minimise the free energy.
     return v, w
 end
-

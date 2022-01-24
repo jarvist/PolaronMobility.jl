@@ -272,7 +272,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
     # If ir_activity is given (an array) then multiple phonon modes are present.
     if N_modes == 1
         ω = 2π * phonon_freq
-        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq * 1e12, m_eff)
+        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
     else
         ω = 2π .* phonon_freq
         ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
@@ -298,7 +298,9 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
     for t in 1:length(T) # Iterate over temperatures.
         if verbose
-            print("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.\n")
+            println("\e[2K", "-------------------------------------------------")
+            println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
+            println("\e[2K", "-------------------------------------------------")
         end
 
         if T[t] == 0.0 # If T = 0
@@ -326,10 +328,14 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
             # Broadcast data.
             if verbose
-                println("\e[2K", "α: ", round(sum(α), digits = 3), " | β: ", Inf, " | v: ", round.(v_t, digits = 3), " | w: ", round.(w_t, digits = 3))
-                println("\e[2K", "κ: ", round.(κ_t, digits = 3), " mₑ kg/s² | M: ", round.(M_t, digits = 3), " mₑ kg")
-                println("\e[2K", "Free Energy (Enthalpy): ", round(F_t, digits = 3), " meV")
-                println("\e[2K", "Mobility: ", round(μ_t, digits = 3), " cm²/Vs")
+                println("\e[2K", "Frohlich coupling α: ", round.(α, digits = 3), " | sum(α): ", round(sum(α), digits = 3))
+                println("\e[2K", "Reduced thermodynamic β: ", Inf)
+                println("\e[2K", "Phonon frequencies ω: ", round.(phonon_freq, digits = 3), " 2π THz")
+                println("\e[2K", "Variational parameters | v: ", round.(v_t, digits = 3), " | w: ", round.(w_t, digits = 3))
+                println("\e[2K", "Fictitious spring constant κ: ", round.(κ_t, digits = 3), " mₑ kg/s²")
+                println("\e[2K", "Fictitious mass M: ", round.(M_t, digits = 3), " mₑ kg")
+                println("\e[2K", "Free energy (enthalpy) F: ", round(F_t, digits = 3), " meV")
+                println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3), " cm²/Vs")
             end
 
             for f in 1:length(Ω) # Iterate over frequencies
@@ -346,7 +352,9 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
                     # Broadcast data.
                     if verbose
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3), " V/A")
                         println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3), " A/V")
                     end
@@ -363,17 +371,19 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
                     # Broadcast data.
                     if verbose
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
                         println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
                     end
                 end
 
-                print("\033[F"^3) # Move cursor back
+                print("\033[F"^5) # Move cursor back
             end
 
             if verbose
-                print("\033[F"^5) # Move cursor back
+                print("\033[F"^11) # Move cursor back
             end
 
         elseif T[t] > 0.0 # If T > 0
@@ -403,10 +413,14 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
             # Broadcast data.
             if verbose
-                println("\e[2K", "α: ", round(sum(α), digits = 3), " | β: ", round.(β_t, digits = 3), " | v: ", round.(v_t, digits = 3), " | w: ", round.(w_t, digits = 3))
-                println("\e[2K", "κ: ", round.(κ_t, digits = 3), " mₑ kg/s² | M: ", round.(M_t, digits = 3), " mₑ kg")
-                println("\e[2K", "Free Energy: ", round(F_t, digits = 3), " meV")
-                println("\e[2K", "Mobility: ", round(μ_t, digits = 3), " cm²/Vs")
+                println("\e[2K", "Frohlich coupling α: ", round.(α, digits = 3), " | sum(α): ", round(sum(α), digits = 3))
+                println("\e[2K", "Reduced thermodynamic β: ", round.(β_t, digits = 3))
+                println("\e[2K", "Phonon frequencies ω: ", round.(phonon_freq, digits = 3), " 2π THz")
+                println("\e[2K", "Variational parameters | v: ", round.(v_t, digits = 3), " | w: ", round.(w_t, digits = 3))
+                println("\e[2K", "Fictitious spring constant κ: ", round.(κ_t, digits = 3), " mₑ kg/s²")
+                println("\e[2K", "Fictitious mass M: ", round.(M_t, digits = 3), " mₑ kg")
+                println("\e[2K", "Free energy (enthalpy) F: ", round(F_t, digits = 3), " meV")
+                println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3), " cm²/Vs")
             end
 
             for f in 1:length(Ω) # Iterate over frequencies
@@ -423,7 +437,9 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
                     # Broadcast data.
                     if verbose
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3), " V/A")
                         println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3), " A/V")
                     end
@@ -440,19 +456,21 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
                     # Broadcast data.
                     if verbose
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                        println("\e[2K", "-------------------------------------------------")
                         println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
                         println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
                     end
                 end
 
                 if verbose
-                    print("\033[F"^3) # Move cursor back
+                    print("\033[F"^5) # Move cursor back
                 end
             end
 
             if verbose
-                print("\033[F"^5) # Move cursor back
+                print("\033[F"^11) # Move cursor back
             end
 
         else # Negative temperatures are unphysical!
@@ -461,11 +479,11 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
     end
 
     if verbose
-        print("\n"^8) # Clear prints
+        print("\n"^16) # Clear prints
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(sum(α), T, β, v, w, κ, M, FE, Ω, Z, σ, μ)
+    return NewPolaron(α, T, β, phonon_freq, v, w, κ, M, FE, Ω, Z, σ, μ)
 end
 
 """
