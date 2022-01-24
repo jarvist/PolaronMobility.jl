@@ -62,11 +62,13 @@ function polaron_memory_function_athermal(Ω, α, v, w; ω = 1.0, rtol = 1e-3)
 	integral, error = ω^2 .* quadgk(x -> integrand(x), 0.0, 1e205, rtol = rtol) # 
 
     # When the frequency Ω ≤ 0 the imaginary part of the memory function is zero. This corresponds to no phonon emission below the phonon frequency of the longitudinal optical mode ω_LO.
-	if Ω <= 1
-		return real(integral) + im * 0.0
-	else
-		return integral
-	end
+	# if Ω <= 1
+	# 	return real(integral) + im * 0.0
+	# else
+	# 	return integral
+	# end
+
+    return integral
 end
 
 """
