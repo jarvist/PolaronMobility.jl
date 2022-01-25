@@ -298,7 +298,7 @@ make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq 
         ir_activity = [0.08168931020200264, 0.006311654262282101, 0.05353548710183397, 0.021303020776321225, 0.23162784335484837, 0.2622203718355982, 0.23382298607799906, 0.0623239656843172, 0.0367465760261409, 0.0126328938653956, 0.006817361620021601, 0.0103757951973341, 0.01095811116040592, 0.0016830270365341532, 0.00646428491253749], 
         N_params = 1)
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq = 0.0, volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-3, verbose = true)
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq = 0.0, volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-3, executor = ThreadedEx(), verbose = true)
 
     # Collect data.
     Ω = efield_freq
@@ -330,11 +330,18 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
     # Initialise variation parameters.
     v_t, w_t = 0.0, 0.0
+
+    count = 0
+    processes = N_temp * N_freq
+
     if verbose
         print("\n")
     end
 
-    @floop ThreadedEx() for (t, f) in collect(Iterators.product(1:length(T), 1:length(Ω))) # Iterate over temperatures and frequencies.
+    println("\e[2K", "-----------------------------------------\nNumber of processes completed: $count / $processes\n-----------------------------------------")
+    FLoops.assistant(false)
+
+    @floop executor for (t, f) in collect(Iterators.product(1:N_temp, 1:N_freq)) # Iterate over temperatures and frequencies.
         if verbose
             println("\e[2K", "-------------------------------------------------")
             println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
@@ -509,6 +516,10 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
         else # Negative temperatures are unphysical!
             println("Temperature must be either zero or positive.")
         end
+
+        count += 1
+        Core.print("\033[F"^3)
+        Core.println("\e[2K", "-----------------------------------------\nNumber of processes completed: $count / $processes\n-----------------------------------------")
     end
 
     if verbose
