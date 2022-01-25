@@ -339,7 +339,7 @@ B_j(α::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(und
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-@noinline function B_j(α, β, v, w; rtol = 1e-3)
+function B_j(α, β, v, w; rtol = 1e-3)
     B_integrand(τ) = cosh(β / 2 - abs(τ)) / (sinh(β / 2) * sqrt(abs(D_j(abs(τ), β, v, w))))
     B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, β / 2, rtol = rtol)[1]
     return B
@@ -354,7 +354,7 @@ B_j(α::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
 """
-@noinline function B_j(α, v, w; rtol = 1e-3)
+function B_j(α, v, w; rtol = 1e-3)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
     B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf, rtol = rtol)[1]
     return B
