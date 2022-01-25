@@ -338,11 +338,11 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
         print("\n")
     end
 
-    println("\e[2K", "-----------------------------------------\nNumber of processes completed: $count / $processes\n-----------------------------------------")
+    println("\e[2K", "------------------------------------------------\nNumber of processes completed: $count / $processes\n------------------------------------------------")
     FLoops.assistant(false)
 
     @floop executor for (t, f) in collect(Iterators.product(1:N_temp, 1:N_freq)) # Iterate over temperatures and frequencies.
-        if verbose
+        if verbose && Threads.threadid() == 1
             println("\e[2K", "-------------------------------------------------")
             println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
             println("\e[2K", "-------------------------------------------------")
@@ -372,7 +372,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
             @inbounds μ[t] = μ_t
 
             # Broadcast data.
-            if verbose
+            if verbose && Threads.threadid() == 1
                 println("\e[2K", "Frohlich coupling α: ", round.(α, digits = 3), " | sum(α): ", round(sum(α), digits = 3))
                 println("\e[2K", "Reduced thermodynamic β: ", Inf)
                 println("\e[2K", "Phonon frequencies ω: ", round.(phonon_freq, digits = 3), " 2π THz")
@@ -394,7 +394,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 @inbounds σ[f, t] = σ_f
 
                 # Broadcast data.
-                if verbose
+                if verbose && Threads.threadid() == 1
                     println("\e[2K", "-------------------------------------------------")
                     println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
                     println("\e[2K", "-------------------------------------------------")
@@ -413,7 +413,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 @inbounds σ[f, t] = σ_f
 
                 # Broadcast data.
-                if verbose
+                if verbose && Threads.threadid() == 1
                     println("\e[2K", "-------------------------------------------------")
                     println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
                     println("\e[2K", "-------------------------------------------------")
@@ -421,11 +421,11 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                     println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
                 end
             end
-            if verbose
+            if verbose && Threads.threadid() == 1
                 print("\033[F"^5) # Move cursor back
             end
 
-            if verbose
+            if verbose && Threads.threadid() == 1
                 print("\033[F"^11) # Move cursor back
             end
 
@@ -455,7 +455,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
             @inbounds μ[t] = μ_t
 
             # Broadcast data.
-            if verbose
+            if verbose && Threads.threadid() == 1
                 println("\e[2K", "Frohlich coupling α: ", round.(α, digits = 3), " | sum(α): ", round(sum(α), digits = 3))
                 println("\e[2K", "Reduced thermodynamic β: ", round.(β_t, digits = 3))
                 println("\e[2K", "Phonon frequencies ω: ", round.(phonon_freq, digits = 3), " 2π THz")
@@ -477,7 +477,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 @inbounds σ[f, t] = σ_f
 
                 # Broadcast data.
-                if verbose
+                if verbose && Threads.threadid() == 1
                     println("\e[2K", "-------------------------------------------------")
                     println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
                     println("\e[2K", "-------------------------------------------------")
@@ -496,7 +496,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 @inbounds σ[f, t] = σ_f
 
                 # Broadcast data.
-                if verbose
+                if verbose && Threads.threadid() == 1
                     println("\e[2K", "-------------------------------------------------")
                     println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
                     println("\e[2K", "-------------------------------------------------")
@@ -505,11 +505,11 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 end
             end
 
-            if verbose
+            if verbose && Threads.threadid() == 1
                 print("\033[F"^5) # Move cursor back
             end
 
-            if verbose
+            if verbose && Threads.threadid() == 1
                 print("\033[F"^11) # Move cursor back
             end
 
@@ -518,8 +518,10 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
         end
 
         count += 1
-        Core.print("\033[F"^3)
-        Core.println("\e[2K", "-----------------------------------------\nNumber of processes completed: $count / $processes\n-----------------------------------------")
+        if Threads.threadid() == 1
+            Core.print("\033[F"^3)
+            Core.println("\e[2K", "------------------------------------------------\nNumber of processes completed: $count / $processes\n------------------------------------------------")
+        end
     end
 
     if verbose
