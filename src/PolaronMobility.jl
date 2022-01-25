@@ -23,6 +23,8 @@ export make_polaron, save_polaron, load_polaron
 using LinearAlgebra
 using Printf
 using JLD
+using FLoops
+
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
 

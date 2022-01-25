@@ -334,7 +334,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
         print("\n")
     end
 
-    for t in 1:length(T) # Iterate over temperatures.
+    @floop ThreadedEx() for (t, f) in collect(Iterators.product(1:length(T), 1:length(Ω))) # Iterate over temperatures and frequencies.
         if verbose
             println("\e[2K", "-------------------------------------------------")
             println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
@@ -342,27 +342,27 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
         end
 
         if T[t] == 0.0 # If T = 0
-            β[t, :] = repeat([Inf], N_modes)  # set β = Inf
+            @inbounds β[t, :] = repeat([Inf], N_modes)  # set β = Inf
 
             # Evaluate variational parameters.
             v_t, w_t = variation(α; v = v_t, w = w_t, ω = ω, N = N_params, rtol = rtol)
 
-            v[t, :] = v_t
-            w[t, :] = w_t
+            @inbounds v[t, :] = v_t
+            @inbounds w[t, :] = w_t
 
             # Evaluate fictitious particle mass and spring constant.
             κ_t = (v_t.^2 .- w_t.^2) # spring constant
             M_t = ((v_t.^2 .- w_t.^2) ./ w_t.^2) # mass
-            κ[t, :] = κ_t
-            M[t, :] = M_t
+            @inbounds κ[t, :] = κ_t
+            @inbounds M[t, :] = M_t
 
             # Evaluate free energy at zero temperature. NB: Enthalpy.
             F_t = multi_F(v_t, w_t, α; ω = ω, rtol = rtol) * 1000 * ħ / eV * 1e12
-            FE[t] = F_t
+            @inbounds FE[t] = F_t
 
             # Evaluate the mobility.
             μ_t = Inf
-            μ[t] = μ_t
+            @inbounds μ[t] = μ_t
 
             # Broadcast data.
             if verbose
@@ -376,47 +376,45 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3), " cm²/Vs")
             end
 
-            for f in 1:length(Ω) # Iterate over frequencies
+            if Ω[f] == 0.0 # If Ω = 0 at T = 0
 
-                if Ω[f] == 0.0 # If Ω = 0 at T = 0
+                # Evaluate AC mobilities. NB: Ω = 0 is DC mobility.
+                Z_f = 0.0 + 1im * 0.0
+                @inbounds Z[f, t] = Z_f
 
-                    # Evaluate AC mobilities. NB: Ω = 0 is DC mobility.
-                    Z_f = 0.0 + 1im * 0.0
-                    Z[f, t] = Z_f
+                # Evaluate frequency-dependent optical absorptions.
+                σ_f = Inf + 1im * 0.0
+                @inbounds σ[f, t] = σ_f
 
-                    # Evaluate frequency-dependent optical absorptions.
-                    σ_f = Inf + 1im * 0.0
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3), " V/A")
-                        println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3), " A/V")
-                    end
-
-                elseif Ω[f] > 0.0 # If Ω > 0 at T = 0
-
-                    # Evaluate AC mobilities.
-                    Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol) / sqrt(ε_0 * ϵ_optic) / c
-                    Z[f, t] = Z_f
-
-                    # Evaluate optical absorptions.
-                    σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol) * sqrt(ε_0 * ϵ_optic) * c
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
-                        println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
-                    end
+                # Broadcast data.
+                if verbose
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3), " V/A")
+                    println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3), " A/V")
                 end
 
+            elseif Ω[f] > 0.0 # If Ω > 0 at T = 0
+
+                # Evaluate AC mobilities.
+                Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol) / sqrt(ε_0 * ϵ_optic) / c
+                @inbounds Z[f, t] = Z_f
+
+                # Evaluate optical absorptions.
+                σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol) * sqrt(ε_0 * ϵ_optic) * c
+                @inbounds σ[f, t] = σ_f
+
+                # Broadcast data.
+                if verbose
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
+                    println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
+                end
+            end
+            if verbose
                 print("\033[F"^5) # Move cursor back
             end
 
@@ -428,26 +426,26 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
 
             # Evaluate reduced thermodynamic beta.
             β_t = [i .* ħ / (kB * T[t]) * 1e12 for i in ω]
-            β[t, :] = β_t
+            @inbounds β[t, :] = β_t
 
             # Evaluate variational parameters.
             v_t, w_t = variation(α, β_t; v = v_t, w = w_t, ω = ω, N = N_params, rtol = rtol)
-            v[t, :] = v_t
-            w[t, :] = w_t
+            @inbounds v[t, :] = v_t
+            @inbounds w[t, :] = w_t
 
             # Evaluate fictitious particle mass and spring constant.
             κ_t = (v_t.^2 .- w_t.^2) # spring constant
             M_t = ((v_t.^2 .- w_t.^2) ./ w_t.^2) # mass
-            κ[t, :] = κ_t
-            M[t, :] = M_t
+            @inbounds κ[t, :] = κ_t
+            @inbounds M[t, :] = M_t
 
             # Evaluate free energy at finite temperature.
             F_t = multi_F(v_t, w_t, α, β_t; ω = ω, rtol = rtol) * 1000 * ħ / eV * 1e12
-            FE[t] = F_t
+            @inbounds FE[t] = F_t
 
             # Evaluate the mobility.
             μ_t = polaron_mobility(β_t, α, v_t, w_t; ω = ω, rtol = rtol) * eV / (1e12 * me * m_eff) * 100^2
-            μ[t] = μ_t
+            @inbounds μ[t] = μ_t
 
             # Broadcast data.
             if verbose
@@ -461,50 +459,47 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
                 println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3), " cm²/Vs")
             end
 
-            for f in 1:length(Ω) # Iterate over frequencies
+            if Ω[f] == 0.0 # If Ω = 0 at T > 0
 
-                if Ω[f] == 0.0 # If Ω = 0 at T > 0
+                # Evaluate DC mobility.
+                Z_f = polaron_complex_impedence(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) / sqrt(ε_0 * ϵ_optic) / c
+                @inbounds Z[f, t] = Z_f
 
-                    # Evaluate DC mobility.
-                    Z_f = polaron_complex_impedence(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) / sqrt(ε_0 * ϵ_optic) / c
-                    Z[f, t] = Z_f
+                # Evaluate DC optical absorption. 
+                σ_f = polaron_complex_conductivity(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) * sqrt(ε_0 * ϵ_optic) * c
+                @inbounds σ[f, t] = σ_f
 
-                    # Evaluate DC optical absorption. 
-                    σ_f = polaron_complex_conductivity(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) * sqrt(ε_0 * ϵ_optic) * c
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3), " V/A")
-                        println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3), " A/V")
-                    end
-
-                elseif Ω[f] > 0.0 # If Ω > 0 at T > 0
-
-                    # Evaluate AC mobilities.
-                    Z_f = polaron_complex_impedence(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) / sqrt(ε_0 * ϵ_optic) / c
-                    Z[f, t] = Z_f
-
-                    # Evaluate optical absorptions.
-                    σ_f = polaron_complex_conductivity(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) * sqrt(ε_0 * ϵ_optic) * c
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
-                        println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
-                    end
-                end
-
+                # Broadcast data.
                 if verbose
-                    print("\033[F"^5) # Move cursor back
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3), " V/A")
+                    println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3), " A/V")
                 end
+
+            elseif Ω[f] > 0.0 # If Ω > 0 at T > 0
+
+                # Evaluate AC mobilities.
+                Z_f = polaron_complex_impedence(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) / sqrt(ε_0 * ϵ_optic) / c
+                @inbounds Z[f, t] = Z_f
+
+                # Evaluate optical absorptions.
+                σ_f = polaron_complex_conductivity(Ω[f], β[t, :], α, v_t, w_t; ω = ω, rtol = rtol) * sqrt(ε_0 * ϵ_optic) * c
+                @inbounds σ[f, t] = σ_f
+
+                # Broadcast data.
+                if verbose
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
+                    println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
+                end
+            end
+
+            if verbose
+                print("\033[F"^5) # Move cursor back
             end
 
             if verbose
@@ -570,7 +565,7 @@ function make_polaron(α; temp = 300.0, efield_freq = 0.0, ω = 1, N_params = 1,
         print("\n")
     end
 
-    for t in 1:length(T) # Iterate over temperatures.
+    @floop ThreadedEx() for (t, f) in collect(Iterators.product(1:length(T), 1:length(Ω))) # Iterate over temperatures and frequencies.
         if verbose
             println("\e[2K", "-------------------------------------------------")
             println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
@@ -612,47 +607,45 @@ function make_polaron(α; temp = 300.0, efield_freq = 0.0, ω = 1, N_params = 1,
                 println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3))
             end
 
-            for f in 1:length(Ω) # Iterate over frequencies
+            if Ω[f] == 0.0 # If Ω = 0 at T = 0
 
-                if Ω[f] == 0.0 # If Ω = 0 at T = 0
+                # Evaluate AC mobilities. NB: Ω = 0 is DC mobility.
+                Z_f = 0.0 + 1im * 0.0
+                Z[f, t] = Z_f
 
-                    # Evaluate AC mobilities. NB: Ω = 0 is DC mobility.
-                    Z_f = 0.0 + 1im * 0.0
-                    Z[f, t] = Z_f
+                # Evaluate frequency-dependent optical absorptions.
+                σ_f = Inf + 1im * 0.0
+                σ[f, t] = σ_f
 
-                    # Evaluate frequency-dependent optical absorptions.
-                    σ_f = Inf + 1im * 0.0
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3))
-                        println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3))
-                    end
-
-                elseif Ω[f] > 0.0 # If Ω > 0 at T = 0
-
-                    # Evaluate AC mobilities.
-                    Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-                    Z[f, t] = Z_f
-
-                    # Evaluate optical absorptions.
-                    σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3))
-                        println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3))
-                    end
+                # Broadcast data.
+                if verbose
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3))
+                    println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3))
                 end
 
+            elseif Ω[f] > 0.0 # If Ω > 0 at T = 0
+
+                # Evaluate AC mobilities.
+                Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
+                Z[f, t] = Z_f
+
+                # Evaluate optical absorptions.
+                σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
+                σ[f, t] = σ_f
+
+                # Broadcast data.
+                if verbose
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3))
+                    println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3))
+                end
+            end
+            if verbose
                 print("\033[F"^5) # Move cursor back
             end
 
@@ -697,50 +690,47 @@ function make_polaron(α; temp = 300.0, efield_freq = 0.0, ω = 1, N_params = 1,
                 println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3))
             end
 
-            for f in 1:length(Ω) # Iterate over frequencies
+            if Ω[f] == 0.0 # If Ω = 0 at T > 0
 
-                if Ω[f] == 0.0 # If Ω = 0 at T > 0
+                # Evaluate DC mobility.
+                Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
+                Z[f, t] = Z_f
 
-                    # Evaluate DC mobility.
-                    Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-                    Z[f, t] = Z_f
+                # Evaluate DC optical absorption. 
+                σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
+                σ[f, t] = σ_f
 
-                    # Evaluate DC optical absorption. 
-                    σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3))
-                        println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3))
-                    end
-
-                elseif Ω[f] > 0.0 # If Ω > 0 at T > 0
-
-                    # Evaluate AC mobilities.
-                    Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-                    Z[f, t] = Z_f
-
-                    # Evaluate optical absorptions.
-                    σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-                    σ[f, t] = σ_f
-
-                    # Broadcast data.
-                    if verbose
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
-                        println("\e[2K", "-------------------------------------------------")
-                        println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
-                        println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
-                    end
-                end
-
+                # Broadcast data.
                 if verbose
-                    print("\033[F"^5) # Move cursor back
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3))
+                    println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3))
                 end
+
+            elseif Ω[f] > 0.0 # If Ω > 0 at T > 0
+
+                # Evaluate AC mobilities.
+                Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
+                Z[f, t] = Z_f
+
+                # Evaluate optical absorptions.
+                σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
+                σ[f, t] = σ_f
+
+                # Broadcast data.
+                if verbose
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
+                    println("\e[2K", "-------------------------------------------------")
+                    println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
+                    println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
+                end
+            end
+
+            if verbose
+                print("\033[F"^5) # Move cursor back
             end
 
             if verbose

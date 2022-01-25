@@ -2,6 +2,14 @@
 
 @testset verbose = true "MultiplePhonons" begin
 
+# Physical constants
+ħ = 1.05457162825e-34;          # kg m2 / s
+eV = 1.602176487e-19;           # kg m2 / s2
+me = 9.10938188e-31;            # kg
+kB =  1.3806504e-23;            # kg m2 / K s2
+ϵ_0 = 8.854E-12                 # Units: C2N−1m−2, permittivity of free space
+c = 3e8
+
 MAPI= [
 # 96.20813558773261 0.4996300522819191
 # 93.13630357703363 1.7139631746083817
