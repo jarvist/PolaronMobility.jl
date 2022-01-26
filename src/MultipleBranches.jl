@@ -455,7 +455,7 @@ free_energy(v, w, α, β; ω = 1.0)
      - volume is the volume of the unit cell of the material in m^3.
      - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
 """
-@noinline function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3)
+function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3)
 
     # Total number of phonon modes / branches.
     num_of_modes = length(ω)
@@ -463,10 +463,10 @@ free_energy(v, w, α, β; ω = 1.0)
     F = 0.0
 
     # Sum over the phonon modes.
-	@simd for j in 1:num_of_modes
+	for j in 1:num_of_modes
 
         # Add contribution to the total free energy from the phonon mode.
-		@inbounds F += -(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_of_modes) + A_j(β[j], v, w, num_of_modes)) * ω[j]
+		F += -(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_of_modes) + A_j(β[j], v, w, num_of_modes)) * ω[j]
         
         # Prints out the frequency, reduced thermodynamic temperature, ionic dielectric and partial coupling for the phonon mode.
         # println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
@@ -488,7 +488,7 @@ F(v, w, α; ω)
         - ω is a vector containing the phonon mode frequencies (in THz).
         - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
 """
-@noinline function multi_F(v, w, α; ω = 1.0, rtol = 1e-3)
+function multi_F(v, w, α; ω = 1.0, rtol = 1e-3)
 
     # Total number of phonon modes / branches.
     num_of_branches = length(ω)
@@ -496,10 +496,10 @@ F(v, w, α; ω)
     F = 0.0
 
     # Sum over the phonon modes.
-	@simd for j in 1:num_of_branches
+	for j in 1:num_of_branches
 
         # Add contribution to the total free energy from the phonon mode.
-		@inbounds F += -(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_of_branches) + A_j(v, w, num_of_branches)) * ω[j]
+		F += -(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_of_branches) + A_j(v, w, num_of_branches)) * ω[j]
         
         # Prints out the frequency, reduced thermodynamic temperature, ionic dielectric and partial coupling for the phonon mode.
         # println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
