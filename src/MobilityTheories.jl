@@ -341,7 +341,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efi
     println("\e[2K", "------------------------------------------------\nNumber of processes completed: $count / $processes\n------------------------------------------------")
     FLoops.assistant(false)
 
-    @floop executor for (t, f) in collect(Iterators.product(1:N_temp, 1:N_freq)) # Iterate over temperatures and frequencies.
+    for (t, f) in collect(Iterators.product(1:N_temp, 1:N_freq)) # Iterate over temperatures and frequencies.
         if verbose && Threads.threadid() == 1
             println("\e[2K", "-------------------------------------------------")
             println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
