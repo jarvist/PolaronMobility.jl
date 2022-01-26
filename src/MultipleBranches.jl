@@ -540,7 +540,7 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
 
     # Limits of the optimisation.
     lower = fill(0.01, 2 * N)
-    upper = fill(Inf, 2 * N)
+    upper = fill(200.0, 2 * N)
 
     # Print out the initial v and w values.
 	# println("Initial guess: ", initial)
@@ -588,7 +588,7 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
 
     # Limits of the optimisation.
     lower = fill(0.01, 2 * N)
-    upper = fill(Inf, 2 * N)
+    upper = fill(200.0, 2 * N)
 
     # Print out the initial v and w values.
 	# println("Initial guess: ", initial)
