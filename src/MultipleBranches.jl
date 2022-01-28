@@ -158,9 +158,8 @@ function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to d
 
     # Sum over all ionic contribution from each phonon mode
     total_ionic = 0.0
-    for (f, r) in zip(phonon_freqs, ir_activity)
-        total_ionic += ϵ_ionic_mode(f, r, volume) 
-    end
+    
+    @tullio total_ionic += ϵ_ionic_mode(phonon_freqs[t], ir_activity[t], volume)
 
     return total_ionic
 end
@@ -356,7 +355,7 @@ B_j(α::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
 """
 function B_j(α, v, w; rtol = 1e-3)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
-    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf, rtol = rtol)[1]
+    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64, rtol = rtol)[1]
     return B
 end
 
@@ -416,11 +415,11 @@ A_j(β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Fl
 function A_j(β, v, w, n)
     s = -log(2π * β) / 2
     # Sum over the contributions from each fictitious mass.
-    for i in 1:length(v)
-        if v[i] != w[i]
-            s += log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
-        end
-    end
+    # for i in 1:length(v)
+    #     if v[i] != w[i]
+    @tullio s += v[i] == w[i] ? 0.0 : log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
+        # end
+    # end
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     3 / β * s / n
 end
@@ -435,10 +434,9 @@ A_j(v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
      - n is the total number of phonon modes.
 """
 function A_j(v, w, n)
-    s = 0.0
-    for i in 1:length(v)
-        s += v[i] - w[i]
-    end
+
+    @tullio (+) s := v[i] - w[i]
+
     return -3 * s / (2 * n)
 end
 
@@ -455,26 +453,21 @@ free_energy(v, w, α, β; ω = 1.0)
      - volume is the volume of the unit cell of the material in m^3.
      - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
 """
-function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3)
+function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
 
-    # Total number of phonon modes / branches.
-    num_of_modes = length(ω)
+    num_modes = length(ω)
 
-    F = 0.0
+    # Add contribution to the total free energy from the phonon mode.
+    @tullio (+) F := -(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_modes) + A_j(β[j], v, w, num_modes)) * ω[j]
 
-    # Sum over the phonon modes.
-	for j in 1:num_of_modes
-
-        # Add contribution to the total free energy from the phonon mode.
-		F += -(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_of_modes) + A_j(β[j], v, w, num_of_modes)) * ω[j]
+    # Print the free energy.
+    if verbose
+        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | F = $(round.(F, digits = 3))")
+        print("\033[F") 
         
-        # Prints out the frequency, reduced thermodynamic temperature, ionic dielectric and partial coupling for the phonon mode.
-        # println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
+        global count += 1
     end
-	
-    # print out the total polaron free energy from all phonon modes.
-    # println("Total free energy: ", F * ħ / eV * 1e3, " meV")
-
+        
     # Free energy in units of meV
     return F
 end
@@ -488,26 +481,20 @@ F(v, w, α; ω)
         - ω is a vector containing the phonon mode frequencies (in THz).
         - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
 """
-function multi_F(v, w, α; ω = 1.0, rtol = 1e-3)
+function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
 
-    # Total number of phonon modes / branches.
-    num_of_branches = length(ω)
+    num_modes = length(ω)
 
-    F = 0.0
+    # Add contribution to the total free energy from the phonon mode.
+	@tullio (+) F := -(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_modes) + A_j(v, w, num_modes)) * ω[j]
 
-    # Sum over the phonon modes.
-	for j in 1:num_of_branches
-
-        # Add contribution to the total free energy from the phonon mode.
-		F += -(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_of_branches) + A_j(v, w, num_of_branches)) * ω[j]
-        
-        # Prints out the frequency, reduced thermodynamic temperature, ionic dielectric and partial coupling for the phonon mode.
-        # println("Free energy: Phonon freq = ", phonon_freqs[j], " | β = ", β_j, " | ϵ_ionic = ", ϵ_ionic_j, " | α_j = ", α_j)
+    # Print the free energy.
+    if verbose
+        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | F = $(round.(F, digits = 3))")
+        print("\033[F") 
+        global count += 1  
     end
-	
-    # print out the total polaron free energy from all phonon modes.
-    # println("Total free energy: ", F * ħ / eV * 1e3, " meV")
-
+        
     # Free energy in units of meV
     return F
 end
@@ -524,7 +511,7 @@ variation(α::Vector{Real}, β::Vector{Real}; v::Real, w::Real, ω::Vector{Real}
      - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
      - N specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
 """
-function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false) # N number of v and w params
+function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -539,7 +526,7 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
     end
 
     # Limits of the optimisation.
-    lower = fill(0.0, 2 * N)
+    lower = fill(rtol, 2 * N)
     upper = fill(100.0, 2 * N)
 
     # Print out the initial v and w values.
@@ -565,14 +552,19 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
 	v = [var_params[2 * n - 1] for n in 1:N]
 	w = [var_params[2 * n] for n in 1:N]
 
-	# Print the variational parameters that minimised the free energy.
-	# println("Variational parameters: ", var_params)
+    # Print the variational parameters that minimised the free energy.
+	if verbose
+        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | v = $(round.(v, digits = 3)) | w = $(round.(w, digits = 3))")
+        print("\033[F")   
+
+        global count += 1
+    end
 
     # Return the variational parameters that minimised the free energy.
-    return v, w
+    return hcat(v, w)
 end
 
-function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false) # N number of v and w params
+function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false) # N number of v and w params
  
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -587,7 +579,7 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
     end
 
     # Limits of the optimisation.
-    lower = fill(0.0, 2 * N)
+    lower = fill(rtol, 2 * N)
     upper = fill(100.0, 2 * N)
 
     # Print out the initial v and w values.
@@ -614,8 +606,13 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
 	w = [var_params[2 * n] for n in 1:N]
 
 	# Print the variational parameters that minimised the free energy.
-	# println("Variational parameters: ", var_params)
+	if verbose
+        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | v = $(round.(v, digits = 3)) | w = $(round.(w, digits = 3))")
+        print("\033[F")    
+
+        global count += 1
+    end
 
     # Return the variational parameters that minimised the free energy.
-    return v, w
+    return hcat(v, w)
 end

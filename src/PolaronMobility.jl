@@ -22,8 +22,8 @@ export make_polaron, save_polaron, load_polaron
 # stdlib
 using LinearAlgebra
 using Printf
-using JLD
-using FLoops
+using JLD, DataFrames
+using Tullio, LoopVectorization, KernelAbstractions, TensorOperations, CUDA, CUDAKernels, GPUCompiler
 
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
