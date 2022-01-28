@@ -76,7 +76,7 @@ ir_activity = MAPI[:, 2]
     println("  ω (THz)    ϵ_ionic     αs")
     println("-------------------------------")
     display(hcat(ω, ϵ_ionic, α))
-    println("-------------------------------")
+    println("\n-------------------------------")
 end
 
 # Variations
@@ -88,11 +88,11 @@ v, w = variation(α, β; v = 0.0, w = 0.0, ω = ω) # Thermal
 
 @testset "Multiple mode variations" begin
     
-    @test v_0 ≈ [3.292283619446986] rtol = 1e-3
-    @test w_0 ≈ [2.679188425097246] rtol = 1e-3
+    @test v_0 ≈ 3.292283619446986 rtol = 1e-3
+    @test w_0 ≈ 2.679188425097246 rtol = 1e-3
     
-    @test v ≈ [35.19211042393129] rtol = 1e-3
-    @test w ≈ [32.454157668863225] rtol = 1e-3
+    @test v ≈ 35.19211042393129 rtol = 1e-3
+    @test w ≈ 32.454157668863225 rtol = 1e-3
 
     println("\nVariational parameters:")
     println("Athermal v = $(v_0[1]) | athermal w = $(w_0[1])")
@@ -172,7 +172,7 @@ end
 
 @testset "Single effective mode MAPI" begin 
 
-    singlemode_polaron = make_polaron(ϵ_optic, ϵ_static, Hellwarth_B_freq, m_eff; temp = [0, 300], efield_freq = [0, 3], volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-4, verbose = true)
+    singlemode_polaron = make_polaron(ϵ_optic, ϵ_static, Hellwarth_B_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume = nothing, ir_activity = nothing, rtol = 1e-4, verbose = true)
 
     println('\n', singlemode_polaron)
 
@@ -189,7 +189,7 @@ end
 
 @testset "Multiple mode (15) MAPI" begin
 
-    multimode_polaron = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = [0, 300], efield_freq = [0, 3], volume = volume, ir_activity = ir_activity, N_params = 1, rtol = 1e-4, verbose = true)
+    multimode_polaron = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume = volume, ir_activity = ir_activity, rtol = 1e-4, verbose = true)
 
     println('\n', multimode_polaron)
 

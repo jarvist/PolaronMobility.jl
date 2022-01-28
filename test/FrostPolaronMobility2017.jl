@@ -8,8 +8,8 @@ T=300
 #effectivemass=0.12 # the bare-electron band effective-mass.
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-MAPIe=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.12)
-MAPIh=polaronmobility(T, 4.5, 24.1, 2.25E12, 0.15)
+MAPIe=polaronmobility(T, 4.5, 24.1, 2.25, 0.12)
+MAPIh=polaronmobility(T, 4.5, 24.1, 2.25, 0.15)
 
 # Hellwarth mobility
 @test MAPIe.Hμ[1] ≈ 136.42 rtol=0.02
