@@ -22,8 +22,8 @@ export make_polaron, save_polaron, load_polaron
 # stdlib
 using LinearAlgebra
 using Printf
-using JLD, DataFrames
-using Tullio, LoopVectorization, KernelAbstractions, TensorOperations, CUDA, CUDAKernels, GPUCompiler
+using JLD
+using Tullio, LoopVectorization
 
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
@@ -49,4 +49,3 @@ include("OedipusRex.jl")       # Optical Absorption
 include("MultipleBranches.jl")  # Oct 2019 extension to multiple phonon branches
 
 end # module
-
