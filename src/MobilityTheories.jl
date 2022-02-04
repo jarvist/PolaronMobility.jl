@@ -331,13 +331,13 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
         global processes = length(T)
     end
 
-    @time @tullio threads = threads params[t] := T[t] == 0.0 ? variation(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : variation(α, betas[:, t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T))
+    @time @tullio threads = threads params[t] := T[t] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α, betas[:, t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T))
 
     @tullio threads = threads v_params[t] := params[t][1] (t in eachindex(T))
     @tullio threads = threads w_params[t] := params[t][2] (t in eachindex(T))
     
     if verbose
-        println("\n\nv: ")
+        println("\nv: ")
         show(IOContext(stdout, :limit => true), round.(v_params, digits = 3))
         print("\n\n")
         println("w: ")
@@ -430,7 +430,7 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("\nCalculating thermodynamic betas...")
     end
 
-    @tullio threads = threads betas[t] := T[t] == 0.0 ? Inf64 : ω / T[t] (t in eachindex(T))
+    @tullio threads = threads betas[t] := T[t] == 0.0 ? Inf64 : ω / T[t]
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(betas, digits = 3))
@@ -440,13 +440,13 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         global processes = length(T)
     end
 
-    @time @tullio threads = threads params[t] := T[t] == 0.0 ? variation(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : variation(α, betas[t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T))
+    @time @tullio threads = threads params[a, t] := T[t] == 0.0 ? var_params(α[a]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α[a], betas[t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), a in eachindex(α))
 
-    @tullio threads = threads v_params[t] := params[t][1] (t in eachindex(T))
-    @tullio threads = threads w_params[t] := params[t][2] (t in eachindex(T))
+    @tullio threads = threads v_params[a, t] := params[a, t][1]
+    @tullio threads = threads w_params[a, t] := params[a, t][2]
     
     if verbose
-        println("\n\nv: ")
+        println("\nv: ")
         show(IOContext(stdout, :limit => true), round.(v_params, digits = 3))
         print("\n\n")
         println("w: ")
@@ -455,7 +455,7 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("Calculating spring constants...")
     end
 
-    @time @tullio threads = threads spring_constants[t] := v_params[t]^2 - w_params[t]^2
+    @time @tullio threads = threads spring_constants[a, t] := v_params[a, t]^2 - w_params[a, t]^2
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(spring_constants, digits = 3))
@@ -463,37 +463,37 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("Calculating fictitious masses...")
     end
 
-    @time @tullio threads = threads masses[t] := spring_constants[t] / w_params[t]^2
+    @time @tullio threads = threads masses[a, t] := spring_constants[a, t] / w_params[a, t]^2
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(masses, digits = 3))
         print("\n\n")
         println("Calculating free energies...")
         global count = 0
-        global processes = length(T)
+        global processes = length(T) * length(α)
     end
 
-    @time @tullio threads = threads energies[t] := T[t] == 0.0 ? multi_F(v_params[t], w_params[t], α; ω = ω, rtol = rtol, verbose = verbose) : multi_F(v_params[t], w_params[t], α, betas[t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T))
+    @time @tullio threads = threads energies[a, t] := T[t] == 0.0 ? multi_F(v_params[a, t], w_params[a, t], α[a]; ω = ω, rtol = rtol, verbose = verbose) : multi_F(v_params[a, t], w_params[a, t], α[a], betas[t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), a in eachindex(α))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits = 3))
         print("\n\n")
         println("Calculating mobilities...")
         global count = 0
-        global processes = length(T)
+        global processes = length(T) * length(α)
     end
 
-    @time @tullio threads = threads  mobilities[t] := T[t] == 0.0 ? Inf64 : polaron_mobility(betas[t], α, v_params[t], w_params[t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T))
+    @time @tullio threads = threads  mobilities[a, t] := T[t] == 0.0 ? Inf64 : polaron_mobility([betas[t]], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T), a in eachindex(α))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
         print("\n\n")
         println("Calculating complex impedances...")
         global count = 0
-        global processes = length(T) * length(Ω)
+        global processes = length(T) * length(Ω) * length(α)
     end
 
-    @time @tullio threads = threads impedances[f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[t], α, v_params[t], w_params[t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), f in eachindex(Ω))
+    @time @tullio threads = threads impedances[a, f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], [betas[t]], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) * 2π (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
@@ -501,7 +501,7 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("Calculating complex conductivities...")
     end
 
-    @time @tullio threads = threads conductivities[f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, t] (t in eachindex(T), f in eachindex(Ω))
+    @time @tullio threads = threads conductivities[a, f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[a, f, t] (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
@@ -509,217 +509,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, T, betas, ω, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
+    return NewPolaron(α, T, betas, ω .* 2π, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
 end
-# function make_polaron(α; temp = 300.0, efield_freq = 0.0, ω = 1, N_params = 1, rtol = 1e-3, verbose = true)
-
-#     # Collect data.
-#     Ω = efield_freq
-#     T = temp
-#     N_temp = length(T)
-#     N_freq = length(efield_freq)
-   
-#     # Prepare empty arrays for different temperatures.
-#     β = Vector{Float64}(undef, N_temp) # Reduced thermodynamic beta (unitless)
-#     v = Matrix{Float64}(undef, N_temp, N_params) # Variational parameter v (1 / s, Hz)
-#     w = Matrix{Float64}(undef, N_temp, N_params) # Variational parameter w (1 / s, Hz)
-#     κ = Matrix{Float64}(undef, N_temp, N_params) # Spring constant (kg / s^2)
-#     M = Matrix{Float64}(undef, N_temp, N_params) # Fictitious mass (kg)
-#     FE = Vector{Float64}(undef, N_temp) # Free energy (meV)
-#     Z = Matrix{ComplexF64}(undef, N_freq, N_temp) # Complex impedence (cm^2 / Vs)
-#     σ = Matrix{ComplexF64}(undef, N_freq, N_temp) # Complex conductivity (1 / cm)
-#     μ = Vector{Float64}(undef, N_temp)
-
-#     # Initialise variation parameters.
-#     v_t, w_t = 0.0, 0.0
-#     if verbose
-#         print("\n")
-#     end
-
-#     @floop ThreadedEx() for (t, f) in collect(Iterators.product(1:length(T), 1:length(Ω))) # Iterate over temperatures and frequencies.
-#         if verbose
-#             println("\e[2K", "-------------------------------------------------")
-#             println("\e[2K", "Working on temperature: $(T[t]) K / $(T[end]) K.")
-#             println("\e[2K", "-------------------------------------------------")
-#         end
-
-#         if T[t] == 0.0 # If T = 0
-#             β[t] = Inf # set β = Inf
-
-#             # Evaluate variational parameters.
-#             v_t, w_t = variation(α; v = v_t, w = w_t, ω = ω, N = N_params, rtol = rtol)
-
-#             v[t, :] = v_t
-#             w[t, :] = w_t
-
-#             # Evaluate fictitious particle mass and spring constant.
-#             κ_t = (v_t.^2 .- w_t.^2) # spring constant
-#             M_t = ((v_t.^2 .- w_t.^2) ./ w_t.^2) # mass
-#             κ[t, :] = κ_t
-#             M[t, :] = M_t
-
-#             # Evaluate free energy at zero temperature. NB: Enthalpy.
-#             F_t = multi_F(v_t, w_t, α; ω = ω, rtol = rtol)
-#             FE[t] = F_t
-
-#             # Evaluate the mobility.
-#             μ_t = Inf
-#             μ[t] = μ_t
-
-#             # Broadcast data.
-#             if verbose
-#                 println("\e[2K", "Frohlich coupling α: ", round.(α, digits = 3), " | sum(α): ", round(sum(α), digits = 3))
-#                 println("\e[2K", "Reduced thermodynamic β: ", Inf)
-#                 println("\e[2K", "Phonon frequencies ω: ", round.(1, digits = 3), " 2π THz")
-#                 println("\e[2K", "Variational parameters | v: ", round.(v_t, digits = 3), " | w: ", round.(w_t, digits = 3))
-#                 println("\e[2K", "Fictitious spring constant κ: ", round.(κ_t, digits = 3))
-#                 println("\e[2K", "Fictitious mass M: ", round.(M_t, digits = 3))
-#                 println("\e[2K", "Free energy (enthalpy) F: ", round(F_t, digits = 3))
-#                 println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3))
-#             end
-
-#             if Ω[f] == 0.0 # If Ω = 0 at T = 0
-
-#                 # Evaluate AC mobilities. NB: Ω = 0 is DC mobility.
-#                 Z_f = 0.0 + 1im * 0.0
-#                 Z[f, t] = Z_f
-
-#                 # Evaluate frequency-dependent optical absorptions.
-#                 σ_f = Inf + 1im * 0.0
-#                 σ[f, t] = σ_f
-
-#                 # Broadcast data.
-#                 if verbose
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3))
-#                     println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3))
-#                 end
-
-#             elseif Ω[f] > 0.0 # If Ω > 0 at T = 0
-
-#                 # Evaluate AC mobilities.
-#                 Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-#                 Z[f, t] = Z_f
-
-#                 # Evaluate optical absorptions.
-#                 σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-#                 σ[f, t] = σ_f
-
-#                 # Broadcast data.
-#                 if verbose
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3))
-#                     println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3))
-#                 end
-#             end
-#             if verbose
-#                 print("\033[F"^5) # Move cursor back
-#             end
-
-#             if verbose
-#                 print("\033[F"^11) # Move cursor back
-#             end
-
-#         elseif T[t] > 0.0 # If T > 0
-
-#             # Evaluate reduced thermodynamic beta.
-#             β_t = ω * 2π / T[t]
-#             β[t] = β_t
-
-#             # Evaluate variational parameters.
-#             v_t, w_t = variation(α, β_t; v = v_t, w = w_t, ω = ω, N = N_params, rtol = rtol)
-#             v[t, :] = v_t
-#             w[t, :] = w_t
-
-#             # Evaluate fictitious particle mass and spring constant.
-#             κ_t = (v_t.^2 .- w_t.^2) # spring constant
-#             M_t = ((v_t.^2 .- w_t.^2) ./ w_t.^2) # mass
-#             κ[t, :] = κ_t
-#             M[t, :] = M_t
-
-#             # Evaluate free energy at finite temperature.
-#             F_t = multi_F(v_t, w_t, α, β_t; ω = ω, rtol = rtol)
-#             FE[t] = F_t
-
-#             # Evaluate the mobility.
-#             μ_t = polaron_mobility(β_t, α, v_t, w_t; ω = ω, rtol = rtol)
-#             μ[t] = μ_t
-
-#             # Broadcast data.
-#             if verbose
-#                 println("\e[2K", "Frohlich coupling α: ", round.(α, digits = 3), " | sum(α): ", round(sum(α), digits = 3))
-#                 println("\e[2K", "Reduced thermodynamic β: ", round.(β_t, digits = 3))
-#                 println("\e[2K", "Phonon frequencies ω: ", 1, " 2π THz")
-#                 println("\e[2K", "Variational parameters | v: ", round.(v_t, digits = 3), " | w: ", round.(w_t, digits = 3))
-#                 println("\e[2K", "Fictitious spring constant κ: ", round.(κ_t, digits = 3))
-#                 println("\e[2K", "Fictitious mass M: ", round.(M_t, digits = 3))
-#                 println("\e[2K", "Free energy (enthalpy) F: ", round(F_t, digits = 3))
-#                 println("\e[2K", "Mobility μ: ", round(μ_t, digits = 3))
-#             end
-
-#             if Ω[f] == 0.0 # If Ω = 0 at T > 0
-
-#                 # Evaluate DC mobility.
-#                 Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-#                 Z[f, t] = Z_f
-
-#                 # Evaluate DC optical absorption. 
-#                 σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-#                 σ[f, t] = σ_f
-
-#                 # Broadcast data.
-#                 if verbose
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "Working on Frequency: $(Ω[f]) THz / $(Ω[end]) THz")
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "DC Impedence: ", round(Z_f, digits = 3))
-#                     println("\e[2K", "DC Conductivity: ", round(σ_f, digits = 3))
-#                 end
-
-#             elseif Ω[f] > 0.0 # If Ω > 0 at T > 0
-
-#                 # Evaluate AC mobilities.
-#                 Z_f = polaron_complex_impedence(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-#                 Z[f, t] = Z_f
-
-#                 # Evaluate optical absorptions.
-#                 σ_f = polaron_complex_conductivity(Ω[f], β[t], α, v_t, w_t; ω = ω, rtol = rtol)
-#                 σ[f, t] = σ_f
-
-#                 # Broadcast data.
-#                 if verbose
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "Working on Frequency: $(Ω[f]) Hz / $(Ω[end]) THz")
-#                     println("\e[2K", "-------------------------------------------------")
-#                     println("\e[2K", "AC Impedence: ", round(Z_f, digits = 3), " V/A")
-#                     println("\e[2K", "AC Conductivity: ", round(σ_f, digits = 3), " A/V")
-#                 end
-#             end
-
-#             if verbose
-#                 print("\033[F"^5) # Move cursor back
-#             end
-
-#             if verbose
-#                 print("\033[F"^11) # Move cursor back
-#             end
-
-#         else # Negative temperatures are unphysical!
-#             println("Temperature must be either zero or positive.")
-#         end
-#     end
-
-#     if verbose
-#         print("\n"^16) # Clear prints
-#     end
-
-#     # Return Polaron mutable struct with evaluated data.
-#     return NewPolaron(α, T, β, 1, v, w, κ, M, FE, Ω, Z, σ, μ)
-# end
 
 """
 save_polaron(p::NewPolaron, prefix)
@@ -813,4 +604,3 @@ function savepolaron(fileprefix, p::Polaron)
     end
     close(f)
 end
-
