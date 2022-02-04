@@ -159,7 +159,9 @@ function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to d
     # Sum over all ionic contribution from each phonon mode
     total_ionic = 0.0
     
-    @tullio total_ionic += ϵ_ionic_mode(phonon_freqs[t], ir_activity[t], volume)
+    for t in 1:length(phonon_freqs)
+        total_ionic += ϵ_ionic_mode(phonon_freqs[t], ir_activity[t], volume)
+    end
 
     return total_ionic
 end
@@ -415,11 +417,11 @@ A_j(β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Fl
 function A_j(β, v, w, n)
     s = -log(2π * β) / 2
     # Sum over the contributions from each fictitious mass.
-    # for i in 1:length(v)
-    #     if v[i] != w[i]
-    @tullio s += v[i] == w[i] ? 0.0 : log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
-        # end
-    # end
+    for i in 1:length(v)
+        if v[i] != w[i]
+            s += v[i] == w[i] ? 0.0 : log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
+        end
+    end
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     3 / β * s / n
 end
@@ -434,31 +436,26 @@ A_j(v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
      - n is the total number of phonon modes.
 """
 function A_j(v, w, n)
-
-    @tullio (+) s := v[i] - w[i]
-
+    s = sum(v .- w)
     return -3 * s / (2 * n)
 end
 
 """
-free_energy(v, w, α, β; ω = 1.0)
+multi_F(v, w, α, β; ω = 1.0)
 
     Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. This generalises Osaka's free energy expression (below Equation (22) in []).
 
      - v is an one-dimensional array of the v variational parameters.
      - w is an one-dimensional array of the w variational parameters.
+     - α is the Frohlich coupling constant.
      - β is the thermodynamic temperature.
-     - ϵ_optic is the optical dielectric constant of the material.
-     - m_eff is the band mass of the electron (in units of electron mass m_e) .
-     - volume is the volume of the unit cell of the material in m^3.
-     - freqs_and_ir_activity is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
 """
 function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
 
     num_modes = length(ω)
 
     # Add contribution to the total free energy from the phonon mode.
-    @tullio (+) F := -(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_modes) + A_j(β[j], v, w, num_modes)) * ω[j]
+    F = sum(-(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_modes) + A_j(β[j], v, w, num_modes)) * ω[j] for j in 1:num_modes)
 
     # Print the free energy.
     if verbose
@@ -473,7 +470,7 @@ function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = fal
 end
 
 """
-F(v, w, α; ω)
+multi_F(v, w, α; ω)
 
     Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. This generalises Osaka's free energy expression (below Equation (22) in []).
 
@@ -486,7 +483,7 @@ function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
     num_modes = length(ω)
 
     # Add contribution to the total free energy from the phonon mode.
-	@tullio (+) F := -(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_modes) + A_j(v, w, num_modes)) * ω[j]
+	F = sum(-(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_modes) + A_j(v, w, num_modes)) * ω[j] for j in 1:num_modes)
 
     # Print the free energy.
     if verbose
@@ -511,7 +508,7 @@ variation(α::Vector{Real}, β::Vector{Real}; v::Real, w::Real, ω::Vector{Real}
      - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
      - N specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
 """
-function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false) # N number of v and w params
+function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -522,18 +519,16 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
 		# Intial guess for v and w parameters.
     	initial = sort(rand(2 * N), rev=true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
 	else
-        initial = vcat(v, w)
+        Δv = v .- w
+        initial = vcat(Δv .+ rtol, w)
     end
 
     # Limits of the optimisation.
-    lower = fill(rtol, 2 * N)
-    upper = fill(100.0, 2 * N)
-
-    # Print out the initial v and w values.
-	# println("Initial guess: ", initial)
+    lower = fill(0.0, 2 * N)
+    upper = fill(Inf, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
@@ -546,10 +541,10 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
 	)
 
 	# Extract the v and w parameters that minimised the free energy.
-	var_params = sort(Optim.minimizer(solution), rev = true)
+	var_params = Optim.minimizer(solution)
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	v = [var_params[2 * n - 1] for n in 1:N]
+	Δv = [var_params[2 * n - 1] for n in 1:N]
 	w = [var_params[2 * n] for n in 1:N]
 
     # Print the variational parameters that minimised the free energy.
@@ -561,10 +556,10 @@ function variation(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_
     end
 
     # Return the variational parameters that minimised the free energy.
-    return hcat(v, w)
+    return hcat(Δv .+ w, w)
 end
 
-function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false) # N number of v and w params
+function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false) # N number of v and w params
  
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -573,20 +568,18 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
     # Use a random set of N initial v and w values.
     if v == 0.0 || w == 0.0
 		# Intial guess for v and w parameters.
-    	initial = sort(rand(2 * N), rev = true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
+    	initial = sort(rand(2 * N), rev=true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
 	else
-        initial = vcat(v, w)
+        Δv = v .- w
+        initial = vcat(Δv .+ rtol, w)
     end
 
     # Limits of the optimisation.
-    lower = fill(rtol, 2 * N)
-    upper = fill(100.0, 2 * N)
-
-    # Print out the initial v and w values.
-	# println("Initial guess: ", initial)
+    lower = fill(0.0, 2 * N)
+    upper = fill(Inf, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([x[2 * n - 1] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
@@ -599,10 +592,10 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
 	)
 
 	# Extract the v and w parameters that minimised the free energy.
-	var_params = sort(Optim.minimizer(solution), rev = true)
+	var_params = Optim.minimizer(solution)
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	v = [var_params[2 * n - 1] for n in 1:N]
+	Δv = [var_params[2 * n - 1] for n in 1:N]
 	w = [var_params[2 * n] for n in 1:N]
 
 	# Print the variational parameters that minimised the free energy.
@@ -614,5 +607,5 @@ function variation(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trac
     end
 
     # Return the variational parameters that minimised the free energy.
-    return hcat(v, w)
+    return hcat(Δv .+ w, w)
 end
