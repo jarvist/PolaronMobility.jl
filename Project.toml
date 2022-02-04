@@ -4,19 +4,13 @@ authors = ["Jarvist Moore Frost <jarvist@gmail.com>", "Bradley A.A. Martin <brad
 version = "1.3.0"
 
 [deps]
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-CUDAKernels = "72cfdca4-0801-4ab0-bf6a-d52aa10adc57"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-GPUCompiler = "61eb1bfa-7361-4325-ad38-22787b887f55"
 Gnuplot = "dc211083-a33a-5b79-959f-2ff34033469d"
 JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
-KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
-TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
