@@ -65,4 +65,3 @@ function HellwarthAScheme(phonon_modes; T = 295, convergence=1e-6)
 	
 	return middle_frequency
 end
-
