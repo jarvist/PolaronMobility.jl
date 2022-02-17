@@ -369,6 +369,24 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits = 3))
         print("\n\n")
+        println("Calculating complex impedances...")
+        global count = 0
+        global processes = length(T) * length(Ω)
+    end
+
+    @time @tullio threads = threads impedances[f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, t], α, v_params[t], w_params[t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3 (t in eachindex(T), f in eachindex(Ω))
+
+    if verbose
+        show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
+        print("\n\n")
+        println("Calculating complex conductivities...")
+    end
+
+    @time @tullio threads = threads conductivities[f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, t] (t in eachindex(T), f in eachindex(Ω))
+
+    if verbose
+        show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
+        print("\n\n")
         println("Calculating mobilities...")
         global count = 0
         global processes = length(T)
@@ -378,24 +396,6 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
-        print("\n\n")
-        println("Calculating complex impedances...")
-        global count = 0
-        global processes = length(T) * length(Ω)
-    end
-
-    @time @tullio threads = threads impedances[f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, t], α, v_params[t], w_params[t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) / sqrt(ε_0 * ϵ_optic) / c (t in eachindex(T), f in eachindex(Ω))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
-        print("\n\n")
-        println("Calculating complex conductivities...")
-    end
-
-    @time @tullio threads = threads conductivities[f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, t] (t in eachindex(T), f in eachindex(Ω))
-    
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
         print("\n")
     end
 
@@ -437,10 +437,10 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         print("\n\n")
         println("Calculating variational parameters...")
         global count = 0
-        global processes = length(T)
+        global processes = length(T) * length(α)
     end
 
-    @time @tullio threads = threads params[a, t] := T[t] == 0.0 ? var_params(α[a]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α[a], betas[t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), a in eachindex(α))
+    @time @tullio threads = threads params[a, t] := T[t] == 0.0 ? var_params(α[a]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α[a], betas[t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T), a in eachindex(α))
 
     @tullio threads = threads v_params[a, t] := params[a, t][1]
     @tullio threads = threads w_params[a, t] := params[a, t][2]
@@ -478,22 +478,12 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits = 3))
         print("\n\n")
-        println("Calculating mobilities...")
-        global count = 0
-        global processes = length(T) * length(α)
-    end
-
-    @time @tullio threads = threads  mobilities[a, t] := T[t] == 0.0 ? Inf64 : polaron_mobility([betas[t]], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T), a in eachindex(α))
-    
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
-        print("\n\n")
         println("Calculating complex impedances...")
         global count = 0
         global processes = length(T) * length(Ω) * length(α)
     end
 
-    @time @tullio threads = threads impedances[a, f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], [betas[t]], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) * 2π (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
+    @time @tullio threads = threads impedances[a, f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], [betas[t]], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
@@ -502,14 +492,24 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
     end
 
     @time @tullio threads = threads conductivities[a, f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[a, f, t] (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
-    
+
     if verbose
         show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
+        print("\n\n")
+        println("Calculating mobilities...")
+        global count = 0
+        global processes = length(T) * length(α)
+    end
+
+    @time @tullio threads = threads mobilities[a, t] := T[t] == 0.0 ? Inf64 : polaron_mobility(betas[t], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T), a in eachindex(α))
+
+    if verbose
+        show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
         print("\n")
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, T, betas, ω .* 2π, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
+    return NewPolaron(α, T, betas, ω, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
 end
 
 """

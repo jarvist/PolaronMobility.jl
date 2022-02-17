@@ -58,7 +58,7 @@ function multi_memory_function(Ω::Float64, β::Array{Float64}(undef, 1), α::Ar
 function polaron_memory_function_thermal(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3)
 
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = cos(t - 1im * β / 2) / sinh(β / 2) / D_j(-1im * t, β, v, w)^(3 / 2)
+    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D_j(-1im * t, β, v, w)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β, Ω) = (1 - exp(1im * Ω * 2π * t)) * imag(S(t, β))
@@ -73,16 +73,19 @@ end
 function polaron_memory_function_athermal(Ω, α, v, w; ω = 1.0, rtol = 1e-3)
 
     # FHIP1962, page 1009, eqn (36).
-    S(t) = exp(im * t) / D_j(-1im * t, v, w)^(3 / 2)
+    S(t) = exp(1im * t) / D_j(-1im * t, v, w)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, Ω) = (1 - exp(1im * 2π * Ω * t)) * imag(S(t))
 
-    ω = length(ω) == 1 ? [ω] : ω
+    memory = 0.0
 
-    integral = map(x -> Ω < minimum(x) / 2π ? (0.0 + im * 0.0) : quadgk(t -> integrand(t, Ω / x), 0.0, 1 / rtol, rtol = rtol)[1], ω)
+    for j in 1:length(ω)
 
-    memory = sum(2 .* α .* ω .^2 .* integral ./ (3 * √π * Ω * 2π))
+        integral = quadgk(t -> integrand(t, Ω / ω[j]), 0.0, 1 / rtol, rtol = rtol)[1]
+        memory += 2 * α[j] * ω[j]^2 * integral / (3 * √π * Ω * 2π)
+
+    end
 
     return memory
 end
@@ -90,8 +93,8 @@ end
 function polaron_memory_function_dc(β, α, v, w; ω = 1.0, rtol = 1e-3)
 
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = cos(t - 1im * β / 2) / sinh(β / 2) / D_j(-1im * t, β, v, w)^(3 / 2)
-
+    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D_j(-1im * t, β, v, w)^(3 / 2)
+    
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β) = -im * t * imag(S(t, β))
 

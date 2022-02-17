@@ -308,7 +308,7 @@ D_j(τ::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(und
 function D_j(τ, β, v, w)
     D = τ * (1 - τ / β)
     for i in 1:length(v)
-        D += (h_i(i, v, w) / v[i]^2) * (2 * sinh(v[i] * τ / 2) * sinh(v[i] * (β - τ) / 2) / (v[i] * sinh(v[i] * β / 2)) - τ * (1 - τ / β))
+        D += (h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β))
     end
     return D
 end
@@ -341,8 +341,8 @@ B_j(α::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(und
      - w is an one-dimensional array of the w variational parameters.
 """
 function B_j(α, β, v, w; rtol = 1e-3)
-    B_integrand(τ) = cosh(β / 2 - abs(τ)) / (sinh(β / 2) * sqrt(abs(D_j(abs(τ), β, v, w))))
-    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, β / 2, rtol = rtol)[1]
+    B_integrand(τ) = (exp(-τ) + exp(τ - β)) / sqrt(abs(D_j(τ, β, v, w)))
+    B = α / (√π * (1 - exp(-β))) * quadgk(τ -> B_integrand(τ), 0.0, β / 2, rtol = rtol)[1]
     return B
 end
 
@@ -525,7 +525,7 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
 
     # Limits of the optimisation.
     lower = fill(0.0, 2 * N)
-    upper = fill(Inf, 2 * N)
+    upper = fill(1000.0, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
 	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
@@ -537,11 +537,15 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
 		upper,
 		initial,
 		Fminbox(BFGS()),
-		Optim.Options(f_reltol = rtol, x_reltol = rtol, show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
+		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
 	)
 
 	# Extract the v and w parameters that minimised the free energy.
 	var_params = Optim.minimizer(solution)
+
+    if Optim.converged(solution) == false
+        @warn "Failed to converge feynmanvw solution."
+    end
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
 	Δv = [var_params[2 * n - 1] for n in 1:N]
@@ -549,7 +553,7 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
 
     # Print the variational parameters that minimised the free energy.
 	if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | v = $(round.(v, digits = 3)) | w = $(round.(w, digits = 3))")
+        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | v = $(round.(Δv .+ w, digits = 3)) | w = $(round.(w, digits = 3))")
         print("\033[F")   
 
         global count += 1
@@ -576,7 +580,7 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
 
     # Limits of the optimisation.
     lower = fill(0.0, 2 * N)
-    upper = fill(Inf, 2 * N)
+    upper = fill(1000, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
 	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
@@ -588,7 +592,7 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
 		upper,
 		initial,
 		Fminbox(BFGS()),
-		Optim.Options(f_reltol = rtol, x_reltol = rtol, show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
+		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
 	)
 
 	# Extract the v and w parameters that minimised the free energy.
@@ -600,7 +604,7 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
 
 	# Print the variational parameters that minimised the free energy.
 	if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | v = $(round.(v, digits = 3)) | w = $(round.(w, digits = 3))")
+        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | v = $(round.(Δv .+ w, digits = 3)) | w = $(round.(w, digits = 3))")
         print("\033[F")    
 
         global count += 1
