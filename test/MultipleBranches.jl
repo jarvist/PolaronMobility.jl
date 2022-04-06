@@ -119,14 +119,14 @@ MAPI_singlemode = [
 ϵ_i=IRtoDielectric(MAPI_singlemode,vol)
 ϵ_s=sum(ϵ_i)+ϵ_o
 println("Sum of ionic dielectric: $(ϵ_s)")
-_,αmode_MAPIe=IRtoalpha(MAPI_singlemode,volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
+αmode_MAPIe=IRtoalpha(MAPI_singlemode,volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
 
-α_MAPIe=frohlichalpha(4.5, 24.1, 2.25E12, meff)
+α_MAPIe=frohlichalpha(4.5, 24.1, 2.25, meff)
 
 @test αmode_MAPIe ≈ α_MAPIe atol=0.01
 
 
-f,α = IRtoalpha(MAPI, volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
+f = IRtoalpha(MAPI, volume=vol, ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
 
 end # @testset
 

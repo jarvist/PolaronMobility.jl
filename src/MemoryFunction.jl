@@ -14,19 +14,19 @@ polaron_memory_function(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Fl
 function polaron_memory_function(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3)
 
     # Zero temperature and frequency is just zero.
-	if Ω == 0 && any(x -> x == Inf, β)
+	if Ω == 0 && any(x -> x == Inf64, β)
 		return 0.0 + im * 0.0
 
     # DC zero frequency limit at finite temperatures.
-	elseif Ω == 0 && any(x -> x != Inf, β)
+	elseif Ω == 0 && any(x -> x != Inf64, β)
 		return polaron_memory_function_dc(β, α, v, w; ω = ω, rtol = rtol)
 
     # Zero temperature limit at AC finite frequencies.
-	elseif Ω != 0 && any(x -> x == Inf, β)
+	elseif Ω != 0 && any(x -> x == Inf64, β)
 		return polaron_memory_function_athermal(Ω, α, v, w; ω = ω, rtol = rtol)
 
     # Finite temperatures and frequencies away from zero limits.
-	elseif Ω != 0 && any(x -> x != Inf, β)
+	elseif Ω != 0 && any(x -> x != Inf64, β)
 		return polaron_memory_function_thermal(Ω, β, α, v, w; ω = ω, rtol = rtol)
 
     # Any other frequencies or temperatures (e.g. negative or complex) prints error message.

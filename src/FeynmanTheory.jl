@@ -48,10 +48,11 @@ function feynmanvw(α; v = 3.0, w = 3.0) # v, w defaults
     # Limits of the optimisation.
     lower = [0.0, 0.0]
     upper = [Inf, Inf]
-    initial = [v, w]
+    Δv=v-w # defines a constraint, so that v>w
+    initial = [Δv+0.01, w]
 
     # Feynman 1955 athermal action 
-    f(x) = F(x[1], x[2], α)
+    f(x) = F(x[1]+x[2], x[2], α)
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
@@ -63,23 +64,10 @@ function feynmanvw(α; v = 3.0, w = 3.0) # v, w defaults
     )
 
     # Get v and w values that minimise the free energy.
-    v, w = Optim.minimizer(solution)
-
-    # If optimisation does not converge or if v ≤ w, pick new random starting guesses for v and w between 1.0 and 11.0. Repeat until the optimisation converges with v > w.
-    while Optim.converged(solution) == false || v <= w
-        initial = sort(rand(2), rev=true) .* 10.0 .+ 1.0
-        solution = Optim.optimize(
-            Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-            lower,
-            upper,
-            initial,
-            Fminbox(BFGS()),
-        )
-        v, w = Optim.minimizer(solution)
-    end
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
 
     # Return variational parameters that minimise the free energy.
-    return v, w
+    return Δv+w, w
 end
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
@@ -99,7 +87,7 @@ A(v,w,β)=3/β*( log(v/w) - 1/2*log(2*π*β) - log(sinh(v*β/2)/sinh(w*β/2)))
 Y(x,v,β)=1/(1-exp(-v*β))*(1+exp(-v*β)-exp(-v*x)-exp(v*(x-β)))
 # 62c integrand
 #   Nb: Magic number 1e-10 adds stablity to optimisation; v,w never step -ve
-f(x,v,w,β)=(exp(β-x)+exp(x))/sqrt(1e-10+ w^2*x*(1-x/β)+Y(x,v,β)*(v^2-w^2)/v)
+f(x,v,w,β)=(exp(β-x)+exp(x))/sqrt(abs(w^2*x*(1-x/β)+Y(x,v,β)*(v^2-w^2)/v))
 # 62c
 B(v,w,β,α) = α*v/(sqrt(π)*(exp(β)-1)) * quadgk(x->f(x,v,w,β),0,β/2)[1]
 # 62e
@@ -122,10 +110,11 @@ function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
     # Limits of the optimisation.
     lower = [0.0, 0.0]
     upper = [Inf, Inf]
-    initial = [v, w]
+    Δv=v-w # defines a constraint, so that v>w
+    initial = [Δv+0.01, w]
 
     # Feynman 1955 athermal action 
-    f(x) = F(x[1], x[2], β, α)
+    f(x) = F(x[1]+x[2], x[2], β, α)
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
@@ -137,8 +126,8 @@ function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
     )
 
     # Get v and w values that minimise the free energy.
-    v, w = Optim.minimizer(solution)
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
 
     # Return variational parameters that minimise the free energy.
-    return v, w
+    return Δv+w, w
 end

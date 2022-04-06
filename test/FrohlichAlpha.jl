@@ -2,7 +2,7 @@ println("Alpha-parameter, Cross check 'frohlichalpha()' fn vs. literature values
 
 @testset "FrohlichAlpha" begin
 
-α=frohlichalpha(2.3, 5.6, 4.9, 1.0)
+α=frohlichalpha(2.3, 5.6, 49 / 2π, 1.0)
 println("NaCl Frohlich paper, α=",α," should be ~about 5 (Feynman1955)")
 @test α ≈ 5.0 atol=0.3
 
