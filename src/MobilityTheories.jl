@@ -27,7 +27,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
 
     # Internally we we use 'mb' for the 'band mass' in SI units, of the effecitve-mass of the electron
     mb=effectivemass*MassElectron
-    ω = (2*pi)*freq # angular-frequency, of the phonon mode
+    ω = (2*pi)*freq*1e12 # angular-frequency, of the phonon mode
 
     α=frohlichalpha(ε_Inf, ε_S,  freq,    effectivemass)
     #α=2.395939683378253 # Hard coded; from MAPI params, 4.5, 24.1, 2.25THz, 0.12me
@@ -298,7 +298,7 @@ make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq 
         ir_activity = [0.08168931020200264, 0.006311654262282101, 0.05353548710183397, 0.021303020776321225, 0.23162784335484837, 0.2622203718355982, 0.23382298607799906, 0.0623239656843172, 0.0367465760261409, 0.0126328938653956, 0.006817361620021601, 0.0103757951973341, 0.01095811116040592, 0.0016830270365341532, 0.00646428491253749], 
         N_params = 1)
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = nothing, ir_activity = nothing, rtol = 1e-4, verbose = false, threads = false)
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = nothing, ir_activity = nothing, rtol = 1e-4, N_params = 1, verbose = false, threads = false)
     
     N_modes = length(phonon_freq)
 
@@ -331,7 +331,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
         global processes = length(T)
     end
 
-    @time @tullio threads = threads params[t] := T[t] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α, betas[:, t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T))
+    @time @tullio threads = threads params[t] := T[t] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, N = N_params, verbose = verbose) : var_params(α, betas[:, t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t], N = N_params, verbose = verbose) (t in eachindex(T))
 
     @tullio threads = threads v_params[t] := params[t][1] (t in eachindex(T))
     @tullio threads = threads w_params[t] := params[t][2] (t in eachindex(T))
