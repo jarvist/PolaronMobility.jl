@@ -81,10 +81,10 @@ end
 
 # Variations
 
-v_0, w_0 = variation(α; v = 0.0, w = 0.0, ω = ω) # Athermal
+v_0, w_0 = var_params(α; v = 0.0, w = 0.0, ω = ω) # Athermal
 
 β = [i .* ħ / (kB * 300) * 1e12 for i in ω]
-v, w = variation(α, β; v = 0.0, w = 0.0, ω = ω) # Thermal
+v, w = var_params(α, β; v = 0.0, w = 0.0, ω = ω) # Thermal
 
 @testset "Multiple mode variations" begin
     

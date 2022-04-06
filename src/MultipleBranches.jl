@@ -204,7 +204,7 @@ function effective_freqs(freqs_and_ir_activity, num_var_params) # PCA Algorithm
 end
 
 """
-frohlich_α_j(ϵ_optic::Float64, ϵ_ionic::Float64, ϵ_total::Float64, phonon_mode_freq::Float64, m_eff::Float64)
+multi_frohlichalpha(ϵ_optic::Float64, ϵ_ionic::Float64, ϵ_total::Float64, phonon_mode_freq::Float64, m_eff::Float64)
 
     Calculates the partial dielectric electron-phonon coupling parameter for a given longitudinal optical phonon mode. This decomposes the original Frohlich alpha coupling parameter (defined for a single phonon branch) into contributions from multiple phonon branches.
 

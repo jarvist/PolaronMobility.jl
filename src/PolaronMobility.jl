@@ -12,7 +12,7 @@ export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
 export HellwarthBScheme, HellwarthAScheme
 export polaron_memory_function  # Polaron memory functions
 export optical_absorption       # Polaron optical absorption
-export ϵ_ionic_mode, multi_frohlichalpha, variation, multi_F, polaron_mobility, polaron_complex_impedence, polaron_complex_conductivity
+export ϵ_ionic_mode, multi_frohlichalpha, var_params, multi_F, polaron_mobility, polaron_complex_impedence, polaron_complex_conductivity
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 export Hellwarth1999mobilityRHS
 export make_polaron, save_polaron, load_polaron
