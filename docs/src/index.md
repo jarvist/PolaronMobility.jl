@@ -1,3 +1,5 @@
+# PolaronMobility.jl
+
 These codes calculate the temperature-dependent polaron mobility for
 a material. 
 We use the Feynman path-integral variational approach. 
@@ -42,13 +44,12 @@ May your phonons drag in a manner truly sublime.
 
 ## Installation
 
-These codes require Julia >0.6 . They are structured as a full Julia package,
-but are not yet registered with the central METADATA package repository. 
+These codes require Julia >1.7 . 
 
 To install, type the following at the Julia REPL:
 
 ```
-julia> Pkg.clone("git://github.com/Jarvist/PolaronMobility.jl.git")
+julia> Pkg.add("PolaronMobility")
 ```
 
 ## Community guidelines

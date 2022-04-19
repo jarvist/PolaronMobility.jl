@@ -1,4 +1,4 @@
-## Functions provided 
+# Functions 
 
 ```@docs
 frohlichalpha(ε_Inf,ε_S,freq,m_eff)

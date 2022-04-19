@@ -1,3 +1,5 @@
+# Scientific discussion
+
 ## Overview 
 
 These codes solve the Feynman polaron mode [Feynman1955] with Ōsaka's

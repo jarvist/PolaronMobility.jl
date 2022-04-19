@@ -1,3 +1,5 @@
+# Examples
+
 Perhaps the easiest way to understand the code is to see how it can be used for
 science. 
 As an example system, we are going to look at some of the basic polaron
