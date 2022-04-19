@@ -274,7 +274,18 @@ function getTocLi(url) {
   return $(selector).closest('.wm-toc-li');
 }
 
+var _deferIframeLoad = false;
+
+// Sometimes iframe is loaded before main window's ready callback. In this case, we defer
+// onIframeLoad call until the main window has initialized.
+function ensureIframeLoaded() {
+  if (_deferIframeLoad) {
+    onIframeLoad();
+  }
+}
+
 function onIframeLoad() {
+  if (!iframeWindow) { _deferIframeLoad = true; return; }
   var url = iframeWindow.location.href;
   onIframeBeforeLoad(url);
 
@@ -345,6 +356,7 @@ if (is_top_frame) {
   $(document).ready(function() {
     iframeWindow = $('.wm-article')[0].contentWindow;
     initMainWindow();
+    ensureIframeLoaded();
   });
 
 } else {
@@ -364,7 +376,6 @@ if (is_top_frame) {
 
 var searchIndexReady = false;
 
-
 /**
  * Initialize search functionality.
  */
@@ -383,7 +394,6 @@ function initSearch() {
   $.getJSON(base_url + '/search/search_index.json')
   .done(function(data) {
     data.docs.forEach(function(doc) {
-      doc.location = base_url + doc.location;
       searchIndex.addDoc(doc);
     });
     searchIndexReady = true;
@@ -457,7 +467,7 @@ function initSearch() {
   $('#wm-search-show,#wm-search-go').on('click', function(e) {
     if (isSmallScreen()) {
       e.preventDefault();
-      var el = $('#mkdocs-search-query').closest('.wm-top-tool')
+      var el = $('#mkdocs-search-query').closest('.wm-top-tool');
       el.toggleClass('wm-top-tool-expanded');
       if (el.hasClass('wm-top-tool-expanded')) {
         setTimeout(function() {
@@ -533,13 +543,13 @@ function doSearch(options) {
     for (var i = 0; i < len; i++) {
       var doc = searchIndex.documentStore.getDoc(results[i].ref);
       var snippet = snippetBuilder.getSnippet(doc.text, snippetLen);
-
       resultsElem.append(
-        $('<li>').append($('<a class="search-link">').attr('href', doc.location)
+        $('<li>').append($('<a class="search-link">').attr('href', pathJoin(base_url, doc.location))
           .append($('<div class="search-title">').text(doc.title))
           .append($('<div class="search-text">').html(snippet)))
       );
     }
+    resultsElem.find('a').each(function() { adjustLink(this); });
     if (limit) {
       resultsElem.append($('<li role="separator" class="divider"></li>'));
       resultsElem.append($(
@@ -549,4 +559,10 @@ function doSearch(options) {
   } else {
     resultsElem.append($('<li class="disabled"><a class="search-link">NO RESULTS FOUND</a></li>'));
   }
+}
+
+function pathJoin(prefix, suffix) {
+  var nPrefix = endsWith(prefix, "/") ? prefix.slice(0, -1) : prefix;
+  var nSuffix = startsWith(suffix, "/") ? suffix.slice(1) : suffix;
+  return nPrefix + "/" + nSuffix;
 }
