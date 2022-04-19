@@ -28,45 +28,40 @@ end
 # More complex scheme, involving thermodynamic Beta
 # Hellwarth(50), RHS
 """
-	HellwarthAScheme(LO,T=295)
+HellwarthAScheme(phonon_modes; T=295, convergence=1e-6)
 
     Multiple phonon mode reduction to a single effective frequency.
-	Temperature dependent, defaults to T=295 K.
+	Temperature dependent, defaults to T = 295 K.
+
+    Solved iteratively by bisection until Δfreq<convergence.
 
     Follows Hellwarth et al. 1999 PRB 'A' scheme, Eqn 50 RHS.
-
-	UNTESTED AND UNCERTAIN CODE.
 """
-function HellwarthAScheme(LO; T=295)
-    println("Hellwarth A scheme...T=$T K")
-    omega=LO[:,1] # No unit conversion
-    #omega=LO[:,1].*2*pi*1E12 # THz --> Hz
-    #omega=LO[:,1].*2*pi*0.02998*1E12 # cm^-1 --> Hz
-    β=(omega.*ħ)/(kB*T) #assuming units SI 
-    H50 = sum( ((LO[:,2].^2).*coth.(β))./omega )
-    println("Hellwarth (50) summation: ",H50)
-
-    H51= sum( LO[:,2].^2 ) # sum of total ir activity squarred
-    println("Hellwarth (51) summation (total ir activity ^2): ", H51)
-    println("Hellwarth (51) W_e (total ir activity ): ", sqrt(H51))
-
-    # OK; so this is deriving Omega / coth(Beta/2)
-    omegacoth=H51/H50
-    println("omegacoth: ",omegacoth)
-
-    solnfreq=0.0 #required for Julia 0.5 so it realises variable still required for return.
-    # Very primitive manner to decouple Omega from both sides of the eqn.
-	# Should really rewrite as a bisection (at least!)
-    maxfreq=maximum(omega)
-    for freq in 0.1:maxfreq/2500:maxfreq
-        pseudo_omega=omegacoth/coth(freq * ħ/(2*kB*T))
-        if freq>pseudo_omega
-            println("freq: $freq pseudo-omega: $pseudo_omega")
-            println("freq: ",freq/(2*pi*0.02998*1E12), " pseudo-omega: ",pseudo_omega/(2*pi*0.02998*1E12))
-            solnfreq=freq
-            break
-        end
-    end
-	return solnfreq
+function HellwarthAScheme(phonon_modes; T = 295, convergence=1e-6)
+	   
+	phonon_mode_freqs = phonon_modes[:, 1]
+	ir_activities = phonon_modes[:, 2]
+	
+	condition(f) = coth(π * f * 1e12 * ħ / (kB * T)) / f 
+        - sum(ir_activities .* 
+              coth.(π .* phonon_mode_freqs .* 1e12 .* ħ ./ (kB * T)) ./ phonon_mode_freqs) / sum(ir_activities)
+	
+    # Solve by bisection
+	minimum_frequency = minimum(phonon_mode_freqs)
+	maximum_frequency = maximum(phonon_mode_freqs)
+	middle_frequency = (maximum_frequency + minimum_frequency) / 2
+	print("\n")
+			
+	while (maximum_frequency - minimum_frequency) / 2 > convergence
+		
+		if sign(condition(middle_frequency)) == sign(condition(minimum_frequency))
+			minimum_frequency = middle_frequency
+			middle_frequency = (maximum_frequency + minimum_frequency) / 2
+		else
+			maximum_frequency = middle_frequency
+			middle_frequency = (maximum_frequency + minimum_frequency) / 2
+		end
+	end
+	
+	return middle_frequency
 end
-

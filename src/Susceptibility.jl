@@ -14,13 +14,13 @@ Susceptibility()=susceptibility([],[],[])
 function ImX(nurange,v,w,βred,α,ω,mb)
 
 Impedance in (47a) from Feynman1962, directly solving freq dep without taking
-Hellwarth1999 limit of v->0 . 
+Hellwarth1999 limit of v->0 .
 
 Calculates a frequency dependent (over range of nu) susceptibility which can be linked back to mobility.
 
-HERE BE DRAGONS! 
+HERE BE DRAGONS!
 Not well tested or validated code; the central numeric integration is highly
-oscillatory and becomes intractable for large nu.  
+oscillatory and becomes intractable for large nu.
 """
 function ImX(nurange,v,w,βred,α,ω,mb)
         @printf("\nAin't no Imaginary Impedance like a Feynman 1962 ImX...\n")
@@ -35,7 +35,7 @@ function ImX(nurange,v,w,βred,α,ω,mb)
 
         @printf("Numerical integration of FHIP1962(42a): nu=%.2f ",nu)
         println("   a: $(a) b:$(b) ")
-       
+
         # This is a simple approximation of part of the
         # https://www.gnu.org/software/gsl/doc/html/integration.html#qawf-adaptive-integration-for-fourier-integrals
         # GSL adaptive method for Fourier integrals
@@ -43,8 +43,8 @@ function ImX(nurange,v,w,βred,α,ω,mb)
         # the roots.
         c=(2*floor(nu)+1)*π/nu
         println("Fourier integral c: $(c)")
-        fourier_range = [ c*i for i in 0:2501 ] 
-        
+        fourier_range = [ c*i for i in 0:2501 ]
+
         # Catch Inf c range
         if nu==0
             fourier_range = [0, Inf]
@@ -52,12 +52,12 @@ function ImX(nurange,v,w,βred,α,ω,mb)
 
         # These params tweaked to get the best behaviour at reproducing
         # Mishchenko-Fig4 in a timely manner.
-        @time n=quadgk(u->k(u,a,b,v,nu),fourier_range... , 
+        @time n=quadgk(u->k(u,a,b,v,nu),fourier_range... ,
                        maxevals=10^6,rtol=0.0001, atol=1e-15, order=7) # numerical quadrature integration of (2)
         K=n[1]
         err=n[2]
         @printf(" quadgk: K=%g err=%g\n",K,err)
-        
+
         if K<err # we've lost control of our errors, due to losing the oscillatory war with nu
             break # --> so give up.
         end
@@ -77,4 +77,3 @@ function ImX(nurange,v,w,βred,α,ω,mb)
     @printf("\n\n")
     return(s)
 end
-

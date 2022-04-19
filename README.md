@@ -1,11 +1,15 @@
 # PolaronMobility.jl
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![made-with-julia](https://img.shields.io/badge/Made%20with-Julia-ff69bf.svg)](https://julialang.org)
+[![DOI](http://joss.theoj.org/papers/10.21105/joss.00566/status.svg)](https://doi.org/10.21105/joss.00566)
+[![docs-latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://jarvist.github.io/PolaronMobility.jl/)
+
+
 [![Build Status](https://travis-ci.org/jarvist/PolaronMobility.jl.svg?branch=master)](https://travis-ci.org/jarvist/PolaronMobility.jl)
 [![Coverage Status](https://coveralls.io/repos/jarvist/PolaronMobility.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/jarvist/PolaronMobility.jl?branch=master)
 [![codecov.io](http://codecov.io/github/jarvist/PolaronMobility.jl/coverage.svg?branch=master)](http://codecov.io/github/jarvist/PolaronMobility.jl?branch=master)
-[![docs-latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://jarvist.github.io/PolaronMobility.jl/)
 
-[![DOI](http://joss.theoj.org/papers/10.21105/joss.00566/status.svg)](https://doi.org/10.21105/joss.00566)
 
 `PolaronMobility.jl` is a Julia package which calculates the
 temperature-dependent polaron mobility for a material. 
@@ -40,31 +44,17 @@ is perhaps easiest to read and understand alongside the first paper:
 / [Frost2017PRB](https://doi.org/10.1103/PhysRevB.96.195202).
 
 
-## Local installation
+## Installation
 
-These codes require Julia >1.0 . 
-
-To install, type the following at the Julia REPL:
+To install, type the following at the Julia (>1.0) REPL:
 
 ```
 julia> import Pkg; Pkg.add("PolaronMobility")
 ```
 
-### Common errors
+## Cloud notebook
 
-Often errors discoverd when trying to run these codes are related to changes in the interface to [`Optim.jl`](https://github.com/JuliaNLSolvers/Optim.jl)
-
-This general appears as a MethodError with the internal Optim type, perhaps similar to:
-`MethodError: Cannot convert an object of type Optim.BFGS{...`
-
-You may want to check the Optim package version and status:
-`Pkg.status("Optim")`
-
-The present versions of the code require `Optim 0.15-`.
-
-## Polarons in the cloud
-
-There is an [example notebook](JuliaBox-Example.ipynb) which can be run interactively on the (free) MyBinder notebook server. This is the fastest way to calculate a few polaron parameters, if you do not have Julia.
+There is an [example notebook](JuliaBox-Example.ipynb) which can be run interactively on the (free) MyBinder notebook server. This is the fastest way to calculate a few polaron parameters, if you do not have Julia installed locally.
 
 1) Click on [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jarvist/PolaronMobility.jl/master?filepath=JuliaBox-Example.ipynb)
 2) That's it!

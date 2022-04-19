@@ -1,17 +1,20 @@
 name = "PolaronMobility"
 uuid = "a1b829d7-2a44-59aa-80d3-9ddd83901c9b"
-authors = ["Jarvist Moore Frost <jarvist@gmail.com>"]
+authors = ["Jarvist Moore Frost <jarvist@gmail.com>", "Bradley A.A. Martin <bradley.martin16@imperial.ac.uk>"]
 version = "1.3.0"
 
-
 [deps]
+Gnuplot = "dc211083-a33a-5b79-959f-2ff34033469d"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [compat]
-Optim = "0.15 - 0.22"
-QuadGK= "2"
-julia = "1.5"
+Optim = ">= 0.15"
+QuadGK = ">= 2"
+julia = ">= 1.5"
