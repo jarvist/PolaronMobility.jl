@@ -20,7 +20,11 @@ test=["Test"]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-Optim = ">= 0.15"
+Optim = "0.15, 1"
+Gnuplot = "1"
+Tullio = "0.3"
+LoopVectorization = "0.12"
+JLD = "0.13"
 QuadGK = "2"
 julia = "1.5"
 
