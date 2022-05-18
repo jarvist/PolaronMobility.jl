@@ -72,3 +72,4 @@ function plotpolaron(fileprefix, p::Polaron; extension="png")
 end
 
 end
+

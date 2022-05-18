@@ -72,11 +72,8 @@ end
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
 
-# Originally a Friday afternoon of hacking to try and implement the T-dep electron-phonon coupling from the above PRB
-# Which was unusually successful! And more or less reproduced Table III
-
 # In Julia we have 'Multiple dispatch', so let's just construct the free
-# energies (temperature-dependent) with the same name as before, but withthe
+# energies (temperature-dependent) with the same name as before, but with the
 # thermodynamic beta where required
 
 # Define Osaka's free-energies (Hellwarth1999 version) as Julia functions
@@ -99,11 +96,11 @@ F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β))
 # F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
 
 """
-    feynmanvw(α; v = 0.0, w = 0.0)
+    feynmanvw(α, β; v = 0.0, w = 0.0)
 
-    Calculate v and w variational polaron parameters,
-    for the supplied α Frohlich coupling.
-    This version uses the original athermal action (Feynman 1955).
+    Calculate v and w variational polaron parameters, for the supplied α Frohlich coupling,
+    and inverse temperature β.  
+    This version uses the Osaka thermal action symmetrised for computation (Hellwarth 1999).
 	Returns v,w.
 """
 function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
@@ -131,3 +128,4 @@ function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
     # Return variational parameters that minimise the free energy.
     return Δv+w, w
 end
+
