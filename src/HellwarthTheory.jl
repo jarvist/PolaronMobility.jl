@@ -3,10 +3,11 @@
 #####
 """
 	HellwarthBScheme(LO)
+    LO an array assumed to be of [freq ; absolute ir activity ]
 
     Multiple phonon mode reduction to a single effective frequency.
-	Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method.
-    Averaging procedure is constructed by considering the average effect of the action of multiple branches.
+    Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method.  Averaging procedure is
+    constructed by considering the average effect of the action of multiple branches.
 
 	Follows Eqn (58) in this paper, assuming typo on LHS, should actually be W_e.
 """

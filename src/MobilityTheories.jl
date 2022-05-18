@@ -298,19 +298,19 @@ make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq 
         ir_activity = [0.08168931020200264, 0.006311654262282101, 0.05353548710183397, 0.021303020776321225, 0.23162784335484837, 0.2622203718355982, 0.23382298607799906, 0.0623239656843172, 0.0367465760261409, 0.0126328938653956, 0.006817361620021601, 0.0103757951973341, 0.01095811116040592, 0.0016830270365341532, 0.00646428491253749], 
         N_params = 1)
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = nothing, ir_activity = nothing, rtol = 1e-4, N_params = 1, verbose = false, threads = false)
-    
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volume = nothing, ir_activity = nothing, rtol = 1e-4, N_params = 1, verbose = false, threads = false)
+   
     N_modes = length(phonon_freq)
 
     if verbose
         println("Calculating Fröhlich alpha...")
     end
 
+    ω = 2π .* phonon_freq
+    
     if N_modes == 1
-        ω = 2π * phonon_freq
         α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
     else
-        ω = 2π .* phonon_freq
         ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
         α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
     end
@@ -321,20 +321,20 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
         println("Calculating thermodynamic betas...")
     end
 
-    @tullio threads = threads betas[m, t] := T[t] == 0.0 ? Inf64 : ħ * ω[m] / (kB * T[t]) * 1e12 (t in eachindex(T))
+    @tullio betas[m, i] := Trange[i] == 0.0 ? Inf64 : ħ * ω[m] / (kB * Trange[i]) * 1e12 (i in eachindex(Trange))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(betas, digits = 3))
         print("\n\n")
         println("Calculating variational parameters...")
         global count = 0
-        global processes = length(T)
+        global processes = length(Trange)
     end
 
-    @time @tullio threads = threads params[t] := T[t] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, N = N_params, verbose = verbose) : var_params(α, betas[:, t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t], N = N_params, verbose = verbose) (t in eachindex(T))
+    @tullio params[i] := Trange[i] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, N = N_params, verbose = verbose) : var_params(α, betas[:, i]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = Trange[i], N = N_params, verbose = verbose) (i in eachindex(Trange))
 
-    @tullio threads = threads v_params[t] := params[t][1] (t in eachindex(T))
-    @tullio threads = threads w_params[t] := params[t][2] (t in eachindex(T))
+    @tullio v_params[i] := params[i][1] (i in eachindex(Trange))
+    @tullio w_params[i] := params[i][2] (i in eachindex(Trange))
     
     if verbose
         println("\nv: ")
@@ -346,7 +346,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
         println("Calculating spring constants...")
     end
 
-    @time @tullio threads = threads spring_constants[t] := v_params[t]^2 - w_params[t]^2
+    @tullio spring_constants[i] := v_params[i]^2 - w_params[i]^2
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(spring_constants, digits = 3))
@@ -354,27 +354,27 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
         println("Calculating fictitious masses...")
     end
 
-    @time @tullio threads = threads masses[t] := spring_constants[t] / w_params[t]^2
+    @tullio masses[i] := spring_constants[i] / w_params[i]^2
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(masses, digits = 3))
         print("\n\n")
         println("Calculating free energies...")
         global count = 0
-        global processes = length(T)
+        global processes = length(Trange)
     end
 
-    @time @tullio threads = threads energies[t] := T[t] == 0.0 ? multi_F(v_params[t], w_params[t], α; ω = ω, rtol = rtol, verbose = verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[t], w_params[t], α, betas[:, t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) * 1000 * ħ / eV * 1e12 (t in eachindex(T))
+    @tullio energies[i] := Trange[i] == 0.0 ? multi_F(v_params[i], w_params[i], α; ω = ω, rtol = rtol, verbose = verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[i], w_params[i], α, betas[:, i]; ω = ω, rtol = rtol, T = Trange[i],  verbose = verbose) * 1000 * ħ / eV * 1e12 (i in eachindex(Trange))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits = 3))
         print("\n\n")
         println("Calculating complex impedances...")
         global count = 0
-        global processes = length(T) * length(Ω)
+        global processes = length(Trange) * length(Ω)
     end
 
-    @time @tullio threads = threads impedances[f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, t], α, v_params[t], w_params[t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3 (t in eachindex(T), f in eachindex(Ω))
+    @tullio impedances[f, i] := Ω[f] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, i], α, v_params[i], w_params[i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3 (i in eachindex(Trange), f in eachindex(Ω))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
@@ -382,17 +382,17 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
         println("Calculating complex conductivities...")
     end
 
-    @time @tullio threads = threads conductivities[f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, t] (t in eachindex(T), f in eachindex(Ω))
+    @tullio conductivities[f, i] := Ω[f] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, i] (i in eachindex(Trange), f in eachindex(Ω))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
         print("\n\n")
         println("Calculating mobilities...")
         global count = 0
-        global processes = length(T)
+        global processes = length(Trange)
     end
 
-    @time @tullio threads = threads  mobilities[t] := T[t] == 0.0 ? Inf64 : polaron_mobility(betas[:, t], α, v_params[t], w_params[t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) * eV / (1e12 * me * m_eff) * 100^2 (t in eachindex(T))
+    @tullio mobilities[i] := Trange[i] == 0.0 ? Inf64 : polaron_mobility(betas[:, i], α, v_params[i], w_params[i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) * eV / (1e12 * me * m_eff) * 100^2 (i in eachindex(Trange))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
@@ -400,7 +400,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T, Ω; volume = n
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, T, betas, phonon_freq, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
+    return NewPolaron(α, Trange, betas, phonon_freq, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
 end
 
 """
