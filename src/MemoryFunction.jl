@@ -7,9 +7,19 @@
 """
 polaron_memory_function(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64)
 
-    Calculate the memory function χ(Ω) of the polaron at finite temperatures (equation (35) in FHIP 1962 [1]) for a given frequency Ω. This function includes the zero-temperature and DC limits. β is the thermodynamic beta. v and w are the variational polaron parameters that minimise the free energy, for the supplied α Frohlich coupling. rtol specifies the relative error tolerance for the QuadGK integral and corresponds to the error of the entire function. 
+    Calculate the memory function χ(Ω) of the polaron at finite temperatures (equation (35)
+    in FHIP 1962 [1]) for a given frequency Ω. This function includes the zero-temperature
+    and DC limits. β is the thermodynamic beta. v and w are the variational polaron
+    parameters that minimise the free energy, for the supplied α Frohlich coupling. rtol
+    specifies the relative error tolerance for the QuadGK integral and corresponds to the
+    error of the entire function. 
         
-    Finite temperature and finite frequency memory function, including the limits to zero frequency Ω → 0 or zero temperature β → ∞.
+    Finite temperature and finite frequency memory function, including the limits to zero
+    frequency Ω → 0 or zero temperature β → ∞.  
+
+    [1] R. P. Feynman, R. W. Hellwarth, C. K. Iddings, and P. M. Platzman, Mobility of slow
+    electrons in a polar crystal, PhysicalReview127, 1004 (1962)
+
 """
 function polaron_memory_function(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3)
 
@@ -40,13 +50,16 @@ end
 Multiple Branch Polaron Memory Function and Complex Conductivity
 ----------------------------------------------------------------------
 
-This section of the code is dedicated to calculating the polaron memory function and complex conductivity, generalised from FHIP's expression to the case where multiple phonon modes are present in the material.
+This section of the code is dedicated to calculating the polaron memory function and complex
+conductivity, generalised from FHIP's expression to the case where multiple phonon modes are
+present in the material.  
 """
 
 """
 function multi_memory_function(Ω::Float64, β::Array{Float64}(undef, 1), α::Array{Float64}(undef, 1), v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), ω::Array{Float64}(undef, 1), m_eff::Float64)
 
-    Calculate polaron complex memory function inclusive of multiple phonon branches j, each with angular frequency ω[j] (rad THz).
+    Calculate polaron complex memory function inclusive of multiple phonon branches j, each
+    with angular frequency ω[j] (rad THz).
 
      - Ω is the frequency (THz) of applied electric field.
      - β is an array of reduced thermodynamic betas, one for each phonon frequency ω[j]. 
@@ -71,7 +84,6 @@ function polaron_memory_function_thermal(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3
 end
 
 function polaron_memory_function_athermal(Ω, α, v, w; ω = 1.0, rtol = 1e-3)
-
     # FHIP1962, page 1009, eqn (36).
     S(t) = exp(1im * t) / D_j(-1im * t, v, w)^(3 / 2)
 
@@ -91,7 +103,6 @@ function polaron_memory_function_athermal(Ω, α, v, w; ω = 1.0, rtol = 1e-3)
 end
 
 function polaron_memory_function_dc(β, α, v, w; ω = 1.0, rtol = 1e-3)
-
     # FHIP1962, page 1009, eqn (36).
     S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D_j(-1im * t, β, v, w)^(3 / 2)
     
@@ -104,3 +115,4 @@ function polaron_memory_function_dc(β, α, v, w; ω = 1.0, rtol = 1e-3)
 
     return memory
 end
+
