@@ -2,73 +2,72 @@
 #  Extending the Feynman theory to multiple phonon branches
 
 """
-frohlichPartial((f, ϵ_mode); ϵ_o,ϵ_s,meff)
+    frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
 
 Calculate a (partial) dielectric electron-phonon coupling element.
-f - frequency of mode in THz
-ϵ_mode - this mode's contribution to dielectric
-ϵ_o - optical dielectric
-ϵ_s - total static dielectric contribution
+
+# Arguments
+- `f`: frequency of mode in THz.
+- `ϵ_mode`: this mode's contribution to dielectric.
+- `ϵ_o`: optical dielectric.
+-  `ϵ_s`: total static dielectric contribution.
 """
-function frohlichPartial((f, ϵ_mode); ϵ_o,ϵ_s,meff)
-    ω=f*1E12*2π
-    α=1/(4*π*ϵ_0) * ϵ_mode/(ϵ_o*ϵ_s) * (q^2/ħ) * sqrt(meff*me/(2*ω*ħ))
+function frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
+    ω = f * 1e12 * 2π
+    α = 1 / (4π * ϵ_0) * ϵ_mode / (ϵ_o * ϵ_s) * (q^2 / ħ) * sqrt(meff * me / (2 * ω * ħ))
     return α
 end
 
 # deprecated signature wrapped via multiple dispatch
-frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f,meff) = frohlichPartial((f, ϵ_mode), ϵ_o=ϵ_o,ϵ_s=ϵ_s,meff=meff)
+frohlichPartial(ϵ_o, ϵ_s, ϵ_mode, f, meff) = frohlichPartial((f, ϵ_mode), ϵ_o = ϵ_o, ϵ_s = ϵ_s, meff = meff)
 
-rows(M::Matrix) = map(x->reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1])
+rows(M::Matrix) = map(x -> reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1])
 
 """
-IRtoDielectric(IRmodes,volume)
+    IRtoDielectric(IRmodes, volume)
 
 From absolute value of IR activities of phonon modes, generate a per-mode
 contribution to the low-frequency dielectric constant.
 
-IRmodes are tuples f,S with Frequency in THz; InfraRed activity in e^2 amu^-1
+IRmodes are tuples f, S with Frequency in THz; InfraRed activity in e^2 amu^-1.
 """
 function IRtoDielectric(IRmodes,volume)
-    ϵ=0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
+    ϵ = 0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
     for r in rows(IRmodes)
-        f,S=r # frequency in THz; activity in e^2 amu^-1
-        f=f * 1E12 #* THz
-        ω=2π * f
-        S=S * q^2 / amu
+        f, S = r # frequency in THz; activity in e^2 amu^-1
+        f = f * 1E12 #* THz
+        ω = 2π * f
+        S = S * q^2 / amu
         ϵ_mode = S / ω^2 / volume
         ϵ_mode /= 3 # take isotropic average = divide by 3
-        ϵ+=ϵ_mode
-        println("Mode f= $f S= $S ϵ_mode = $(ϵ_mode/ϵ_0)")
+        ϵ += ϵ_mode
+        println("Mode f= $f S= $S ϵ_mode = $(ϵ_mode / ϵ_0)")
     end
-    println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ/ϵ_0) relative")
-    return ϵ/ϵ_0
+    println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ / ϵ_0) relative")
+    return ϵ / ϵ_0
 end
 
-
 """
-IRtoalpha(IR,volume)
+    IRtoalpha(IR, volume)
 
-Calculates contribution to dielectric constant for each polar phonon mode, and
-thereby the Frohlich alpha contribution for this mode.
+Calculates contribution to dielectric constant for each polar phonon mode, and thereby the Frohlich alpha contribution for this mode.
 """
-function IRtoalpha(IR; volume, ϵ_o,ϵ_s,meff)
-    ϵ=0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
-    α_sum=0.0
+function IRtoalpha(IR; volume, ϵ_o, ϵ_s, meff)
+    ϵ = 0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
+    α_sum = 0.0
     for r in rows(IR)
-        f,S=r # frequency in THz; activity in e^2 amu^-1
-        f=f * 1E12 #* THz
-        ω=2π * f
-        S=S * q^2 / amu
+        f, S = r # frequency in THz; activity in e^2 amu^-1
+        ω = 2π * f * 1e12
+        S = S * q^2 / amu
         ϵ_mode = S / ω^2 / volume
         ϵ_mode /= 3 # take isotropic average = divide by 3
         ϵ_mode /= ϵ_0 # reduced dielectric constant
-        ϵ+=ϵ_mode
+        ϵ += ϵ_mode
         #println("Mode f= $f S= $S ϵ_mode = $(upreferred(ϵ_mode/u"ϵ0"))")
-        α=frohlichPartial(ϵ_o,ϵ_s,ϵ_mode,f/1E12,meff)
-        α_sum+=α
-        if (α>0.1)
-            println("Notable Mode f= $f    α_partial=$α")
+        α = frohlichPartial(ϵ_o, ϵ_s, ϵ_mode, f, meff)
+        α_sum += α
+        if (α > 0.1)
+            println("Notable Mode f = $f, α_partial = $α.")
         end
     end
     println("Sum alpha: $(α_sum)")
@@ -76,39 +75,45 @@ function IRtoalpha(IR; volume, ϵ_o,ϵ_s,meff)
 end
 
 """
-DieletricFromIRmode(IRmode)
+    DieletricFromIRmode(IRmode)
 
 Calculate dielectric from an individual mode.
 
-IRmode is a tuple f,S with Frequency in THz; InfraRed activity in e^2 amu^-1
+IRmode is a tuple f, S with Frequency in THz; InfraRed activity in e^2 amu^-1.
 """
 function DielectricFromIRmode(IRmode; volume)
-    f,S=IRmode # Assumes Frequency in THz; InfraRed activity in e^2 amu^-1
-    f*=1E12 # convert to Hz from THz
-    ω=2π * f
-    S=S * q^2 / amu
+    f, S = IRmode # Assumes Frequency in THz; InfraRed activity in e^2 amu^-1
+    ω = 2π * f * 1e12
+    S = S * q^2 / amu
     ϵ_mode = S / ω^2 / volume
     ϵ_mode /= 3 # take isotropic average = divide by 3
     ϵ_mode /= ϵ_0 # reduced dielectric
     return ϵ_mode
 end
 
-function Hellwarth1999mobilityRHS( (α, (v,w) ,f) , effectivemass, T)
-    mb=effectivemass*MassElectron
-    ω=f*1E12*2π
-    βred=ħ*ω/(kB*T)
+"""
+    Hellwarth1999mobilityRHS((α, (v, w) ,f), effectivemass, T)
 
-    R=(v^2-w^2)/(w^2*v) # inline, page 300 just after Eqn (2)
-    b=R*βred/sinh(βred*v/2) # Feynman1962 version; page 1010, Eqn (47b)
-    a=sqrt( (βred/2)^2 + R*βred*coth(βred*v/2))
-    k(u,a,b,v) = (u^2+a^2-b*cos(v*u))^(-3/2)*cos(u) # integrand in (2)
-    K=quadgk(u->k(u,a,b,v),0,Inf)[1] # numerical quadrature integration of (2)
+Calculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
 
-    #Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
-    RHS=α/(3*sqrt(π)) * βred^(5/2) / sinh(βred/2) * (v^3/w^3) * K
-    μ=RHS^-1 * (q)/(ω*mb)
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+function Hellwarth1999mobilityRHS((α, (v, w) ,f), effectivemass, T)
+    mb = effectivemass * MassElectron
+    ω = f * 1e12 * 2π
+    βred = ħ * ω / (kB * T)
 
-    return 1/μ
+    R = (v^2 - w^2) / (w^2 * v) # inline, page 300 just after Eqn (2)
+    b = R * βred / sinh(βred * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
+    a = sqrt((βred / 2)^2 + R * βred * coth(βred * v / 2))
+    k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3/2) * cos(u) # integrand in (2)
+    K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
+
+    # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
+    RHS = α / (3 * sqrt(π)) * βred^(5/2) / sinh(βred / 2) * (v^3 / w^3) * K
+    μ = RHS^(-1) * q / (ω * mb)
+
+    return 1 / μ
 end
 
 """
@@ -116,18 +121,18 @@ end
 Multiple Branch Frohlich Alpha
 ----------------------------------------------------------------------
 
-Partial dielectric electron-phonon coupling parameter, decomposed into ionic dielectric
-contributions from each phonon mode of the matieral.  
+Partial dielectric electron-phonon coupling parameter, decomposed into ionic dielectric contributions from each phonon mode of the matieral.  
 """
 
 """
-ϵ_ionic_mode(phonon_mode_freq::Float64, ir_activity::Float64, volume::Float64)
+    ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume)
 
-    Calculate the ionic contribution to the dielectric function for a given phonon mode.
-    phonon_mode_freq is the frequency of the mode in THz.
+Calculate the ionic contribution to the dielectric function for a given phonon mode.
 
-     - ir_activity is the infra-red activity of the mode in e^2 amu^-1.
-     - volume is the volume of the unit cell of the material in m^3.
+# Arguments
+- `phonon_mode_freq::Float64`: is the frequency of the mode in THz.
+- `ir_activity::Float64`: is the infra-red activity of the mode in e²amu⁻¹.
+- `volume::Float64`: is the volume of the unit cell of the material in m³.
 """
 function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mode
 
@@ -142,13 +147,13 @@ function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mod
 end
 
 """
-ϵ_total(freqs_and_ir_activity::Matrix{Float64}, volume::Float64)
+    ϵ_total(freqs_and_ir_activity, volume)
 
-    Calculate the total ionic contribution to the dielectric function from all phonon modes.
+Calculate the total ionic contribution to the dielectric function from all phonon modes.
 
-     - freqs_and_ir_activity is a matrix containexing the phonon mode frequencies (in THz)
-     in the first column and the infra-red activities (in e^2 amu^-1) in the second column.
-     - volume is the volume of the unit cell of the material in m^3.
+# Arguments
+- `freqs_and_ir_activity::Matrix{Float64}`: is a matrix containeing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e²amu⁻¹) in the second column.
+- `volume::Float64`: is the volume of the unit cell of the material in m^3.
 """
 function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to dielectric
 
@@ -169,17 +174,15 @@ function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to d
 end
 
 """
-effective_freqs(freqs_and_ir_activity::Matrix{Float64}, num_var_params::Integer)
+    effective_freqs(freqs_and_ir_activity, num_var_params)
 
-    Generates a matrix of effective phonon modes with frequencies and infra-red activities
-    derived from a larger matrix using the Principal Component Analysis (PCA) method.
+Generates a matrix of effective phonon modes with frequencies and infra-red activities derived from a larger matrix using the Principal Component Analysis (PCA) method.
 
-     - freqs_and_ir_activity: is a matrix containing the phonon mode frequencies (in THz) in
-     the first column and the infra-red activities (in e^2 amu^-1) in the second column.
-     - num_var_params: is the number of effective modes required (which needs to be less
-     than the number of modes in freqs_and_ir_activity)
+# Arguments
+- `freqs_and_ir_activity::Matrix{Float64}`: is a matrix containing the phonon mode frequencies (in THz) in the first column and the infra-red activities (in e²amu⁻¹) in the second column.
+- `num_var_params::Integer`: is the number of effective modes required (which needs to be less than the number of modes in `freqs_and_ir_activity``).
 
-    *** POSSIBLY REDUNDANT ***
+*** POSSIBLY REDUNDANT ***
 """
 function effective_freqs(freqs_and_ir_activity, num_var_params) # PCA Algorithm
 
@@ -209,18 +212,19 @@ function effective_freqs(freqs_and_ir_activity, num_var_params) # PCA Algorithm
 end
 
 """
-multi_frohlichalpha(ϵ_optic::Float64, ϵ_ionic::Float64, ϵ_total::Float64, phonon_mode_freq::Float64, m_eff::Float64)
+    multi_frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff)
 
-    Calculates the partial dielectric electron-phonon coupling parameter for a given
-    longitudinal optical phonon mode. This decomposes the original Frohlich alpha coupling
-    parameter (defined for a single phonon branch) into contributions from multiple phonon
-    branches.
+Calculates the partial dielectric electron-phonon coupling parameter for a given longitudinal optical phonon mode. 
 
-     - ϵ_optic is the optical dielectric constant of the material.
-     - ϵ_ionic is the ionic dielectric contribution from the phonon mode.
-     - ϵ_total is the total ionic dielectric contribution from all phonon modes of the material.
-     - phonon_mode_freq is the frequency of the phonon mode (THz).
-     - m_eff is the band mass of the electron (in units of electron mass m_e)
+This decomposes the original Frohlich alpha coupling parameter (defined for a single phonon branch) into contributions from multiple phonon
+branches.
+
+# Arguments
+- `ϵ_optic::Float64`: is the optical dielectric constant of the material.
+- `ϵ_ionic::Float64`: is the ionic dielectric contribution from the phonon mode.
+- `ϵ_total::Float64`: is the total ionic dielectric contribution from all phonon modes of the material.
+- `phonon_mode_freq::Float64`: is the frequency of the phonon mode (THz).
+- `m_eff::Float64` is the band mass of the electron (in units of electron mass m_e).
 """
 function multi_frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) 
 
@@ -244,23 +248,22 @@ end
 Multiple Branch Polaron Free Energy
 ----------------------------------------------------------------------
 
-Calculate the polaron free energy, generalised from Osaka's expression to the case where
-multiple phonon modes are present in the material.
+Calculate the polaron free energy, generalised from Osaka's expression to the case where multiple phonon modes are present in the material.
 """
 
 """
-κ_i(i::Integer, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    κ_i(i, v, w)
 
-    Calculates the spring-constant coupling the electron to the `ith' fictitious mass that
-    approximates the exact electron-phonon interaction with a harmonic coupling to a massive
-    fictitious particle. NB: Not to be confused with the number of physical phonon branches;
-    many phonon branches could be approximated with one or two etc. fictitious masses for
-    example. The number of fictitious mass does not necessarily need to match the number of
-    phonon branches.
+Calculates the spring-constant coupling the electron to the 'ith' fictitious mass that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
 
-     - i enumerates the current fictitious mass.
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+Required for calculating the polaron free energy.
+
+Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+
+# Arguments
+- `i::Integer`: enumerates the current fictitious mass.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
 function κ_i(i, v, w)
     κ = v[i]^2 - w[i]^2
@@ -275,18 +278,18 @@ function κ_i(i, v, w)
 end
 
 """
-h_i(i::Integer, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    h_i(i, v, w)
 
-    Calculates the normal-mode (the eigenmodes) frequency of the coupling between the
-    electron and the `ith' fictitious mass that approximates the exact electron-phonon
-    interaction with a harmonic coupling to a massive fictitious particle. NB: Not to be
-    confused with the number of physical phonon branches; many phonon branches could be
-    approximated with one or two etc. fictitious masses for example. The number of
-    fictitious mass does not necessarily need to match the number of phonon branches.
+Calculates the normal-mode (the eigenmodes) frequency of the coupling between the electron and the `ith' fictitious mass that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
 
-     - i enumerates the current fictitious mass.
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+Required for calculating the polaron free energy.
+
+Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+
+# Arguments
+- `i::Integer`: enumerates the current fictitious mass.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
 function h_i(i, v, w)
     h = v[i]^2 - w[i]^2
@@ -301,19 +304,20 @@ function h_i(i, v, w)
 end
 
 """
-C_ij(i::Integer, j::Integer, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    C_ij(i, j, v, w)
 
-    Calculates the element to the coupling matrix C_ij (a generalisation of Feynman's `C`
-    coupling variational parameter) between the electron and the `ith' and `jth' fictitious
-    masses that approximates the exact electron-phonon interaction with a harmonic coupling
-    to a massive fictitious particle. NB: Not to be confused with the number of physical
-    phonon branches; many phonon branches could be approximated with one or two etc.
-    fictitious masses for example. The number of fictitious mass does not necessarily need
-    to match the number of phonon branches.
+Calculates the element to the coupling matrix C_ij (a generalisation of Feynman's `C` coupling variational parameter in Feynman 1955) between the electron and the `ith' and `jth' fictitious masses that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
 
-     - i, j enumerate the current fictitious masses under focus (also the index of the element in the coupling matrix C)
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+Required for calculating the polaron free energy.
+
+Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+
+# Arguments
+- `i::Integer, j::Integer`: enumerate the current fictitious masses under focus (also the index of the element in the coupling matrix C)
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
 function C_ij(i, j, v, w)
     C = w[i] * κ_i(i, v, w) * h_i(j, v, w) / (4 * (v[j]^2 - w[i]^2))
@@ -321,17 +325,17 @@ function C_ij(i, j, v, w)
 end
 
 """
-D_j(τ::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    D_j(τ, β, v, w)
 
-    Calculates the recoil function that approximates the exact influence (recoil effects) of
-    the phonon bath on the electron with the influence of the harmonicly coupled fictitious
-    masses on the electron. It appears in the exponent of the intermediate scattering
-    function.
+Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1962) that approximates the exact influence (recoil effects) of the phonon bath on the electron with the influence of the fictitious masses attached by springs to the electron. It appears in the exponent of the intermediate scattering function.
 
-     - τ is the imaginary time variable.
-     - β is the reduced thermodynamic temperature ħ ω_j / (kB T) associated with the `jth` phonon mode.
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+# Arguments
+- `τ::Float64`: is the imaginary time variable.
+- `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
 function D_j(τ, β, v, w)
     D = τ * (1 - τ / β)
@@ -342,16 +346,16 @@ function D_j(τ, β, v, w)
 end
 
 """
-D_j(τ::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    D_j(τ, v, w)
 
-    Calculates the recoil function that approximates the exact influence (recoil effects) of
-    the phonon bath on the electron with the influence of the harmonicly coupled fictitious
-    masses on the electron. It appears in the exponent of the intermediate scattering
-    function. This function works at zero temperature.
+Calculates the recoil function at zero-temperature.
 
-     - τ is the imaginary time variable.
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+# Arguments
+- `τ::Float64`: is the imaginary time variable.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See also ['D_j'](@ref).
 """
 function D_j(τ, v, w)
     D = τ
@@ -362,21 +366,22 @@ function D_j(τ, v, w)
 end
 
 """
-B_j(α::Float64, β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    B_j(α, β, v, w; rtol = 1e-3)
 
-    Generalisation of the B function from Equation 62c in Hellwarth and Biaggio[1]. This is
-    the expected value of the exact action <S_j> taken w.r.t trial action, given for the
-    `jth` phonon mode.
+Generalisation of the B function from Eqn. (62c) in Hellwarth et al. 1999. This is the expected value of the exact action <S_j> taken w.r.t trial action, given for the 'jth' phonon mode.
 
-     - α is the partial dielectric electron-phonon coupling parameter for the `jth` phonon
-     mode.  
-     - β is the reduced thermodynamic temperature ħ ω_j / (kB T) associated with the
-     `jth` phonon mode.  
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+Required for calculating the polaron free energy.
 
-     [1] Hellwarth, R. W., Biaggio, I. (1999). Mobility of an electron in a multimode polar
-     lattice. Physical Review B, 60(1), 299–307. https://doi.org/10.1103/PhysRevB.60.299 
+# Arguments
+- `α::Float64`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+
+See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also ['B'](@ref).
 """
 function B_j(α, β, v, w; rtol = 1e-3)
     B_integrand(τ) = (exp(-τ) + exp(τ - β)) / sqrt(abs(D_j(τ, β, v, w)))
@@ -385,18 +390,17 @@ function B_j(α, β, v, w; rtol = 1e-3)
 end
 
 """
-B_j(α::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1))
+    B_j(α, v, w; rtol = 1e-3)
 
-    Generalisation of the B function from Equation 62c in Biaggio and Hellwarth [1] to zero
-    temperature. This is the expected value of the exact action <S_j> taken w.r.t trial
-    action, given for the `jth` phonon mode.
+Calculates `B_j(α, β, v, w)` but at zero-temperature, `β = Inf`.
 
-     - α is the partial dielectric electron-phonon coupling parameter for the `jth` phonon mode.
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
+# Arguments
+- `α::Float64`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 
-     [1] Hellwarth, R. W., Biaggio, I. (1999). Mobility of an electron in a multimode polar
-     lattice. Physical Review B, 60(1), 299–307. https://doi.org/10.1103/PhysRevB.60.299 
+See also [`B_j`](@ref).
 """
 function B_j(α, v, w; rtol = 1e-3)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
@@ -405,19 +409,21 @@ function B_j(α, v, w; rtol = 1e-3)
 end
 
 """
-C_j(β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
+    C_j(β, v, w, n)
 
-    Generalisation of the C function from Equation 62e in Hellwarth and Biaggio[1]. This is
-    the expected value of the trial action <S_0> taken w.r.t trial action.
+Generalisation of the C function from Eqn. (62e) in Hellwarth et al. 1999. This is the expected value of the trial action <S_0> taken w.r.t trial action.
 
-     - β is the reduced thermodynamic temperature ħ ω_j / (kB T) associated with the `jth`
-     phonon mode.  
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - n is the total number of phonon modes.
+Required for calculating the polaron free energy.
 
-     [1] Hellwarth, R. W., Biaggio, I. (1999). Mobility of an electron in a multimode polar
-     lattice. Physical Review B, 60(1), 299–307. https://doi.org/10.1103/PhysRevB.60.299 
+# Arguments
+- `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `n::Integer`: is the number of phonon modes.
+
+See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also ['C'](@ref).
 """
 function C_j(β, v, w, n)
     s = 0.0
@@ -432,18 +438,16 @@ function C_j(β, v, w, n)
 end
 
 """
-C_j(v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
+    C_j(v, w, n)
 
-    Generalisation of the C function from Equation 62e in Biaggio and Hellwarth [] but to
-    zero temperaure. This is the expected value of the trial action <S_0> taken w.r.t trial
-    action.
+Calculates `C_j(β, v, w, n)` but at zero-temperature, `β = Inf`.
 
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - n is the total number of phonon modes.
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `n::Integer`: is the number of phonon modes.
 
-    [1] Hellwarth, R. W., Biaggio, I. (1999). Mobility of an electron in a multimode polar
-     lattice. Physical Review B, 60(1), 299–307. https://doi.org/10.1103/PhysRevB.60.299 
+See also [`C_j`](@ref).
 """
 function C_j(v, w, n)
     s = 0.0
@@ -458,18 +462,21 @@ function C_j(v, w, n)
 end
 
 """
-A_j(β::Float64, v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
+    A_j(β, v, w, n)
 
-    Generalisation of the A function from Equation 62b in Hellwarth and Biaggio[1]. This is
-    the Helmholtz free energy of the trial model.
+Generalisation of the A function from Eqn. (62b) in Hellwarth et al. 1999. This is the Helmholtz free energy of the trial model.
 
-     - β is the reduced thermodynamic temperature ħ ω_j / (kB T) associated with the `jth` phonon mode.
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - n is the total number of phonon modes.
+Required for calculating the polaron free energy.
 
-    [1] Hellwarth, R. W., Biaggio, I. (1999). Mobility of an electron in a multimode polar
-     lattice. Physical Review B, 60(1), 299–307. https://doi.org/10.1103/PhysRevB.60.299 
+# Arguments
+- `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `n::Integer`: is the number of phonon modes.
+
+See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also ['A'](@ref).
 """
 function A_j(β, v, w, n)
     s = -log(2π * β) / 2
@@ -484,17 +491,16 @@ function A_j(β, v, w, n)
 end
 
 """
-A_j(v::Array{Float64}(undef, 1), w::Array{Float64}(undef, 1), n::Float64)
+    A_j(v, w, n)
 
-    Generalisation of the A function from Equation 62b in Hellwarth Biaggio[1] but to
-    zero temperature. This is the ground-state energy of the trial model.
+Calculates `A_j(β, v, w, n)` but at zero-temperature, `β = Inf`.
 
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - n is the total number of phonon modes.
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `n::Integer`: is the number of phonon modes.
 
-    [1] Hellwarth, R. W., Biaggio, I. (1999). Mobility of an electron in a multimode polar
-     lattice. Physical Review B, 60(1), 299–307. https://doi.org/10.1103/PhysRevB.60.299 
+See also [`A_j`](@ref).
 """
 function A_j(v, w, n)
     s = sum(v .- w)
@@ -502,18 +508,25 @@ function A_j(v, w, n)
 end
 
 """
-multi_F(v, w, α, β; ω = 1.0)
+    multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
 
-    Calculates the Helmholtz free energy of the polaron for a material with multiple phonon
-    branches. This generalises Osaka's free energy expression (below Equation (22) in [1]).
+Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. 
+    
+This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn. (62a)) free energy expressions.
 
-     - v is an one-dimensional array of the v variational parameters.
-     - w is an one-dimensional array of the w variational parameters.
-     - α is the Frohlich coupling constant.
-     - β is the thermodynamic temperature.
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `α::Float64`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+- `T`: is a token used by `make_polaron()` to keep track of the temperature for printing during a calculation. Do not alter.
+- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
 
-    [1] Osaka, Y. (1959). Polaron State at a Finite Temperature. Progress of Theoretical
-    Physics, 22(3), 437–446. https://doi.org/10.1143/ptp.22.437
+See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also [`F`](@ref).
 """
 function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
 
@@ -535,18 +548,20 @@ function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = fal
 end
 
 """
-multi_F(v, w, α; ω)
+    multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
 
-    Calculates the Helmholtz free energy of the polaron for a material with multiple phonon
-    branches. This generalises Osaka's free energy expression (below Equation (22) in [1]).
+Calculates the zero-temperature ground-state energy of the polaron for a material with multiple phonon branches. Similar to `multi_F(v, w, α, β)` but with `β = Inf`. Generalises Eqn. (33) in Feynman 1955.
 
-        - α is the Frohlich alpha parameter.
-        - ω is a vector containing the phonon mode frequencies (in THz).
-        - v and w determines if the function should start with a random initial set of
-        variational parameters (= 0.0) or a given set of variational parameter values.  
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `α::Float64`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
+- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.  
 
-    [1] Osaka, Y. (1959). Polaron State at a Finite Temperature. Progress of Theoretical
-    Physics, 22(3), 437–446. https://doi.org/10.1143/ptp.22.437
+See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
+
+See also [`multi_F`](@ref).
 """
 function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
 
@@ -567,17 +582,22 @@ function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
 end
 
 """
-variation(α::Vector{Real}, β::Vector{Real}; v::Real, w::Real, ω::Vector{Real}, N::Integer)
+    var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false)
 
-    Minimises the multiple phonon mode free energy function for a set of v_p and w_p
-    variational parameters.  The variational parameters follow the inequality: v_1 > w_1
-    > v_2 > w_2 > ... > v_N > w_N.
+Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters. The variational parameters follow the inequality: v₁ > w₁ > v₂ > w₂ > ... > vₙ > wₙ. Generalises `feynmanvw` to multiple variational parameters.
 
-     - β is the thermodynamic temperature.
-     - α is the Frohlich alpha parameter.
-     - ω is a vecotr containing the phonon mode frequencies (in THz).
-     - v and w determines if the function should start with a random initial set of variational parameters (= 0.0) or a given set of variational parameter values.
-     - N specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
+# Arguments
+- `α::Vector{Float64}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `β::Vector{Float64}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+- `v::Float64, w::Float64`: determines if the function should start with a random initial set of variational parameters (v, w = 0.0) or a given set of variational parameter values.
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
+- `N::Integer`: specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+- `show_trace::Bool`: shows the optimsation trace from `Optim.jl`.
+- `T`: is a token used by `make_polaron()` to keep track of the temperature for printing during a calculation. Do not alter.
+- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
+
+See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
 function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false) # N number of v and w params
 
@@ -634,6 +654,22 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
     return hcat(Δv .+ w, w)
 end
 
+"""
+    var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false)
+
+Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters at zero-temperature. Similar to `var_params(α, β)` but with `β = Inf`.
+
+# Arguments
+- `α::Vector{Float64}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `v::Float64, w::Float64`: determines if the function should start with a random initial set of variational parameters (v, w = 0.0) or a given set of variational parameter values.
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
+- `N::Integer`: specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+- `show_trace::Bool`: shows the optimsation trace from `Optim.jl`.
+- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
+
+See also [`multi_F`](@ref), [`feynmanvw`](@ref), [`var_param`](@ref).
+"""
 function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false) # N number of v and w params
  
     if N != length(v) != length(w)
