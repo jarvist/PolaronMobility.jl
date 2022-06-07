@@ -435,7 +435,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
 end
 
 """
-make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads = false)
+    make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads = false)
 
 Same as above but from a model system with specified alpha values rather than from material properties. Here we only have one phonon mode with a normalised frequency `ω = 1.0`.
 """
@@ -568,7 +568,7 @@ function save_polaron(polaron::NewPolaron, prefix)
 end
 
 """
-load_polaron(p::NewPolaron, prefix)
+    load_polaron(p::NewPolaron, prefix)
 
 Loads data from file "polaron_file_path" into a NewPolaron type.
 """
