@@ -162,8 +162,7 @@ See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 
 # Examples
 ```jldoctest
-juila> v, w = feynmanvw(2.39, 0.36, v = 3.0, w = 1.0)
-(19.86, 16.96)
+v, w = feynmanvw(2.39, 0.36, v = 3.0, w = 1.0)
 ```
 """
 function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
