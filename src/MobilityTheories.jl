@@ -1,25 +1,45 @@
 # MobilityTheories.jl
 
 """
-polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
+    polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
 
-    Solves the Feynman polaron problem variationally with finite temperature
-    Osaka energies.  From the resulting v, and w parameters, calculates polaron
-    structure (wave function size, etc.).  Uses FHIP, Kadanoff (Boltzmann
-    relaxation time) and Hellwarth direct contour integration to predict
-    a temperature-dependent mobility for the material system.
-    Input is a temperature range (e.g. 10:50:1000),
-    reduced dielectric constants (e.g. 5, 20),
-    characteristic dielectric phonon frequency (e.g. 2.25E12) - units Hertz
-    bare-band effective-mass (e.g. 012) - units electron mass.
+Solves the Feynman polaron problem variationally with finite temperature Osaka energies. From the resulting v, and w parameters, calculates polaron structure (wave function size, etc.).  Uses FHIP, Kadanoff (Boltzmann relaxation time) and Hellwarth direct contour integration to predict a temperature-dependent mobility for the material system.
 
-    Returns a structure of type Polaron, containing arrays of useful
-    information.  Also prints a lot of information to the standard out - which
-    may be more useful if you're just inquiring as to a particular data point,
-    rather than plotting a temperature-dependent parameter.
+# Arguments  
+- `Trange::range`: temperature range.
+- `ε_Inf`: reduced optical dielectric constant.
+- `ε_S`: reduced static dielectric constant.
+- `freq`: characteristic dielectric phonon frequency (THz).
+- `effectivemass`: bare-band effective mass (mₑ).
 
-    As an example, to calculate the electron polaron in MAPI at 300 K:
-    polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
+Returns a structure of type `Polaron`, containing arrays of useful
+information.  Also prints a lot of information to the standard out - which
+may be more useful if you're just inquiring as to a particular data point,
+rather than plotting a temperature-dependent parameter.
+
+As an example, to calculate the electron polaron in MAPI at 300 K:
+# Examples
+```jldoctest
+julia> polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
+Polaron mobility for system ε_Inf=4.5, ε_S=24.1, freq=2.25e12, 
+    effectivemass=0.12; with Trange 300 ...
+Polaron mobility input parameters: ε_Inf=4.500000 ε_S=24.100000 freq=2.25e+12 α=2.393991 
+Derived params in SI: ω =1.41372e+13 mb=1.09313e-31 
+T: 300.000000 β: 2.41e+20 βred: 0.36 ħω  = 9.31 meV		Converged? : true
+Polaraon Parameters:  v= 19.8635  w= 16.9621  ||   M=0.371360  k=106.845717	
+Polaron frequency (SI) v= 4.5e+13 Hz  w= 3.8e+13 Hz
+Polaron size (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )
+Schultz1959(2.4): rf= 0.528075 (int units) = 2.68001e-09 m [SI]
+Polaron Free Energy: A= -6.448918 B= 7.355627 C= 2.912080 F= -3.818788	 = -35.534786 meV
+Polaron Mobility theories:
+μ(FHIP)= 0.082053 m^2/Vs 	= 820.53 cm^2/Vs
+μ(Kadanoff,via Devreese2016)= 0.019690 m^2/Vs 	= 196.90 cm^2/Vs
+Eqm. Phonon. pop. Nbar: 2.308150 
+Gamma0 = 5.42813e+13 rad/s = 8.63914e+12 /s  
+Tau=1/Gamma0 = 1.15752e-13 = 0.115752 ps
+Energy Loss = 1.28798e-08 J/s = 80.3893 meV/ps
+μ(Hellwarth1999)= 0.013642 m^2/Vs 	= 136.42 cm^2/Vs
+```
 """
 function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
     println("\n\nPolaron mobility for system ε_Inf=$ε_Inf, ε_S=$ε_S, freq=$freq,
@@ -261,57 +281,76 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
 end
 
 """
-make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq = 0.0, volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-3, verbose = true)
+    make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq = 0.0, volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-3, verbose = false, threads = false)
 
-    Solves the Feynman polaron problem variationally with finite temperature
-    Osaka energies. From the resulting v and w parameters, calculates polaron
-    structure (wave function size, etc.).  Uses FHIP to predict
-    a temperature- and frequency-dependent mobility, complex conductivity and impedance for the material system.
-    Can evaluate polaron properties for materials with multiple phonon branches using infrared activities and phonon branch frequencies.
+Solves the Feynman polaron problem variationally with finite temperature
+Osaka energies. From the resulting v and w parameters, calculates polaron
+structure (wave function size, etc.). 
 
-    Inputs are:
-    • temperature range (e.g. 10:50:1000),
-    • reduced dielectric constants (e.g. 5, 20),
-    • characteristic dielectric phonon frequency (e.g. 2.25) - units TeraHertz
-    • bare-band effective-mass (e.g. 0.12) - units electron mass
-    • electric field frequency range - units TeraHertz
-    • unit cell volume for the material - units m³
-    • infrared activities - units ?
-    • phonon mode frequencies - units TeraHertz
-    • number of variational parameters to minimise the polaron energy
-    • relative tolerance for the accuracy of any quadrature integrations
+Uses FHIP to predict a temperature- and frequency-dependent mobility, complex conductivity and impedance for the material system.
 
-    Returns a structure of type NewPolaron, containing arrays of useful
-    information.  Also prints a lot of information to the standard out - which
-    may be more useful if you're just inquiring as to a particular data point,
-    rather than plotting a temperature-dependent parameter.
+Can evaluate polaron properties for materials with multiple phonon branches using infrared activities and phonon branch frequencies.
 
-    As an example, to calculate the electron polaron in MAPI, at temperatures 0:100:400 K and electric field frequencies 0.0:0.1:5.0 THz, and inclusive of 15 optical phonon modes:
-    make_polaron(
-        4.5, 
-        24.1, 
-        [4.016471586720514, 3.887605410774121, 3.5313112232401513, 2.755392921480459, 2.4380741812443247, 2.2490917637719408, 2.079632190634424, 2.0336707697261187, 1.5673011873879714, 1.0188379384951798, 1.0022960504442775, 0.9970130778462072, 0.9201781906386209, 0.800604081794174, 0.5738689505255512], 
-        0.12; 
-        temp = 0.0:100.0:400.0, 
-        efield_freq = 0.0:0.1:5.0, 
-        volume = (6.29e-10)^3, 
-        ir_activity = [0.08168931020200264, 0.006311654262282101, 0.05353548710183397, 0.021303020776321225, 0.23162784335484837, 0.2622203718355982, 0.23382298607799906, 0.0623239656843172, 0.0367465760261409, 0.0126328938653956, 0.006817361620021601, 0.0103757951973341, 0.01095811116040592, 0.0016830270365341532, 0.00646428491253749], 
-        N_params = 1)
+# Arguments
+- `ϵ_optic`: reduced optical dielectric constant.
+- `ϵ_static`: reduced static dielectric constant.
+- `phonon_freq`: vector of characteristic dielectric phonon frequencies (THz).
+- `m_eff`: bare-band effective-mass (mₑ).
+- `Trange`: temperature value or range.
+- `Ω`: electric field frequency value or range (THz).
+- `volume`: unit cell volume for the material (m³). `nothing` for one phonon mode.
+- `ir_activity`: vector of infrared activities. `nothing` for one phonon  mode.
+- `N_params`: number of variational parameters to minimise the polaron energy.
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+- 'verbose': `true` to print progress. `false` to print nothing.
+- 'threads'; `true` activates multithreading through use of @tullio macro. Tullio utilises einsum notation.
+
+Returns a structure of type NewPolaron, containing arrays of useful
+information.  Also prints a lot of information to the standard out - which
+may be more useful if you're just inquiring as to a particular data point,
+rather than plotting a temperature-dependent parameter.
+
+As an example, to calculate the electron polaron in MAPI, at temperatures 0:100:400 K and electric field frequencies 0.0:0.1:5.0 THz, and inclusive of 15 optical phonon modes:
+
+# Examples
+```jldoctest
+julia> make_polaron(
+    4.5, 
+    24.1, 
+    [4.016471586720514, 3.887605410774121, 3.5313112232401513, 2.755392921480459, 2.4380741812443247, 2.2490917637719408, 2.079632190634424, 2.0336707697261187, 1.5673011873879714, 1.0188379384951798, 1.0022960504442775, 0.9970130778462072, 0.9201781906386209, 0.800604081794174, 0.5738689505255512], 
+    0.12; 
+    temp = 0.0:100.0:400.0, 
+    efield_freq = 0.0:0.1:5.0, 
+    volume = (6.29e-10)^3, 
+    ir_activity = [0.08168931020200264, 0.006311654262282101, 0.05353548710183397, 0.021303020776321225, 0.23162784335484837, 0.2622203718355982, 0.23382298607799906, 0.0623239656843172, 0.0367465760261409, 0.0126328938653956, 0.006817361620021601, 0.0103757951973341, 0.01095811116040592, 0.0016830270365341532, 0.00646428491253749], 
+    N_params = 1)
+```
+    
 """
 function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volume = nothing, ir_activity = nothing, rtol = 1e-4, N_params = 1, verbose = false, threads = false)
    
+    # Number of phonon modes.
     N_modes = length(phonon_freq)
 
     if verbose
         println("Calculating Fröhlich alpha...")
     end
 
+    # Convert THz phonon frequencies to 2π THz.
     ω = 2π .* phonon_freq
     
-    if N_modes == 1
+    if N_modes == 1 
+        # One phonon mode.
+
+        # Calculate Frohlich alpha coupling parameters.
         α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
-    else
+    else 
+        # Multiple phonon modes
+
+        # Calculate contribution to the ionic delectric constant for each phonon mode.
         ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
+
+        # Calculate contribution to Frohlich alpha for each phonon mode.
         α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
     end
 
@@ -321,7 +360,9 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         println("Calculating thermodynamic betas...")
     end
 
-    @tullio betas[m, i] := Trange[i] == 0.0 ? Inf64 : ħ * ω[m] / (kB * Trange[i]) * 1e12 (i in eachindex(Trange))
+    # Calculate reduced thermodynamic betas for each phonon mode.
+    # If temperature is zero, return Inf.
+    @tullio threads = threads betas[m, i] := Trange[i] == 0.0 ? Inf64 : ħ * ω[m] / (kB * Trange[i]) * 1e12 (i in eachindex(Trange))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(betas, digits = 3))
@@ -331,10 +372,12 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         global processes = length(Trange)
     end
 
-    @tullio params[i] := Trange[i] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, N = N_params, verbose = verbose) : var_params(α, betas[:, i]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = Trange[i], N = N_params, verbose = verbose) (i in eachindex(Trange))
+    # Calculate variational parameters for each temperature from multiple phonon frequencies.
+    @tullio threads = threads params[i] := Trange[i] == 0.0 ? var_params(α; v = 5.6, w = 3.4, ω = ω, rtol = rtol, N = N_params, verbose = verbose) : var_params(α, betas[:, i]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = Trange[i], N = N_params, verbose = verbose) (i in eachindex(Trange))
 
-    @tullio v_params[i] := params[i][1] (i in eachindex(Trange))
-    @tullio w_params[i] := params[i][2] (i in eachindex(Trange))
+    # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
+    @tullio threads = threads v_params[i] := params[i][1] (i in eachindex(Trange))
+    @tullio threads = threads w_params[i] := params[i][2] (i in eachindex(Trange))
     
     if verbose
         println("\nv: ")
@@ -346,7 +389,8 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         println("Calculating spring constants...")
     end
 
-    @tullio spring_constants[i] := v_params[i]^2 - w_params[i]^2
+    # Calculate fictitious spring constants for each temperature.
+    @tullio threads = threads spring_constants[i] := v_params[i]^2 - w_params[i]^2
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(spring_constants, digits = 3))
@@ -354,7 +398,8 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         println("Calculating fictitious masses...")
     end
 
-    @tullio masses[i] := spring_constants[i] / w_params[i]^2
+    # Calculate fictitious masses for each temperature.
+    @tullio threads = threads masses[i] := spring_constants[i] / w_params[i]^2
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(masses, digits = 3))
@@ -364,7 +409,8 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         global processes = length(Trange)
     end
 
-    @tullio energies[i] := Trange[i] == 0.0 ? multi_F(v_params[i], w_params[i], α; ω = ω, rtol = rtol, verbose = verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[i], w_params[i], α, betas[:, i]; ω = ω, rtol = rtol, T = Trange[i],  verbose = verbose) * 1000 * ħ / eV * 1e12 (i in eachindex(Trange))
+    # Calculate ground-state free energies for each temperature.
+    @tullio threads = threads energies[i] := Trange[i] == 0.0 ? multi_F(v_params[i], w_params[i], α; ω = ω, rtol = rtol, verbose = verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[i], w_params[i], α, betas[:, i]; ω = ω, rtol = rtol, T = Trange[i],  verbose = verbose) * 1000 * ħ / eV * 1e12 (i in eachindex(Trange))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits = 3))
@@ -374,7 +420,8 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         global processes = length(Trange) * length(Ω)
     end
 
-    @tullio impedances[f, i] := Ω[f] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, i], α, v_params[i], w_params[i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3 (i in eachindex(Trange), f in eachindex(Ω))
+    # Calculate complex impedances for each frequency and temperature. Returns a matrix.
+    @tullio threads = threads impedances[f, i] := Ω[f] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, i], α, v_params[i], w_params[i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3 (i in eachindex(Trange), f in eachindex(Ω))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
@@ -382,7 +429,8 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         println("Calculating complex conductivities...")
     end
 
-    @tullio conductivities[f, i] := Ω[f] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, i] (i in eachindex(Trange), f in eachindex(Ω))
+    # Calculate complex conductivities for each frequency and temperature. Returns a matrix.
+    @tullio threads = threads conductivities[f, i] := Ω[f] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, i] (i in eachindex(Trange), f in eachindex(Ω))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
@@ -392,7 +440,8 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         global processes = length(Trange)
     end
 
-    @tullio mobilities[i] := Trange[i] == 0.0 ? Inf64 : polaron_mobility(betas[:, i], α, v_params[i], w_params[i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) * eV / (1e12 * me * m_eff) * 100^2 (i in eachindex(Trange))
+    # Calculates the dc mobility for each temperature.
+    @tullio threads = threads mobilities[i] := Trange[i] == 0.0 ? Inf64 : polaron_mobility(betas[:, i], α, v_params[i], w_params[i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) * eV / (1e12 * me * m_eff) * 100^2 (i in eachindex(Trange))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
@@ -404,46 +453,34 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
 end
 
 """
-make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq = 0.0, volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-3, verbose = true)
+make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads = false)
 
-    Same as above but from a model system with a specified alpha value rather than from material properties.
-
-    Inputs are:
-    • temperature range (e.g. 10:50:1000),
-    • Frohlich alpha parameter,
-    • electric field frequency range - units TeraHertz
-    • phonon mode frequency weight (choose either 1 or 2π)
-    • number of variational parameters to minimise the polaron energy
-    • relative tolerance for the accuracy of any quadrature integrations
-
-    Returns a structure of type NewPolaron, containing arrays of useful
-    information.  Also prints a lot of information to the standard out - which
-    may be more useful if you're just inquiring as to a particular data point,
-    rather than plotting a temperature-dependent parameter.
-
-    As an example, to calculate the polaron of a α = 6 system, at temperatures 0:100:400 K and electric field frequencies 0.0:0.1:5.0 THz:
-    make_polaron(6.0; temp = 0.0:100.0:400.0, efield_freq = 0.0:0.1:5.0)
+Same as above but from a model system with specified alpha values rather than from material properties. Here we only have one phonon mode with a normalised frequency `ω = 1.0`.
 """
-function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads = false)
+function make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads = false)
 
     if verbose
         println("\nCalculating thermodynamic betas...")
     end
 
-    @tullio threads = threads betas[t] := T[t] == 0.0 ? Inf64 : ω / T[t]
+    # Calculate reduced thermodynamic betas for each phonon mode.
+    # If temperature is zero, return Inf.
+    @tullio threads = threads betas[i] := Trange[i] == 0.0 ? Inf64 : ω / Trange[i]
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(betas, digits = 3))
         print("\n\n")
         println("Calculating variational parameters...")
         global count = 0
-        global processes = length(T) * length(α)
+        global processes = length(Trange) * length(α)
     end
 
-    @time @tullio threads = threads params[a, t] := T[t] == 0.0 ? var_params(α[a]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α[a], betas[t]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T), a in eachindex(α))
+    # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
+    @tullio threads = threads params[j, i] := Trange[i] == 0.0 ? var_params(α[j]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, verbose = verbose) : var_params(α[j], betas[i]; v = 5.6, w = 3.4, ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) (i in eachindex(Trange), j in eachindex(α))
 
-    @tullio threads = threads v_params[a, t] := params[a, t][1]
-    @tullio threads = threads w_params[a, t] := params[a, t][2]
+    # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
+    @tullio threads = threads v_params[j, i] := params[j, i][1]
+    @tullio threads = threads w_params[j, i] := params[j, i][2]
     
     if verbose
         println("\nv: ")
@@ -455,7 +492,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("Calculating spring constants...")
     end
 
-    @time @tullio threads = threads spring_constants[a, t] := v_params[a, t]^2 - w_params[a, t]^2
+    # Calculate fictitious spring constants for each alpha parameter and temperature. Returns a Matrix.
+    @tullio threads = threads spring_constants[j, i] := v_params[j, i]^2 - w_params[j, i]^2
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(spring_constants, digits = 3))
@@ -463,7 +501,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("Calculating fictitious masses...")
     end
 
-    @time @tullio threads = threads masses[a, t] := spring_constants[a, t] / w_params[a, t]^2
+    # Calculate fictitious masses for each alpha parameter and temperature. Returns a Matrix.
+    @tullio threads = threads masses[j, i] := spring_constants[j, i] / w_params[j, i]^2
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(masses, digits = 3))
@@ -473,7 +512,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         global processes = length(T) * length(α)
     end
 
-    @time @tullio threads = threads energies[a, t] := T[t] == 0.0 ? multi_F(v_params[a, t], w_params[a, t], α[a]; ω = ω, rtol = rtol, verbose = verbose) : multi_F(v_params[a, t], w_params[a, t], α[a], betas[t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), a in eachindex(α))
+    # Calculate ground-state free energies for each alpha parameter and temperature. Returns a Matrix.
+    @tullio threads = threads energies[j, i] := Trange[i] == 0.0 ? multi_F(v_params[j, i], w_params[j, i], α[j]; ω = ω, rtol = rtol, verbose = verbose) : multi_F(v_params[j, i], w_params[j, i], α[j], betas[i]; ω = ω, rtol = rtol, T = Trange[i],  verbose = verbose) (i in eachindex(Trange), j in eachindex(α))
     
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits = 3))
@@ -483,7 +523,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         global processes = length(T) * length(Ω) * length(α)
     end
 
-    @time @tullio threads = threads impedances[a, f, t] := Ω[f] == T[t] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], [betas[t]], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t],  verbose = verbose) (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
+    # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
+    @tullio threads = threads impedances[k, j, i] := Ω[j] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[j], [betas[i]], α[k], v_params[k, i], w_params[k, i]; ω = ω, rtol = rtol, T = Trange[i],  verbose = verbose) (i in eachindex(Trange), j in eachindex(Ω), k in eachindex(α))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(impedances, digits = 3))
@@ -491,7 +532,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         println("Calculating complex conductivities...")
     end
 
-    @time @tullio threads = threads conductivities[a, f, t] := Ω[f] == T[t] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[a, f, t] (t in eachindex(T), f in eachindex(Ω), a in eachindex(α))
+    # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
+    @tullio threads = threads conductivities[k, j, i] := Ω[j] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[k, j, i] (i in eachindex(Trange), j in eachindex(Ω), k in eachindex(α))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(conductivities, digits = 3))
@@ -501,7 +543,8 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
         global processes = length(T) * length(α)
     end
 
-    @time @tullio threads = threads mobilities[a, t] := T[t] == 0.0 ? Inf64 : polaron_mobility(betas[t], α[a], v_params[a, t], w_params[a, t]; ω = ω, rtol = rtol, T = T[t], verbose = verbose) (t in eachindex(T), a in eachindex(α))
+    # Calculates the dc mobility for each alpha parameter and each temperature.
+    @tullio threads = threads mobilities[j, i] := Trange[i] == 0.0 ? Inf64 : polaron_mobility(betas[i], α[j], v_params[j, i], w_params[j, i]; ω = ω, rtol = rtol, T = Trange[i], verbose = verbose) (i in eachindex(Trange), j in eachindex(α))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(mobilities, digits = 3))
@@ -509,11 +552,11 @@ function make_polaron(α, T, Ω; ω = 1.0, rtol = 1e-4, verbose = false, threads
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, T, betas, ω, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
+    return NewPolaron(α, Trange, betas, ω, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
 end
 
 """
-save_polaron(p::NewPolaron, prefix)
+    save_polaron(p::NewPolaron, prefix)
 
 Saves data from 'polaron' into file "prefix".
 This is a .jdl file for storing the polaron data whilst preserving types. Allows for saving multidimensional arrays that sometimes arise in the polaron data.
