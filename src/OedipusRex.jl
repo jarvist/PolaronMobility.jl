@@ -12,18 +12,19 @@ Polaron absorption coefficient Γ(Ω).
 """
 
 """
-optical_absorption(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64; rtol = 1e-3)
+    optical_absorption(Ω, β, α, v, w; rtol = 1e-3)
 
-    Calculate the absorption coefficient Γ(Ω) for the polaron at at finite temperatures
-    (equation (11a) in [1]) for a given frequency Ω.  β is thermodynamic beta. v and w are
-    the variational Polaron parameters that minimise the free energy, for the supplied
-    α Frohlich coupling. rtol specifies the relative error tolerance for the QuadGK integral
-    in the memory function.  
+Calculate the absorption coefficient Γ(Ω) for the polaron at at finite temperatures (Eqn. (11a) in DSG 1972) for a given frequency Ω.  
 
-    [1] Devreese, J., De Sitter, J., & Goovaerts, M. (1972). Optical Absorption of Polarons
-    in the Feynman-Hellwarth-Iddings-Platzman Approximation. Physical Review B, 5(6),
-    2367–2381. doi:10.1103/physrevb.5.2367 
+# Arguments
+- `Ω::Float64`: is the frequency (2π THz) of applied electric field.
+- `β::Float64`: is the reduced thermodynamic betas. 
+- `α::Float64`: is the Frohlich alpha coupling parameter.
+- `v::Float64`: is the 'v' variational parameter.
+- `w::Float64`: is the 'w' variational parameter. 
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 
+See DSG 1972: https://doi.org/10.1103/PhysRevB.5.2367.
 """
 function optical_absorption(Ω, β, α, v, w; rtol = 1e-3)
     real(complex_conductivity(Ω, β, α, v, w; rtol = rtol))
@@ -36,13 +37,22 @@ The Complex Impedence and Conductivity of the Polaron.
 """
 
 """
-polaron_complex_impedence(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64)
+    polaron_complex_impedence(Ω, β, α, v, w; rtol = 1e-3, T = nothing, verbose = false)
 
-    Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for a given
-    frequency Ω (equation (41) in FHIP 1962 [1]). β is the thermodynamic beta. v and w are
-    the variational polaron parameters that minimise the free energy, for the supplied
-    α Frohlich coupling. rtol specifies the relative error tolerance for the QuadGK
-    integral in the memory function.  
+Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for a given frequency Ω (Eqn. (41) in FHIP 1962). 
+
+# Arguments
+- `Ω::Float64`: is the frequency (2π THz) of applied electric field.
+- `β::Float64`: is the reduced thermodynamic betas. 
+- `α::Float64`: is the Frohlich alpha coupling parameter.
+- `v::Float64`: is the 'v' variational parameter.
+- `w::Float64`: is the 'w' variational parameter. 
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+- `T`: is a token used by `make_polaron()` to keep track of the temperature for printing during a calculation. Do not alter.
+- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
+
+See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
+
 """
 function polaron_complex_impedence(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
 	impedance = -im * Ω * 2π + im * polaron_memory_function(Ω, β, α, v, w; ω = ω, rtol = rtol)
@@ -58,25 +68,41 @@ function polaron_complex_impedence(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3, T = 
 end
 
 """
-polaron_complex_conductivity(Ω::Float64, β::Float64, α::Float64, v::Float64, w::Float64)
+    polaron_complex_conductivity(Ω, β, α, v, w; rtol = 1e-3)
 
-    Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures for
-    a given frequency Ω (equal to 1 / Z(Ω) with Z the complex impedence). β is the
-    thermodynamic beta. v and w are the variational polaron parameters that minimise the
-    free energy, for the supplied α Frohlich coupling. rtol specifies the relative error
-    tolerance for the QuadGK integral in the memory function.  
+Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures for a given frequency Ω (equal to 1 / Z(Ω) with Z the complex impedence). 
+
+# Arguments
+- `Ω::Float64`: is the frequency (2π THz) of applied electric field.
+- `β::Float64`: is the reduced thermodynamic betas. 
+- `α::Float64`: is the Frohlich alpha coupling parameter.
+- `v::Float64`: is the 'v' variational parameter.
+- `w::Float64`: is the 'w' variational parameter. 
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+
+See also [`polaron_complex_impedence`](@ref)
 """
-function polaron_complex_conductivity(Ω, β, α, v, w; ω = 0.0, rtol = 1e-3)
+function polaron_complex_conductivity(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3)
 	return 1 / polaron_complex_impedence(Ω, β, α, v, w; ω = ω, rtol = rtol)
 end
 
 """
-polaron_mobility(β::Float64, α::Float64, v::Float64, w::Float64; rtol = 1e-3)
+    polaron_mobility(β, α, v, w; rtol = 1e-3, T = nothing, verbose = false)
 
-    Calculate the dc mobility μ of the polaron at finite temperatues (equation (11.5) in
-    [3]) for a given frequency Ω. β is the thermodynamic beta. v and w are the variational
-    polaron parameters that minimise the free energy, for the supplied α Frohlich coupling.
-    rtol specifies the relative error for the integral to reach.  
+Calculate the dc mobility μ of the polaron at finite temperatues (Eqn. (11.5) in F. Peeters and J. Devreese 1984) for a given frequency Ω.
+
+# Arguments
+- `β::Float64`: is the reduced thermodynamic betas. 
+- `α::Float64`: is the Frohlich alpha coupling parameter.
+- `v::Float64`: is the 'v' variational parameter.
+- `w::Float64`: is the 'w' variational parameter. 
+- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
+- `T`: is a token used by `make_polaron()` to keep track of the temperature for printing during a calculation. Do not alter.
+- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
+
+See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312-4.
+
+See also [`polaron_complex_conductivity`](@ref)
 """
 function polaron_mobility(β, α, v, w; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
     
