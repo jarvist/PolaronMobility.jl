@@ -1,55 +1,90 @@
 # types.jl
 
-# Physical constants
-const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s
-const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2
-const me=MassElectron = 9.10938188e-31;                          # kg
-const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
-const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
-const c = 3e8
+# Physical Constants
 
+"Planck's constant, (kgm²s⁻¹)."
+const hbar = const ħ = 1.054571817e-34
+"Electron charge, (kgm²s⁻²)."
+const eV = const q = const ElectronVolt = 1.602176634e-19
+"Electron mass, (kg)."
+const me = MassElectron = 9.1093837015e-31
+"Boltzmann's constant, (kgm²K⁻¹)."
+const Boltzmann = const kB = 1.380649e-23
+"Permittivity of free space, (C²N⁻¹m⁻²)."
+const ε_0 = 8.85418682e-12
+"Speed of light, (ms⁻¹)."
+const c = 299792458
 
-# Structure to store data of polaron solution + other parameters, for each temperature
+# Structures
+
+"Polaron. Structure to store data of polaron solution and other parameters, for each temperature or frequency."
 struct Polaron
+    "T, temperature (K)."
     T
-    # Mobilities
-    Kμ; Hμ; FHIPμ
-    # Spring constant and renormalised (phonon-drag) mass
-    k; M
-    # Osaka free energy components (A,B,C) and total (F). See Hellwarth et al. 1999 PRB Part IV
+    "Kμ, Kadanoff mobility (cm²V⁻¹s⁻¹)."
+    Kμ
+    "Hμ, Hellwarth mobility (cm²V⁻¹s⁻¹)."
+    Hμ
+    "FHIPμ, FHIP mobility (cm²V⁻¹s⁻¹)."
+    FHIPμ
+    "k, spring constant."
+    k
+    "M, renormalised (phonon-drag) mass (mₑ)."
+    M
+    "Osaka free energy components (A,B,C) and total (F) (unitless). See Hellwarth et al. 1999 PRB Part IV."
     A; B; C; F
-    # Relaxation time from Kadanoff Boltzmann transport equation
+    "Tau, relaxation time from Kadanoff Boltzmann transport equation (s)."
     Tau
-    # Raw variational parameters
+    "v and w, raw variational parameters (unitless)."
     v; w
-    # Reduced thermodynamic beta
+    "βred, reduced thermodynamic beta (unitless)."
     βred
-    # Feynman polaron radius (Schultz), in SI units. Then also the small-alpha asymptotic approx
-    rfsi; rfsmallalpha
+    "rfsi, Feynman polaron radius (Schultz) (m)."
+    rfsi
+    "rfsmallalpha, small-alpha asymptotic approximation (unitless)."
+    rfsmallalpha
+
     # Setup of simulation. These parameters are sent to the function.
-    # Alpha = Frohlich alpha
+
+    "α, Fröhlich alpha coupling parameter (unitless)."
     α
-    # Band effective mass
+    "mb, Band effective mass (mₑ)."
     mb
-    # Effective dielectric frequency
+    "ω, effective dielectric frequency (2π THz)."
     ω
 end
-Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]) # structure initialisation
 
+# structure initialisation
+Polaron()=Polaron([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]) 
+
+"NewPolaron. Structure to store data of polaron solution and other parameters, for each temperature or frequency."
 struct NewPolaron
-    α      # Frohlich alpha (unitless)
-    T      # Temperature (K)
-    β      # Reduced Thermodynamic beta (unitless)
-    ω      # Phonon frequency (rad THz)
-    v      # Variational parameter (s^-1)
-    w      # Variational parameter (s^-1)
-    κ      # Fictitious spring constant (multiples of m_e) (kg / s^2)
-    M      # Fictitious particle (multiples of m_e) (kg)
-    F      # Free energy (meV)
-    Ω      # Electric field frequencies (multiples of phonon frequency ω) (s^-1)
-    Z      # Complex impedence (V/A)
-    σ      # Complex conductivity (A/V)
-    μ      # Mobility (cm^2/Vs)
+    "α, Fröhlich alpha coupling parameter (unitless)"
+    α
+    "T, temperature (K)."
+    T
+    "β, reduced Thermodynamic beta (unitless)."
+    β
+    "ω, phonon frequency (2π THz)."
+    ω
+    "v, variational parameters (unitless)."
+    v
+    "w, variational parameters (unitless)."
+    w
+    "κ, fictitious spring constant (multiples of mₑ) (kgs⁻²)."
+    κ
+    "M, fictitious particle (multiples of mₑ) (kg)."
+    M
+    "F, free energy (meV)."
+    F
+    "Ω, electric field frequencies (multiples of phonon frequency ω) (2π THz)."
+    Ω
+    "Z, complex impedence (V/A)."
+    Z
+    "σ, complex conductivity (A/V)."
+    σ
+    "μ, FHIP mobility (cm²V⁻¹s⁻¹)."
+    μ
 end
 
 # Broadcast Polaron data.
