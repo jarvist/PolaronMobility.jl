@@ -20,7 +20,7 @@ rather than plotting a temperature-dependent parameter.
 As an example, to calculate the electron polaron in MAPI at 300 K:
 # Examples
 ```jldoctest
-polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
+polaronmobility(300, 4.5, 24.1, 2.25, 0.12)
 ```
 """
 function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
