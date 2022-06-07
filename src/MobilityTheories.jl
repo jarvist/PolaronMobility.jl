@@ -20,25 +20,7 @@ rather than plotting a temperature-dependent parameter.
 As an example, to calculate the electron polaron in MAPI at 300 K:
 # Examples
 ```jldoctest
-julia> polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
-Polaron mobility for system ε_Inf=4.5, ε_S=24.1, freq=2.25e12, 
-    effectivemass=0.12; with Trange 300 ...
-Polaron mobility input parameters: ε_Inf=4.500000 ε_S=24.100000 freq=2.25e+12 α=2.393991 
-Derived params in SI: ω =1.41372e+13 mb=1.09313e-31 
-T: 300.000000 β: 2.41e+20 βred: 0.36 ħω  = 9.31 meV		Converged? : true
-Polaraon Parameters:  v= 19.8635  w= 16.9621  ||   M=0.371360  k=106.845717	
-Polaron frequency (SI) v= 4.5e+13 Hz  w= 3.8e+13 Hz
-Polaron size (rf), following Schultz1959. (s.d. of Gaussian polaron ψ )
-Schultz1959(2.4): rf= 0.528075 (int units) = 2.68001e-09 m [SI]
-Polaron Free Energy: A= -6.448918 B= 7.355627 C= 2.912080 F= -3.818788	 = -35.534786 meV
-Polaron Mobility theories:
-μ(FHIP)= 0.082053 m^2/Vs 	= 820.53 cm^2/Vs
-μ(Kadanoff,via Devreese2016)= 0.019690 m^2/Vs 	= 196.90 cm^2/Vs
-Eqm. Phonon. pop. Nbar: 2.308150 
-Gamma0 = 5.42813e+13 rad/s = 8.63914e+12 /s  
-Tau=1/Gamma0 = 1.15752e-13 = 0.115752 ps
-Energy Loss = 1.28798e-08 J/s = 80.3893 meV/ps
-μ(Hellwarth1999)= 0.013642 m^2/Vs 	= 136.42 cm^2/Vs
+polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
 ```
 """
 function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)
