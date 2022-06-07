@@ -46,7 +46,7 @@ The call signature is: ϵ-optical, ϵ-static, phonon-frequency (Hz),
 effective-mass (in mass-of-electron units).
 
 ```
-α=frohlichalpha(7.1, 10.4, 5.08E12, 0.095)
+α=frohlichalpha(7.1, 10.4, 5.08, 0.095)
 println("CdTe  α=",α," Stone 0.39 / Devreese 0.29")
 #@test α ≈ 0.3 atol=0.1
 ```
@@ -83,7 +83,7 @@ masses.
 
 
 ```
-MAPIe=polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe=polaronmobility(300, 4.5, 24.1, 2.25, 0.12)
 ```
 
 This will think for a bit (as Julia just-in-time compiles the required
@@ -219,7 +219,7 @@ Getting temperature-dependent behaviour is a matter of sending a temperature
 range to the `polaronmobility` function.
 
 ```julia
-MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25, 0.12)
 ```
 
 ## Plotting
