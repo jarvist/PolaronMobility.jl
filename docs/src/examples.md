@@ -42,7 +42,7 @@ This is provided as a convenience function (with correct units!).
 Let us demonstrate by calculating α for CdTe, and compare it to literature
 values.
 
-The call signature is: ϵ-optical, ϵ-static, phonon-frequency (Hz),
+The call signature is: ϵ-optical, ϵ-static, phonon-frequency (THz),
 effective-mass (in mass-of-electron units).
 
 ```
