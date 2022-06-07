@@ -65,7 +65,7 @@ As an example:
 
 ```
 using PolaronMobility
-MAPIe=polaronmobility(300, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe=polaronmobility(300, 4.5, 24.1, 2.25, 0.12)
 ```
 
 Will calculate the polaron mobility for methyl-ammonium lead halide perovskite
