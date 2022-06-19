@@ -89,15 +89,89 @@ Explicit k-space integral version of variational model.
 
 # ╔═╡ 6cd58deb-fb04-44fc-a854-dce5b5cb8565
 function D(t, v, w)
-	abs(w^2 * t + (v^2 - w^2) / v * (1 - exp(-v * t)))
+	abs(w^2 / v^2 * t + (v^2 - w^2) / v^3 * (1 - exp(-v * t)))
 end
+
+# ╔═╡ f7a07dc5-ba45-4870-b94c-44ae5d85436d
+"""
+Test first that it reproduces the Feynamn analytic result. (R = 0).
+"""
+
+# ╔═╡ cc237871-08fd-4658-8fa5-8658d9394b3b
+"""
+Now try Holstein model with k-space integral.
+"""
+
+# ╔═╡ 907b2475-0749-4d85-b09e-6eed75d35e68
+"""
+Now the k-space integral for the Holstein can be done and is expressed in terms of an erf function. So lets do it as it will be quicker!
+"""
+
+# ╔═╡ e7a4f46e-8fcc-48ef-9c5c-5790b42d7648
+"""
+Let's now plot the α dependence of Frohlich vs Holstein!
+"""
+
+# ╔═╡ 78936a9d-9567-4def-bf89-85be9e62e12d
+α = 0.1:0.1:12
+
+# ╔═╡ 8d726e23-5a40-4a10-8405-7c9775a0c9d0
+frohlich_params = feynmanvw_old.(α)
+
+# ╔═╡ 2cdfdcbc-a6e7-444c-a9a0-47529ddb091a
+begin
+	vf = [i[1] for i in frohlich_params]
+	wf = [i[2] for i in frohlich_params]
+end
+
+# ╔═╡ 35ce9514-521c-4985-a85e-f236f67417c9
+frohlich_energy = [F(vf[i], wf[i], α[i]) for i in 1:length(α)]
+
+# ╔═╡ 3f5069df-89e2-4ac7-96e4-f3c79936fdd9
+"""
+Thermal version...
+"""
+
+# ╔═╡ 9c1284f7-f503-4c4d-be6a-e4e04043246a
+"""
+    A(v, w, β)
+
+Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+A(v, w, β) = 3 / β * (log(v / w) - 1/2 * log(2π * β) - log(sinh(v * β / 2) / sinh(w * β / 2)))
+
+# ╔═╡ b36f7997-f29c-4a92-bb00-9e82ae7d2a05
+"""
+    Y(x, v, β)
+
+Hellwarth's Y expression from Eqn. (62d) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression. Contained in denominator of the integrand of Eqn. (62c).
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+Y(x, v, β) = 1 / (1 - exp(-v * β)) * (1 + exp(-v * β) - exp(-v * x) - exp(v * (x - β)))
+
+# ╔═╡ d4e1ac9e-84d7-4809-ac1c-c24a9263db84
+"""
+    f(x, v, w, β)
+
+Integrand of Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+f_Fro(x, v, w, β) = (exp(β - x) + exp(x)) / sqrt(abs(w^2 * x * (1 - x / β) + Y(x, v, β) * (v^2 - w^2) / v))
+
+
+# ╔═╡ ca1d9705-b49e-43f8-bd17-ab4a7e28b578
+D(x, v, w, β) = w^2 / v^2 * x * (1 - x / β) + Y(x, v, β) * (v^2 - w^2) / v^3
 
 # ╔═╡ 00fc8b3d-c485-43e2-92f0-451539ecf1e6
 function k_integral(t, v, w; power = 0, R = 0)
 	if R == 0
-		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2 / v^2), -Inf, Inf)[1] / sqrt(2pi)
+		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), -Inf, Inf)[1] / sqrt(2pi)
 	else
-		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2 / v^2), 0, R)[1] / sqrt(2pi)
+		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), 0, R)[1] / sqrt(2π)
 	end
 end
 
@@ -138,37 +212,22 @@ function var_params_k(α; v = 3.0, w = 3.0, power = 0, R = 0)
     return Δv + w, w
 end
 
-# ╔═╡ f7a07dc5-ba45-4870-b94c-44ae5d85436d
-"""
-Test first that it reproduces the Feynamn analytic result. (R = 0).
-"""
-
 # ╔═╡ 71118d82-37fb-4504-b944-c3461de91233
 v_k, w_k = var_params_k(2.39; v = v, w = w)
-
-# ╔═╡ 2be860db-52b0-4514-872f-db79dc454323
-energy(2.39, v_k, w_k)
-
-# ╔═╡ cc237871-08fd-4658-8fa5-8658d9394b3b
-"""
-Now try Holstein model with k-space integral.
-"""
 
 # ╔═╡ 80cd6d37-92d3-4757-a62e-490cffb4b63c
 vh_k, wh_k = var_params_k(2.39; v = v, w = w, power = 2, R = (6 * π^2)^(1/3))
 
-# ╔═╡ 410d234c-25fe-4752-926e-f6c5d263ef05
-energy(2.39, vh_k, wh_k; power = 0, R = (6 * π^2)^(1/3))
+# ╔═╡ 2be860db-52b0-4514-872f-db79dc454323
+energy(2.39, v_k, w_k)
 
-# ╔═╡ 907b2475-0749-4d85-b09e-6eed75d35e68
-"""
-Now the k-space integral for the Holstein can be done and is expressed in terms of an erf function. So lets do it as it will be quicker!
-"""
+# ╔═╡ 410d234c-25fe-4752-926e-f6c5d263ef05
+energy(2.39, vh_k, wh_k; power = 2, R = (6 * π^2)^(1/3))
 
 # ╔═╡ 079d7328-c2e1-4681-a4e3-e19a53841d25
 function explicit_integral(α, v, w; R = (6 * π^2)^(1/3))
 	d(t) = D(t, v, w)
-	integrand(t) = v^3 * erf(sqrt(d(t) / 2) * R / v) / (2 * (d(t))^(3/2)) - R * v^2 * exp(-R^2 * d(t) / (2 * v^2)) / (sqrt(2π) * d(t))
+	integrand(t) = erf(sqrt(d(t) / 2) * R) / (2 * (d(t))^(3/2)) - R * exp(-R^2 * d(t) / (2)) / (sqrt(2π) * d(t))
 	integral = α * quadgk(t -> exp(-t) * integrand(t), 0, Inf, rtol = 1e-4)[1] / sqrt(π)
 	return integral
 end
@@ -205,28 +264,127 @@ function var_params(α; v = 3.0, w = 3.0)
     return Δv + w, w
 end
 
+# ╔═╡ 650e36ab-7ac8-4d0b-ad74-f5693c2c1586
+holstein_energy = [explicit_energy(α[i], vf[i], wf[i]) for i in 1:length(α)]
+
+# ╔═╡ b2454e06-146c-4fc1-8928-70c7982922ec
+begin
+	pe = plot(α, frohlich_energy .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Fro", linewidth = 2, xlabel = "alpha, α", ylabel = "Energy (meV)")
+	plot!(α, holstein_energy .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Hol", linewidth = 2, linestyle = :dash)
+end
+
+# ╔═╡ 67154f5a-e61e-4a5e-abf8-215bf8c8646e
+savefig(pe, "energy_comparison.png")
+
+# ╔═╡ 4e99725c-0895-4bc3-97ba-70eb675c7f47
+f_Hol(x, v, w, β) = (exp(β - x) + exp(x)) * (erf(sqrt(D(x, v, w, β) / 2) * (6 * π^2)^(1/3)) / (2 * D(x, v, w, β)^(3/2)) - (6 * π^2)^(1/3) * exp(-D(x, v, w, β) * (6 * π^2)^(2/3) / 2) / (sqrt(2π) * D(x, v, w, β)))
+
+# ╔═╡ e8b8e4de-e548-447e-82c5-979124ce6cf3
+"""
+    B(v, w, β, α)
+
+Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+B_Fro(v, w, β, α) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f_Fro(x, v, w, β), 0, β/2, rtol = 1e-5)[1]
+
+
+# ╔═╡ f87703c9-fa55-420a-b3cc-c6b947ef456a
+B_Hol(v, w, β, α) = α / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f_Hol(x, v, w, β), 0, β/2)[1]
+
+# ╔═╡ c1358b12-4f68-4485-8ee7-73ef672f3ed8
+"""
+    C(v, w, β)
+
+Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+C(v, w, β) = 3/4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β))
+
+# ╔═╡ fc699405-e1d6-48dd-aff3-a7ae7fb0114b
+"""
+    F(v, w, β, α)
+
+Hellwarth's total free energy expression from Eqn. (62a) in Hellwarth et al. 1999 PRB.
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+F_Fro(v, w, β, α) = -(A(v, w, β) + B_Fro(v, w, β, α) + C(v, w, β))
+
+# ╔═╡ 9ed1bad6-9ac5-444f-8d02-974bdd955b09
+F_Hol(v, w, β, α) = -(A(v, w, β) + B_Hol(v, w, β, α) + C(v, w, β))
+
+# ╔═╡ 5d5bf742-89c2-45e6-81f6-3b22e90b7bd0
+"""
+Check that it roughly gives the Holstein ground-state energy (high beta)
+"""
+
+# ╔═╡ 2455abad-abf2-4b0a-bb3f-30d97de9a9ec
+function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
+
+    # Limits of the optimisation.
+    lower = [0.0, 0.0]
+    upper = [Inf, Inf]
+    Δv = v - w # defines a constraint, so that v>w
+    initial = [Δv + 0.01, w]
+
+    # Feynman 1955 athermal action 
+    f(x) = F_Fro(x[1] + x[2], x[2], β, α)
+
+    # Use Optim to optimise v and w to minimise enthalpy.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS()),
+    )
+
+    # Get v and w values that minimise the free energy.
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
+
+    # Return variational parameters that minimise the free energy.
+    return Δv + w, w
+end
+
+# ╔═╡ 4d5e8c8e-2225-43fd-a934-0c8dd9f21585
+function var_params(α, β; v = 3.0, w = 3.0) # v, w defaults
+
+    # Limits of the optimisation.
+    lower = [0.0, 0.0]
+    upper = [Inf, Inf]
+    Δv = v - w # defines a constraint, so that v>w
+    initial = [Δv + 0.01, w]
+
+    # Feynman 1955 athermal action 
+    f(x) = F_Hol(x[1] + x[2], x[2], β, α)
+
+    # Use Optim to optimise v and w to minimise enthalpy.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS()),
+    )
+
+    # Get v and w values that minimise the free energy.
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
+
+    # Return variational parameters that minimise the free energy.
+    return Δv + w, w
+end
+
 # ╔═╡ 466bc0e9-4cd2-42f5-8bbc-1317b5c1c7b6
 vh, wh = var_params(2.39; v = v, w = w)
 
 # ╔═╡ a1d89e74-7ab6-4c8f-8748-63ede869decb
 explicit_energy(2.39, vh, wh)
 
-# ╔═╡ e7a4f46e-8fcc-48ef-9c5c-5790b42d7648
-"""
-Let's now plot the α dependence of Frohlich vs Holstein!
-"""
-
-# ╔═╡ 78936a9d-9567-4def-bf89-85be9e62e12d
-α = 0.1:0.1:12
-
-# ╔═╡ 8d726e23-5a40-4a10-8405-7c9775a0c9d0
-frohlich_params = feynmanvw_old.(α)
-
-# ╔═╡ 2cdfdcbc-a6e7-444c-a9a0-47529ddb091a
-begin
-	vf = [i[1] for i in frohlich_params]
-	wf = [i[2] for i in frohlich_params]
-end
+# ╔═╡ 60254d3a-97b0-4c7e-a6c3-ad9ea0d93c97
+F_Hol(vh, wh, 330, 2.39)
 
 # ╔═╡ 5f5785c4-b9be-4246-820d-3e3ccf841cc6
 holstein_params = var_params.(α)
@@ -239,29 +397,261 @@ end
 
 # ╔═╡ f5e2a904-5e2f-4dcd-8691-b7620d24a7f0
 begin
-	pv = plot(α, vf, label = "Fro v", legend = :topleft, linewidth = 2, xlabel = "alpha, α", ylabel = "v and w")
+	pv = plot(α, vf, label = "Fro v", legend = :topleft, linewidth = 2, xlabel = "alpha, α", ylabel = "v and w", minorgrid = true)
 	plot!(α, wf, label = "Fro w", linewidth = 2)
 	plot!(α, vh_new, label = "Hol v", linewidth = 2, linestyle = :dash)
 	plot!(α, wh_new, label = "Hol w", linewidth = 2, linestyle = :dash)
 end
 
-# ╔═╡ 35ce9514-521c-4985-a85e-f236f67417c9
-frohlich_energy = [F(vf[i], wf[i], α[i]) for i in 1:length(α)]
-
-# ╔═╡ 650e36ab-7ac8-4d0b-ad74-f5693c2c1586
-holstein_energy = [explicit_energy(α[i], vf[i], wf[i]) for i in 1:length(α)]
-
-# ╔═╡ b2454e06-146c-4fc1-8928-70c7982922ec
-begin
-	pe = plot(α, frohlich_energy, label = "Fro", linewidth = 2, xlabel = "alpha, α", ylabel = "Energy")
-	plot!(α, holstein_energy, label = "Hol", linewidth = 2, linestyle = :dash)
-end
-
 # ╔═╡ a8852b06-3f60-4bac-a610-8b0a1b8cf560
 savefig(pv, "vw_comparison.png")
 
-# ╔═╡ 67154f5a-e61e-4a5e-abf8-215bf8c8646e
-savefig(pe, "energy_comparison.png")
+# ╔═╡ af11d3d0-b93d-4916-baad-5c81cec45ab4
+"""
+Temperature dependence free-energy and v/w comparisons
+"""
+
+# ╔═╡ 28f3a13d-cee1-4415-be15-4cefc474207d
+T_range = 1:400
+
+# ╔═╡ 7cd14da3-799d-4a53-a446-10a6842e5214
+hol_params = [var_params(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23) for T in T_range]
+
+# ╔═╡ 2baddbea-169a-4558-9f47-1c43e1269f1f
+fro_params = [feynmanvw(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23) for T in T_range]
+
+# ╔═╡ 1d45213c-3921-4a67-a76c-f37db47a14ad
+begin
+	vh_β = [i[1] for i in hol_params]
+	wh_β = [i[2] for i in hol_params]
+end
+
+# ╔═╡ 3d423a59-b295-4026-8666-e08c38f01747
+begin
+	vf_β = [i[1] for i in fro_params]
+	wf_β = [i[2] for i in fro_params]
+end
+
+# ╔═╡ 0e771039-19b8-4cec-bb12-8ddcb4b6975e
+hol_energy_β = [F_Hol(vh_β[T], wh_β[T], 2π * 2.25 * 1e12 * 1.05e-34 / T_range[T] / 1.38e-23, 2.39) for T in 1:length(T_range)]
+
+# ╔═╡ 07e267b3-03e8-4b1f-af0a-6c5ea6c57684
+fro_energy_β = [F_Fro(vf_β[T], wf_β[T], 2π * 2.25 * 1e12 * 1.05e-34 / T_range[T] / 1.38e-23, 2.39) for T in 1:length(T_range)]
+
+# ╔═╡ 1d08e7de-026b-4b1c-ba29-d12ce9f2b4ef
+begin
+	pvt = plot(T_range, vf_β, label = "Fro v", linewidth = 2, legend = :topleft, xlabel = "Temperature (K)", ylabel = "v and w params")
+	plot!(T_range, wf_β, label = "Fro w", linewidth = 2)
+	plot!(T_range, vh_β, label = "Hol v", linestyle = :dash, linewidth = 2)
+	plot!(T_range, wh_β, label = "Hol w", linestyle = :dash, linewidth = 2)
+end
+
+# ╔═╡ a6ff82d8-ac2f-4034-ad64-c3800d67ecfa
+begin
+	pft = plot(T_range, fro_energy_β .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Fro", xlabel = "Temperature (K)", ylabel = "Free energy (ħω)", linewidth = 2)
+	plot!(T_range, hol_energy_β .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Hol", linewidth = 2, linestyle = :dash)
+end
+
+# ╔═╡ a0cd088c-0412-4b1d-ba32-441f59e20c3c
+savefig(pvt, "vw_comparison_temp.png")
+
+# ╔═╡ 35864bca-4813-45ab-b579-ba9b40492189
+savefig(pft, "free_energy_comparison.png")
+
+# ╔═╡ a835bb67-f4d0-4b42-8cda-de6b44936ca2
+"""
+Have a look at effective mass
+"""
+
+# ╔═╡ 5ac9e949-4b55-42f5-9dd4-1de517051112
+function fro_eff_mass(v, w, α)
+	integrand(τ) = τ^2 * exp(-τ) / (D(τ, v, w))^(3/2)
+	integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(π))
+	return 1 + integral
+end
+
+# ╔═╡ 6a848cac-dc22-4419-8833-7279a4940834
+function hol_eff_mass(v, w, α)
+	R = (6 * π^2)^(1/3)
+	integrand(τ) = τ^2 * exp(-τ) * (3 * erf(sqrt(D(τ, v, w) / 2) * R) / (2 * D(τ, v, w)^(5/2)) - R * exp(-D(τ, v, w) * R^2 / 2) * (D(τ, v, w) * R^2 + 3) / (sqrt(2π) * D(τ, v, w)^2))
+	integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(π))
+	return 1 + integral
+end
+
+# ╔═╡ 2041244d-1a95-4e9f-846b-0f64d5fca357
+α[1:30]
+
+# ╔═╡ 4d9a6e4c-0b35-4a55-ac12-4c21e52603b7
+fro_m = [fro_eff_mass(vf[i], wf[i], α[i]) for i in 1:length(α)]
+
+# ╔═╡ 4a4d9cd9-b991-40c9-9e09-18ab10f0e7ba
+hol_m = [hol_eff_mass(vh_new[i], wh_new[i], α[i]) for i in 1:length(α)]
+
+# ╔═╡ 308b415e-8965-4d31-b374-078add023990
+begin
+	pm = plot(α, 1 ./ fro_m, label = "Fro", xlabel = "α", ylabel = "m₀ / m*", linewidth = 2)
+	plot!(α, 1 ./ hol_m, label = "Hol", linewidth = 2, linestyle = :dash)
+end
+
+# ╔═╡ 4b001539-7208-4100-ae75-6c1232f540f8
+savefig(pm, "mass_comparison_alpha.png")
+
+# ╔═╡ 614fe5ba-f265-420d-b914-0ecadedfbacc
+"""
+Mobility comparisons
+"""
+
+# ╔═╡ 750b1d30-79c4-4f5a-8df4-3b6fcffb7d49
+function P(x)
+	1 / (exp(x) - 1)
+end
+
+# ╔═╡ 31c30c6c-d68a-48f7-a9f7-c6a6572367cb
+function D_c(u, β, v, w)
+	w^2 / v^2 * ((v^2 - w^2) / (w^2 * v) * (1 - exp(im * v * u) + 4 * P(β * v) * (sin(v * u / 2))^2) - im * u + u^2 / β)
+end
+
+# ╔═╡ 4e17762c-461b-43b5-b037-da144af61e27
+function fro_S(u, α, β, v, w)
+	2 * α / (3 * √π) * (exp(im * u) + 2 * P(β) * cos(u)) / D_c(u, β, v, w)^(3/2)
+end
+
+# ╔═╡ babe6b05-bb06-42b2-84aa-27b2c51d7226
+function hol_S(u, α, β, v, w)
+	R = (6 * π^2)^(1/3)
+	2 * α / (3 * √π) * (exp(im * u) + 2 * P(β) * cos(u)) * (erf(sqrt(D_c(u, β, v, w) / 2) * (6 * π^2)^(1/3)) / (2 * D_c(u, β, v, w)^(3/2)) - (6 * π^2)^(1/3) * exp(-D_c(u, β, v, w) * (6 * π^2)^(2/3) / 2) / (sqrt(2π) * D_c(u, β, v, w))) * 2π
+end
+
+# ╔═╡ 2042d4f1-b830-4d76-a38f-240506168618
+function fro_chi(Ω, α, β, v, w)
+	integrand(u) = (1 - exp(im * Ω * u)) * imag(fro_S(u, α, β, v, w))
+	integral = quadgk(u -> integrand(u), 0.0, Inf, rtol = 1e-4)[1]
+	return integral
+end
+
+# ╔═╡ bab68f24-c8fb-4b8d-865f-5e9e760513ca
+function hol_chi(Ω, α, β, v, w)
+	integrand(u) = (1 - exp(im * Ω * u)) * imag(hol_S(u, α, β, v, w))
+	integral = quadgk(u -> integrand(u), 0.0, Inf)[1]
+	return integral
+end
+
+# ╔═╡ 9655e230-37d7-4504-8440-34078996a22d
+function fro_impedance(Ω, α, β, v, w)
+	return (Ω^2 - fro_chi(Ω, α, β, v, w)) / (-im * Ω)
+end
+
+# ╔═╡ 8455cb9b-e0f7-4832-a880-84a31d7b5d11
+function hol_impedance(Ω, α, β, v, w)
+	return (Ω^2 - hol_chi(Ω, α, β, v, w)) / (-im * Ω)
+end
+
+# ╔═╡ 9452286f-e801-4db0-b884-f0c7b2373879
+Ω_range = 0.01:0.01:5.0
+
+# ╔═╡ 36ce62de-bf89-4e9d-beb5-47da3cfebc3d
+fro_z = fro_impedance.(Ω_range, 2.39, 100, v, w)
+
+# ╔═╡ dae9f84a-f7b9-4ec1-8399-d39410df2ab9
+hol_z = hol_impedance.(Ω_range, 2.39, 100, vh, wh)
+
+# ╔═╡ fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
+begin
+	plot(Ω_range, -real.(1 ./ fro_z), ylims = (0, 0.25), linewidth = 2)
+	plot!(Ω_range, -real.(1 ./ hol_z), linewidth = 2, linestyle = :dash)
+end
+
+# ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a
+
+
+# ╔═╡ 63eaadaa-9f2b-4de5-964e-7e1a8dfd0121
+function fro_chi_dc(α, β, v, w)
+	integrand(u) = -im * u * imag(fro_S(u, α, β, v, w))
+	integral = quadgk(u -> integrand(u), 0.0, Inf, rtol = 1e-4)[1]
+	return integral
+end
+
+# ╔═╡ 2e6d1157-62db-4774-887d-4872a1b64d4d
+function hol_chi_dc(α, β, v, w)
+	integrand(u) = -im * u * imag(hol_S(u, α, β, v, w))
+	integral = quadgk(u -> integrand(u), 0.0, Inf, rtol = 1e-4)[1]
+	return integral
+end
+
+# ╔═╡ 8e489020-256a-4014-9df3-99ef4bc35f6b
+function fro_mobility(α, β, v, w)
+	abs(1 / imag(fro_chi_dc(α, β, v, w)))
+end
+
+# ╔═╡ 71653a17-89dd-4cfd-8c5c-abd6c655c362
+function hol_mobility(α, β, v, w)
+	abs(1 / imag(hol_chi_dc(α, β, v, w)))
+end
+
+# ╔═╡ cec30175-2096-42a6-965a-5cf5aec4fcaf
+fro_μ = [fro_mobility(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23, vf_β[T], wf_β[T]) for T in 15:length(T_range)]
+
+# ╔═╡ 5c758d90-a0b3-4e4e-a492-d96536ccbe6f
+hol_μ = [hol_mobility(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23, vh_β[T], wh_β[T]) for T in 15:length(T_range)]
+
+# ╔═╡ 0459ac5b-48bf-4645-8d91-a4c61c07578e
+begin
+	MAPI_mob_plot = plot(T_range[15:end], fro_μ .* 1.6e-19 / (2π * 2.25 * 0.12 * 1e12 * 9.11e-31) * 100^2, label = "Fro", minorgrid = true, ylims = (50, 200), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "MAPI Mobility")
+	plot!(T_range[15:end], hol_μ .* 1.6e-19 / (2π * 2.25 * 0.12 * 1e12 * 9.11e-31) * 100^2, label = "Hol", linewidth = 2, linestyle = :dash)
+end
+
+# ╔═╡ 4bd4af25-59ef-4008-b039-52ada489f81c
+savefig(MAPI_mob_plot, "MAPI_mob_plot.png")
+
+# ╔═╡ 639bd491-ccaa-4913-b4e9-c8f20977bce5
+"""
+300K Rubrene mobility. Get ~ 13cm^2/Vs for Holstein and ~ 20.6 cm^2/Vs Frohlich
+"""
+
+# ╔═╡ 799c1983-d4c4-4882-9024-29a492c7b2ba
+rubrene_params_hol = [var_params(2.21, 1e13 * 1.41 * 1.05e-34 / T / 1.38e-23) for T in T_range]
+
+# ╔═╡ 2858d507-0ce0-4a98-ad35-fa12cdb5fa89
+rubrene_params_fro = [feynmanvw(2.21, 1e13 * 1.41 * 1.05e-34 / T / 1.38e-23) for T in T_range]
+
+# ╔═╡ d1b784a5-ba76-46f4-8613-53503997ec05
+begin
+	rubrene_vh = [i[1] for i in rubrene_params_hol]
+	rubrene_wh = [i[2] for i in rubrene_params_hol]
+end
+
+# ╔═╡ d41fc336-e9d1-4f00-8a68-fe2f26103a82
+begin
+	rubrene_vf = [i[1] for i in rubrene_params_fro]
+	rubrene_wf = [i[2] for i in rubrene_params_fro]
+end
+
+# ╔═╡ 0014b87c-e9e1-45a2-be18-ca587adcc1af
+rubrene_mob_hol = [hol_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / T_range[T] / 1.38e-23, rubrene_vh[T], rubrene_wh[T]) for T in 15:length(T_range)] .* 1.6e-19 / (1e13 * 1.41 * 9.11e-31 * 0.88) * 100^2
+
+# ╔═╡ 560edf4e-fa8f-4c29-be6b-f51d17783f36
+rubrene_mob_fro = [fro_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / T_range[T] / 1.38e-23, rubrene_vf[T], rubrene_wf[T]) for T in 15:length(T_range)] .* 1.6e-19 / (1e13 * 1.41 * 9.11e-31 * 0.88) * 100^2
+
+# ╔═╡ 0cc49e62-1191-43f6-976a-4b649b8348f6
+begin
+	rubrene_mob_plot = plot(T_range[15:end], rubrene_mob_fro, label = "Fro", minorgrid = true, ylims = (0, 100), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "Rubrene Mobility")
+	plot!(T_range[15:end], rubrene_mob_hol, label = "Hol", linewidth = 2, linestyle = :dash)
+end
+
+# ╔═╡ fe290c3a-7a5d-4d74-b5e3-495714598f8a
+savefig(rubrene_mob_plot, "rubrene_mob_plot.png")
+
+# ╔═╡ 3a8efacf-2936-4517-9fa3-538809d7c67f
+vrh, wrh = var_params(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23)
+
+# ╔═╡ 5e3e532c-10bc-4ba7-8a97-84c5b84e0b1b
+vrf, wrf = feynmanvw(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23)
+
+# ╔═╡ 30c5b617-5d93-40fc-9b65-91f5dd1d2a1b
+hol_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23, vrh, wrh) * 1.6e-19 / (1e13 * 1.41 * 9.11e-31 * 0.88) * 100^2
+
+# ╔═╡ f170dfc6-cdd2-4a13-9db7-3035f159d9b2
+fro_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23, vrf, wrf) * 1.6e-19 / (1e13 * 1.41 * 9.11e-31 * 0.88) * 100^2
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1306,5 +1696,75 @@ version = "0.9.1+5"
 # ╠═b2454e06-146c-4fc1-8928-70c7982922ec
 # ╠═a8852b06-3f60-4bac-a610-8b0a1b8cf560
 # ╠═67154f5a-e61e-4a5e-abf8-215bf8c8646e
+# ╠═3f5069df-89e2-4ac7-96e4-f3c79936fdd9
+# ╠═9c1284f7-f503-4c4d-be6a-e4e04043246a
+# ╠═b36f7997-f29c-4a92-bb00-9e82ae7d2a05
+# ╠═d4e1ac9e-84d7-4809-ac1c-c24a9263db84
+# ╠═ca1d9705-b49e-43f8-bd17-ab4a7e28b578
+# ╠═4e99725c-0895-4bc3-97ba-70eb675c7f47
+# ╠═e8b8e4de-e548-447e-82c5-979124ce6cf3
+# ╠═f87703c9-fa55-420a-b3cc-c6b947ef456a
+# ╠═c1358b12-4f68-4485-8ee7-73ef672f3ed8
+# ╠═fc699405-e1d6-48dd-aff3-a7ae7fb0114b
+# ╠═9ed1bad6-9ac5-444f-8d02-974bdd955b09
+# ╠═5d5bf742-89c2-45e6-81f6-3b22e90b7bd0
+# ╠═60254d3a-97b0-4c7e-a6c3-ad9ea0d93c97
+# ╠═2455abad-abf2-4b0a-bb3f-30d97de9a9ec
+# ╠═4d5e8c8e-2225-43fd-a934-0c8dd9f21585
+# ╠═af11d3d0-b93d-4916-baad-5c81cec45ab4
+# ╠═28f3a13d-cee1-4415-be15-4cefc474207d
+# ╠═7cd14da3-799d-4a53-a446-10a6842e5214
+# ╠═2baddbea-169a-4558-9f47-1c43e1269f1f
+# ╠═1d45213c-3921-4a67-a76c-f37db47a14ad
+# ╠═3d423a59-b295-4026-8666-e08c38f01747
+# ╠═0e771039-19b8-4cec-bb12-8ddcb4b6975e
+# ╠═07e267b3-03e8-4b1f-af0a-6c5ea6c57684
+# ╠═1d08e7de-026b-4b1c-ba29-d12ce9f2b4ef
+# ╠═a6ff82d8-ac2f-4034-ad64-c3800d67ecfa
+# ╠═a0cd088c-0412-4b1d-ba32-441f59e20c3c
+# ╠═35864bca-4813-45ab-b579-ba9b40492189
+# ╠═a835bb67-f4d0-4b42-8cda-de6b44936ca2
+# ╠═5ac9e949-4b55-42f5-9dd4-1de517051112
+# ╠═6a848cac-dc22-4419-8833-7279a4940834
+# ╠═2041244d-1a95-4e9f-846b-0f64d5fca357
+# ╠═4d9a6e4c-0b35-4a55-ac12-4c21e52603b7
+# ╠═4a4d9cd9-b991-40c9-9e09-18ab10f0e7ba
+# ╠═308b415e-8965-4d31-b374-078add023990
+# ╠═4b001539-7208-4100-ae75-6c1232f540f8
+# ╠═614fe5ba-f265-420d-b914-0ecadedfbacc
+# ╠═750b1d30-79c4-4f5a-8df4-3b6fcffb7d49
+# ╠═31c30c6c-d68a-48f7-a9f7-c6a6572367cb
+# ╠═4e17762c-461b-43b5-b037-da144af61e27
+# ╠═babe6b05-bb06-42b2-84aa-27b2c51d7226
+# ╠═2042d4f1-b830-4d76-a38f-240506168618
+# ╠═bab68f24-c8fb-4b8d-865f-5e9e760513ca
+# ╠═9655e230-37d7-4504-8440-34078996a22d
+# ╠═8455cb9b-e0f7-4832-a880-84a31d7b5d11
+# ╠═9452286f-e801-4db0-b884-f0c7b2373879
+# ╠═36ce62de-bf89-4e9d-beb5-47da3cfebc3d
+# ╠═dae9f84a-f7b9-4ec1-8399-d39410df2ab9
+# ╠═fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
+# ╠═907cc295-5315-467f-8dc1-bec11b3b284a
+# ╠═63eaadaa-9f2b-4de5-964e-7e1a8dfd0121
+# ╠═2e6d1157-62db-4774-887d-4872a1b64d4d
+# ╠═8e489020-256a-4014-9df3-99ef4bc35f6b
+# ╠═71653a17-89dd-4cfd-8c5c-abd6c655c362
+# ╠═cec30175-2096-42a6-965a-5cf5aec4fcaf
+# ╠═5c758d90-a0b3-4e4e-a492-d96536ccbe6f
+# ╠═0459ac5b-48bf-4645-8d91-a4c61c07578e
+# ╠═4bd4af25-59ef-4008-b039-52ada489f81c
+# ╠═639bd491-ccaa-4913-b4e9-c8f20977bce5
+# ╠═799c1983-d4c4-4882-9024-29a492c7b2ba
+# ╠═2858d507-0ce0-4a98-ad35-fa12cdb5fa89
+# ╠═d1b784a5-ba76-46f4-8613-53503997ec05
+# ╠═d41fc336-e9d1-4f00-8a68-fe2f26103a82
+# ╠═0014b87c-e9e1-45a2-be18-ca587adcc1af
+# ╠═560edf4e-fa8f-4c29-be6b-f51d17783f36
+# ╠═0cc49e62-1191-43f6-976a-4b649b8348f6
+# ╠═fe290c3a-7a5d-4d74-b5e3-495714598f8a
+# ╠═3a8efacf-2936-4517-9fa3-538809d7c67f
+# ╠═5e3e532c-10bc-4ba7-8a97-84c5b84e0b1b
+# ╠═30c5b617-5d93-40fc-9b65-91f5dd1d2a1b
+# ╠═f170dfc6-cdd2-4a13-9db7-3035f159d9b2
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
