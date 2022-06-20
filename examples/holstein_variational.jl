@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.0
+# v0.19.4
 
 using Markdown
 using InteractiveUtils
@@ -13,8 +13,8 @@ begin
 end
 
 # ╔═╡ 9f6474e5-41f1-4b96-aeee-d299404a3718
-"""
-Feynman's variational theory for the continious Frohlich model.
+md"""
+## Feynman's variational theory for the (continious) Frohlich model.
 """
 
 # ╔═╡ 9429ae6b-55e1-4fb2-9a88-ae7636c35bb5
@@ -83,8 +83,8 @@ v, w = feynmanvw_old(2.39)
 F(v, w, 2.39)
 
 # ╔═╡ 7bf82f19-e6fc-4c3f-b7e8-a02bebf0d0dd
-"""
-Explicit k-space integral version of variational model.
+md"""
+# Explicit k-space integral version of Frohlich model.
 """
 
 # ╔═╡ 6cd58deb-fb04-44fc-a854-dce5b5cb8565
@@ -93,18 +93,18 @@ function D(t, v, w)
 end
 
 # ╔═╡ f7a07dc5-ba45-4870-b94c-44ae5d85436d
-"""
-Test first that it reproduces the Feynamn analytic result. (R = 0).
+md"""
+### Test first that it reproduces the Feynman analytic result. (R = 0).
 """
 
 # ╔═╡ cc237871-08fd-4658-8fa5-8658d9394b3b
-"""
-Now try Holstein model with k-space integral.
+md"""
+### Now try Frohlich model with k-space integral.
 """
 
 # ╔═╡ 907b2475-0749-4d85-b09e-6eed75d35e68
-"""
-Now the k-space integral for the Holstein can be done and is expressed in terms of an erf function. So lets do it as it will be quicker!
+md"""
+### Now the k-space integral for the Holstein can be done and is expressed in terms of an erf function. So lets do it as it will be quicker!
 """
 
 # ╔═╡ e7a4f46e-8fcc-48ef-9c5c-5790b42d7648
@@ -125,11 +125,11 @@ begin
 end
 
 # ╔═╡ 35ce9514-521c-4985-a85e-f236f67417c9
-frohlich_energy = [F(vf[i], wf[i], α[i]) for i in 1:length(α)]
+frohlich_energies = [F(vf[i], wf[i], α[i]) for i in 1:length(α)]
 
 # ╔═╡ 3f5069df-89e2-4ac7-96e4-f3c79936fdd9
-"""
-Thermal version...
+md"""
+## Thermal (free energy) version of the theory...
 """
 
 # ╔═╡ 9c1284f7-f503-4c4d-be6a-e4e04043246a
@@ -167,22 +167,31 @@ f_Fro(x, v, w, β) = (exp(β - x) + exp(x)) / sqrt(abs(w^2 * x * (1 - x / β) + 
 D(x, v, w, β) = w^2 / v^2 * x * (1 - x / β) + Y(x, v, β) * (v^2 - w^2) / v^3
 
 # ╔═╡ 00fc8b3d-c485-43e2-92f0-451539ecf1e6
+"""
+ k_integral
+
+R is cutoff for Holstei n k-space integral (in k-space spherical volume, R)
+
+if R==0, Frohlich model (power should be 0, as the K^2 cancels with the 1/K^2 dependency in the el-ph matrix element)
+
+Power is the K^Power
+"""
 function k_integral(t, v, w; power = 0, R = 0)
-	if R == 0
+	if R == 0 # Frohlich
 		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), -Inf, Inf)[1] / sqrt(2pi)
-	else
+	else # Holstein, note limits on integral, R=k-space volume
 		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), 0, R)[1] / sqrt(2π)
 	end
 end
 
 # ╔═╡ dcf7f24a-6ef4-4613-9778-e2637f5e6c16
-function integral(α, v, w; power = 0, R = 0)
+function Frohlich_el_integral(α, v, w; power = 0, R = 0)
 	α * quadgk(t -> exp(-t) * k_integral(t, v, w; power = power, R = R), 0.0, Inf, rtol = 1e-4)[1] / sqrt(pi)
 end
 
 # ╔═╡ 6714b04e-9b26-42d0-89eb-f6c510cd5f56
-function energy(α, v, w; power = 0, R = 0)
-	3 * (v - w)^2 / (4 * v) - integral(α, v, w; power = power, R = R)
+function Frohlich_energy(α, v, w; power = 0, R = 0)
+	3 * (v - w)^2 / (4 * v) - Frohlich_el_integral(α, v, w; power = power, R = R)
 end
 
 # ╔═╡ 429d0098-9d78-47e5-915b-cf16c7fce660
@@ -194,7 +203,7 @@ function var_params_k(α; v = 3.0, w = 3.0, power = 0, R = 0)
     initial = [Δv + 0.01, w]
 
     # Feynman 1955 athermal action 
-    f(x) = energy(α, x[1] + x[2], x[2]; power = power, R = R)
+    f(x) = Frohlich_energy(α, x[1] + x[2], x[2]; power = power, R = R)
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
@@ -219,13 +228,13 @@ v_k, w_k = var_params_k(2.39; v = v, w = w)
 vh_k, wh_k = var_params_k(2.39; v = v, w = w, power = 2, R = (6 * π^2)^(1/3))
 
 # ╔═╡ 2be860db-52b0-4514-872f-db79dc454323
-energy(2.39, v_k, w_k)
+Frohlich_energy(2.39, v_k, w_k)
 
 # ╔═╡ 410d234c-25fe-4752-926e-f6c5d263ef05
-energy(2.39, vh_k, wh_k; power = 2, R = (6 * π^2)^(1/3))
+Frohlich_energy(2.39, vh_k, wh_k; power = 2, R = (6 * π^2)^(1/3))
 
 # ╔═╡ 079d7328-c2e1-4681-a4e3-e19a53841d25
-function explicit_integral(α, v, w; R = (6 * π^2)^(1/3))
+function holstein_elph_integral(α, v, w; R = (6 * π^2)^(1/3))
 	d(t) = D(t, v, w)
 	integrand(t) = erf(sqrt(d(t) / 2) * R) / (2 * (d(t))^(3/2)) - R * exp(-R^2 * d(t) / (2)) / (sqrt(2π) * d(t))
 	integral = α * quadgk(t -> exp(-t) * integrand(t), 0, Inf, rtol = 1e-4)[1] / sqrt(π)
@@ -233,12 +242,12 @@ function explicit_integral(α, v, w; R = (6 * π^2)^(1/3))
 end
 
 # ╔═╡ bc20477e-2ce3-4377-9af0-5d479256175a
-function explicit_energy(α, v, w)
-	3 * (v - w)^2 / (4 * v) - explicit_integral(α, v, w)
+function holstein_energy(α, v, w)
+	3 * (v - w)^2 / (4 * v) - holstein_elph_integral(α, v, w)
 end
 
 # ╔═╡ 380c5c1b-01e1-455b-a757-46c87fc45285
-function var_params(α; v = 3.0, w = 3.0)
+function holstein_variational_solution(α; v = 3.0, w = 3.0)
 	 # Limits of the optimisation.
     lower = [0.0, 0.3]
     upper = [Inf, Inf]
@@ -246,7 +255,7 @@ function var_params(α; v = 3.0, w = 3.0)
     initial = [Δv + 0.01, w]
 
     # Feynman 1955 athermal action 
-    f(x) = explicit_energy(α, x[1] + x[2], x[2])
+    f(x) = holstein_energy(α, x[1] + x[2], x[2])
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
@@ -265,16 +274,16 @@ function var_params(α; v = 3.0, w = 3.0)
 end
 
 # ╔═╡ 650e36ab-7ac8-4d0b-ad74-f5693c2c1586
-holstein_energy = [explicit_energy(α[i], vf[i], wf[i]) for i in 1:length(α)]
+holstein_energies = [holstein_energy(α[i], vf[i], wf[i]) for i in 1:length(α)]
 
 # ╔═╡ b2454e06-146c-4fc1-8928-70c7982922ec
 begin
-	pe = plot(α, frohlich_energy .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Fro", linewidth = 2, xlabel = "alpha, α", ylabel = "Energy (meV)")
-	plot!(α, holstein_energy .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Hol", linewidth = 2, linestyle = :dash)
+	pe = plot(α, frohlich_energies .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Fro", linewidth = 2, xlabel = "alpha, α", ylabel = "Energy (meV)")
+	plot!(α, holstein_energies .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Hol", linewidth = 2, linestyle = :dash)
 end
 
 # ╔═╡ 67154f5a-e61e-4a5e-abf8-215bf8c8646e
-savefig(pe, "energy_comparison.png")
+savefig(pe, "energy_comparison.pdf")
 
 # ╔═╡ 4e99725c-0895-4bc3-97ba-70eb675c7f47
 f_Hol(x, v, w, β) = (exp(β - x) + exp(x)) * (erf(sqrt(D(x, v, w, β) / 2) * (6 * π^2)^(1/3)) / (2 * D(x, v, w, β)^(3/2)) - (6 * π^2)^(1/3) * exp(-D(x, v, w, β) * (6 * π^2)^(2/3) / 2) / (sqrt(2π) * D(x, v, w, β)))
@@ -350,7 +359,7 @@ function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
 end
 
 # ╔═╡ 4d5e8c8e-2225-43fd-a934-0c8dd9f21585
-function var_params(α, β; v = 3.0, w = 3.0) # v, w defaults
+function holstein_variational_solution(α, β; v = 3.0, w = 3.0) # v, w defaults
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
@@ -378,16 +387,16 @@ function var_params(α, β; v = 3.0, w = 3.0) # v, w defaults
 end
 
 # ╔═╡ 466bc0e9-4cd2-42f5-8bbc-1317b5c1c7b6
-vh, wh = var_params(2.39; v = v, w = w)
+vh, wh = holstein_variational_solution(2.39; v = v, w = w)
 
 # ╔═╡ a1d89e74-7ab6-4c8f-8748-63ede869decb
-explicit_energy(2.39, vh, wh)
+holstein_energy(2.39, vh, wh)
 
 # ╔═╡ 60254d3a-97b0-4c7e-a6c3-ad9ea0d93c97
 F_Hol(vh, wh, 330, 2.39)
 
 # ╔═╡ 5f5785c4-b9be-4246-820d-3e3ccf841cc6
-holstein_params = var_params.(α)
+holstein_params = holstein_variational_solution.(α)
 
 # ╔═╡ 2ce6cc8d-0582-4f08-9e2f-5317f2f5b2e0
 begin
@@ -404,7 +413,7 @@ begin
 end
 
 # ╔═╡ a8852b06-3f60-4bac-a610-8b0a1b8cf560
-savefig(pv, "vw_comparison.png")
+savefig(pv, "vw_comparison.pdf")
 
 # ╔═╡ af11d3d0-b93d-4916-baad-5c81cec45ab4
 """
@@ -415,7 +424,7 @@ Temperature dependence free-energy and v/w comparisons
 T_range = 1:400
 
 # ╔═╡ 7cd14da3-799d-4a53-a446-10a6842e5214
-hol_params = [var_params(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23) for T in T_range]
+hol_params = [holstein_variational_solution(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23) for T in T_range]
 
 # ╔═╡ 2baddbea-169a-4558-9f47-1c43e1269f1f
 fro_params = [feynmanvw(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23) for T in T_range]
@@ -453,10 +462,10 @@ begin
 end
 
 # ╔═╡ a0cd088c-0412-4b1d-ba32-441f59e20c3c
-savefig(pvt, "vw_comparison_temp.png")
+savefig(pvt, "vw_comparison_temp.pdf")
 
 # ╔═╡ 35864bca-4813-45ab-b579-ba9b40492189
-savefig(pft, "free_energy_comparison.png")
+savefig(pft, "free_energy_comparison.pdf")
 
 # ╔═╡ a835bb67-f4d0-4b42-8cda-de6b44936ca2
 """
@@ -494,11 +503,11 @@ begin
 end
 
 # ╔═╡ 4b001539-7208-4100-ae75-6c1232f540f8
-savefig(pm, "mass_comparison_alpha.png")
+savefig(pm, "mass_comparison_alpha.pdf")
 
 # ╔═╡ 614fe5ba-f265-420d-b914-0ecadedfbacc
-"""
-Mobility comparisons
+md"""
+# Mobility comparisons
 """
 
 # ╔═╡ 750b1d30-79c4-4f5a-8df4-3b6fcffb7d49
@@ -557,8 +566,9 @@ hol_z = hol_impedance.(Ω_range, 2.39, 100, vh, wh)
 
 # ╔═╡ fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
 begin
-	plot(Ω_range, -real.(1 ./ fro_z), ylims = (0, 0.25), linewidth = 2)
-	plot!(Ω_range, -real.(1 ./ hol_z), linewidth = 2, linestyle = :dash)
+	plot(xlabel = "Omega (Hz)", ylabel = "Re(Χ)")
+	plot!(Ω_range, -real.(1 ./ fro_z), ylims = (0, 0.25), linewidth = 2, label="Fro")
+	plot!(Ω_range, -real.(1 ./ hol_z), linewidth = 2, linestyle = :dash, label = "Hol")
 end
 
 # ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a
@@ -601,7 +611,7 @@ begin
 end
 
 # ╔═╡ 4bd4af25-59ef-4008-b039-52ada489f81c
-savefig(MAPI_mob_plot, "MAPI_mob_plot.png")
+savefig(MAPI_mob_plot, "MAPI_mob_plot.pdf")
 
 # ╔═╡ 639bd491-ccaa-4913-b4e9-c8f20977bce5
 """
@@ -609,7 +619,7 @@ savefig(MAPI_mob_plot, "MAPI_mob_plot.png")
 """
 
 # ╔═╡ 799c1983-d4c4-4882-9024-29a492c7b2ba
-rubrene_params_hol = [var_params(2.21, 1e13 * 1.41 * 1.05e-34 / T / 1.38e-23) for T in T_range]
+rubrene_params_hol = [holstein_variational_solution(2.21, 1e13 * 1.41 * 1.05e-34 / T / 1.38e-23) for T in T_range]
 
 # ╔═╡ 2858d507-0ce0-4a98-ad35-fa12cdb5fa89
 rubrene_params_fro = [feynmanvw(2.21, 1e13 * 1.41 * 1.05e-34 / T / 1.38e-23) for T in T_range]
@@ -634,15 +644,15 @@ rubrene_mob_fro = [fro_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / T_range[T] / 1.38
 
 # ╔═╡ 0cc49e62-1191-43f6-976a-4b649b8348f6
 begin
-	rubrene_mob_plot = plot(T_range[15:end], rubrene_mob_fro, label = "Fro", minorgrid = true, ylims = (0, 100), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "Rubrene Mobility")
+	rubrene_mob_plot = plot(T_range[15:end], rubrene_mob_fro, label = "Fro", minorgrid = true, ylims = (0, 40), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "Rubrene Mobility")
 	plot!(T_range[15:end], rubrene_mob_hol, label = "Hol", linewidth = 2, linestyle = :dash)
 end
 
 # ╔═╡ fe290c3a-7a5d-4d74-b5e3-495714598f8a
-savefig(rubrene_mob_plot, "rubrene_mob_plot.png")
+savefig(rubrene_mob_plot, "rubrene_mob_plot.pdf")
 
 # ╔═╡ 3a8efacf-2936-4517-9fa3-538809d7c67f
-vrh, wrh = var_params(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23)
+vrh, wrh = holstein_variational_solution(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23)
 
 # ╔═╡ 5e3e532c-10bc-4ba7-8a97-84c5b84e0b1b
 vrf, wrf = feynmanvw(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23)
@@ -848,9 +858,9 @@ version = "0.13.2"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterfaceCore", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "a0700c21266b55bf62c22e75af5668aa7841b500"
+git-tree-sha1 = "ee13c773ce60d9e95a6c6ea134f25605dce2eda3"
 uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
-version = "2.12.1"
+version = "2.13.0"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -1662,11 +1672,11 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╠═66d2d0e0-ee56-11ec-21f9-5d6ae25cff48
-# ╠═9f6474e5-41f1-4b96-aeee-d299404a3718
+# ╟─9f6474e5-41f1-4b96-aeee-d299404a3718
 # ╠═9429ae6b-55e1-4fb2-9a88-ae7636c35bb5
 # ╠═1cf1e5cc-301c-4779-86cb-5b6436ecebf0
 # ╠═2a609c87-4579-490e-99e7-0d0c25e11333
-# ╠═7bf82f19-e6fc-4c3f-b7e8-a02bebf0d0dd
+# ╟─7bf82f19-e6fc-4c3f-b7e8-a02bebf0d0dd
 # ╠═6cd58deb-fb04-44fc-a854-dce5b5cb8565
 # ╠═00fc8b3d-c485-43e2-92f0-451539ecf1e6
 # ╠═dcf7f24a-6ef4-4613-9778-e2637f5e6c16
@@ -1675,10 +1685,10 @@ version = "0.9.1+5"
 # ╠═f7a07dc5-ba45-4870-b94c-44ae5d85436d
 # ╠═71118d82-37fb-4504-b944-c3461de91233
 # ╠═2be860db-52b0-4514-872f-db79dc454323
-# ╠═cc237871-08fd-4658-8fa5-8658d9394b3b
+# ╟─cc237871-08fd-4658-8fa5-8658d9394b3b
 # ╠═80cd6d37-92d3-4757-a62e-490cffb4b63c
 # ╠═410d234c-25fe-4752-926e-f6c5d263ef05
-# ╠═907b2475-0749-4d85-b09e-6eed75d35e68
+# ╟─907b2475-0749-4d85-b09e-6eed75d35e68
 # ╠═079d7328-c2e1-4681-a4e3-e19a53841d25
 # ╠═bc20477e-2ce3-4377-9af0-5d479256175a
 # ╠═380c5c1b-01e1-455b-a757-46c87fc45285
@@ -1696,7 +1706,7 @@ version = "0.9.1+5"
 # ╠═b2454e06-146c-4fc1-8928-70c7982922ec
 # ╠═a8852b06-3f60-4bac-a610-8b0a1b8cf560
 # ╠═67154f5a-e61e-4a5e-abf8-215bf8c8646e
-# ╠═3f5069df-89e2-4ac7-96e4-f3c79936fdd9
+# ╟─3f5069df-89e2-4ac7-96e4-f3c79936fdd9
 # ╠═9c1284f7-f503-4c4d-be6a-e4e04043246a
 # ╠═b36f7997-f29c-4a92-bb00-9e82ae7d2a05
 # ╠═d4e1ac9e-84d7-4809-ac1c-c24a9263db84
