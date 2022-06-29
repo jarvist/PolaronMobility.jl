@@ -566,13 +566,10 @@ hol_z = hol_impedance.(Ω_range, 2.39, 100, vh, wh)
 
 # ╔═╡ fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
 begin
-	plot(xlabel = "Omega (Hz)", ylabel = "Re(Χ)")
+	plot(xlabel = "Omega (THz)", ylabel = "Re(Χ)")
 	plot!(Ω_range, -real.(1 ./ fro_z), ylims = (0, 0.25), linewidth = 2, label="Fro")
 	plot!(Ω_range, -real.(1 ./ hol_z), linewidth = 2, linestyle = :dash, label = "Hol")
 end
-
-# ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a
-
 
 # ╔═╡ 63eaadaa-9f2b-4de5-964e-7e1a8dfd0121
 function fro_chi_dc(α, β, v, w)
@@ -647,6 +644,9 @@ begin
 	rubrene_mob_plot = plot(T_range[15:end], rubrene_mob_fro, label = "Fro", minorgrid = true, ylims = (0, 40), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "Rubrene Mobility")
 	plot!(T_range[15:end], rubrene_mob_hol, label = "Hol", linewidth = 2, linestyle = :dash)
 end
+
+# ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a
+savefig(rubrene_mob_plot, "rubrene_real_imped.pdf")
 
 # ╔═╡ fe290c3a-7a5d-4d74-b5e3-495714598f8a
 savefig(rubrene_mob_plot, "rubrene_mob_plot.pdf")
