@@ -566,7 +566,7 @@ hol_z = hol_impedance.(Ω_range, 2.39, 100, vh, wh)
 
 # ╔═╡ fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
 begin
-	plot(xlabel = "Omega (THz)", ylabel = "Re(Χ)")
+	rubrene_real_imped=plot(xlabel = "Omega (THz)", ylabel = "Re(Χ)")
 	plot!(Ω_range, -real.(1 ./ fro_z), ylims = (0, 0.25), linewidth = 2, label="Fro")
 	plot!(Ω_range, -real.(1 ./ hol_z), linewidth = 2, linestyle = :dash, label = "Hol")
 end
