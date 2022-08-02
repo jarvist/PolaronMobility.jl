@@ -502,7 +502,7 @@ function make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, th
         print("\n\n")
         println("Calculating complex impedances...")
         global count = 0
-        global processes = length(T) * length(Ω) * length(α)
+        global processes = length(Trange) * length(Ω) * length(α)
     end
 
     # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
@@ -522,7 +522,7 @@ function make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, th
         print("\n\n")
         println("Calculating mobilities...")
         global count = 0
-        global processes = length(T) * length(α)
+        global processes = length(Trange) * length(α)
     end
 
     # Calculates the dc mobility for each alpha parameter and each temperature.
