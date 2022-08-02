@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.4
+# v0.19.0
 
 using Markdown
 using InteractiveUtils
@@ -180,7 +180,7 @@ function k_integral(t, v, w; power = 0, R = 0)
 	if R == 0 # Frohlich
 		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), -Inf, Inf)[1] / sqrt(2pi)
 	else # Holstein, note limits on integral, R=k-space volume
-		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), 0, R)[1] / sqrt(2π)
+		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), 0, R)[1] / sqrt(2) / pi
 	end
 end
 
@@ -237,7 +237,7 @@ Frohlich_energy(2.39, vh_k, wh_k; power = 2, R = (6 * π^2)^(1/3))
 function holstein_elph_integral(α, v, w; R = (6 * π^2)^(1/3))
 	d(t) = D(t, v, w)
 	integrand(t) = erf(sqrt(d(t) / 2) * R) / (2 * (d(t))^(3/2)) - R * exp(-R^2 * d(t) / (2)) / (sqrt(2π) * d(t))
-	integral = α * quadgk(t -> exp(-t) * integrand(t), 0, Inf, rtol = 1e-4)[1] / sqrt(π)
+	integral = α * quadgk(t -> exp(-t) * integrand(t), 0, Inf, rtol = 1e-4)[1] / sqrt(π / 2)
 	return integral
 end
 
@@ -300,7 +300,7 @@ B_Fro(v, w, β, α) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f_Fro(x,
 
 
 # ╔═╡ f87703c9-fa55-420a-b3cc-c6b947ef456a
-B_Hol(v, w, β, α) = α / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f_Hol(x, v, w, β), 0, β/2)[1]
+B_Hol(v, w, β, α) = α / (sqrt(2) * pi * (exp(β) - 1)) * quadgk(x -> f_Hol(x, v, w, β), 0, β/2)[1]
 
 # ╔═╡ c1358b12-4f68-4485-8ee7-73ef672f3ed8
 """
@@ -483,7 +483,7 @@ end
 function hol_eff_mass(v, w, α)
 	R = (6 * π^2)^(1/3)
 	integrand(τ) = τ^2 * exp(-τ) * (3 * erf(sqrt(D(τ, v, w) / 2) * R) / (2 * D(τ, v, w)^(5/2)) - R * exp(-D(τ, v, w) * R^2 / 2) * (D(τ, v, w) * R^2 + 3) / (sqrt(2π) * D(τ, v, w)^2))
-	integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(π))
+	integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(2) * pi)
 	return 1 + integral
 end
 
