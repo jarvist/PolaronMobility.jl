@@ -491,7 +491,7 @@ function make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, th
         print("\n\n")
         println("Calculating free energies...")
         global count = 0
-        global processes = length(T) * length(α)
+        global processes = length(Trange) * length(α)
     end
 
     # Calculate ground-state free energies for each alpha parameter and temperature. Returns a Matrix.
