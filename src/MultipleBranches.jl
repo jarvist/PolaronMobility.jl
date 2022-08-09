@@ -166,7 +166,7 @@ function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to d
     # Sum over all ionic contribution from each phonon mode
     total_ionic = 0.0
     
-    for t in 1:length(phonon_freqs)
+    for t in eachindex(phonon_freqs)
         total_ionic += ϵ_ionic_mode(phonon_freqs[t], ir_activity[t], volume)
     end
 
@@ -267,13 +267,7 @@ Note: Not to be confused with the number of physical phonon branches; many phono
 """
 function κ_i(i, v, w)
     κ = v[i]^2 - w[i]^2
-    if length(v) > 1
-        for j in 1:length(v)
-            if j != i
-                κ *= (v[j]^2 - w[i]^2) / (w[j]^2 - w[i]^2)
-            end
-        end
-    end
+    κ *= prod(j != i ? (v[j]^2 - w[i]^2) / (w[j]^2 - w[i]^2) : 1.0 for j in eachindex(v))
     return κ
 end
 
@@ -293,13 +287,7 @@ Note: Not to be confused with the number of physical phonon branches; many phono
 """
 function h_i(i, v, w)
     h = v[i]^2 - w[i]^2
-    if length(v) > 1
-        for j in 1:length(v)
-            if j != i
-                h *= (w[j]^2 - v[i]^2) / (v[j]^2 - v[i]^2)
-            end
-        end
-    end
+    h *= prod(j != i ? (w[j]^2 - v[i]^2) / (v[j]^2 - v[i]^2) : 1.0 for j in eachindex(v))
     return h
 end
 
@@ -338,10 +326,7 @@ Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
 function D_j(τ, β, v, w)
-    D = τ * (1 - τ / β)
-    for i in 1:length(v)
-        D += (h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β))
-    end
+    D = τ * (1 - τ / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β)) for i in eachindex(v))
     return D
 end
 
@@ -358,10 +343,7 @@ Calculates the recoil function at zero-temperature.
 See also ['D_j'](@ref).
 """
 function D_j(τ, v, w)
-    D = τ
-    for i in 1:length(v)
-        D += (h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ)
-    end
+    D = τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))
     return D
 end
 
@@ -384,8 +366,8 @@ See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.29
 See also ['B'](@ref).
 """
 function B_j(α, β, v, w; rtol = 1e-3)
-    B_integrand(τ) = (exp(-τ) + exp(τ - β)) / sqrt(abs(D_j(τ, β, v, w)))
-    B = α / (√π * (1 - exp(-β))) * quadgk(τ -> B_integrand(τ), 0.0, β / 2, rtol = rtol)[1]
+    B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D_j(τ, β, v, w)))
+    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ), 0.0, β / 2.0, atol = rtol)[1]
     return B
 end
 
@@ -404,7 +386,7 @@ See also [`B_j`](@ref).
 """
 function B_j(α, v, w; rtol = 1e-3)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
-    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64, rtol = rtol)[1]
+    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64, atol = rtol)[1]
     return B
 end
 
@@ -426,13 +408,9 @@ See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.29
 See also ['C'](@ref).
 """
 function C_j(β, v, w, n)
-    s = 0.0
     # Sum over the contributions from each fictitious mass.
-    for i in 1:length(v)
-        for j in 1:length(v)
-            s += C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2)  - 2 / (β * v[j]))
-        end
-    end
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2)  - 2 / (β * v[j])) for i in eachindex(v), j in eachindex(w))
+
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     return 3 * s / n
 end
@@ -450,13 +428,8 @@ Calculates `C_j(β, v, w, n)` but at zero-temperature, `β = Inf`.
 See also [`C_j`](@ref).
 """
 function C_j(v, w, n)
-    s = 0.0
     # Sum over the contributions from each fictitious mass.
-    for i in 1:length(v)
-        for j in 1:length(v)
-            s += C_ij(i, j, v, w) / (v[j] * w[i])
-        end
-    end
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) for i in eachindex(v), j in eachindex(w))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     return 3 * s / n
 end
@@ -479,13 +452,8 @@ See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.29
 See also ['A'](@ref).
 """
 function A_j(β, v, w, n)
-    s = -log(2π * β) / 2
     # Sum over the contributions from each fictitious mass.
-    for i in 1:length(v)
-        if v[i] != w[i]
-            s += v[i] == w[i] ? 0.0 : log(v[i] / w[i]) - log(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))
-        end
-    end
+    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0.0 : log(abs(v[i] / w[i])) - log(abs(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))) for i in eachindex(v))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     3 / β * s / n
 end
@@ -530,10 +498,8 @@ See also [`F`](@ref).
 """
 function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
 
-    num_modes = length(ω)
-
     # Add contribution to the total free energy from the phonon mode.
-    F = sum(-(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, num_modes) + A_j(β[j], v, w, num_modes)) * ω[j] for j in 1:num_modes)
+    F = sum(-(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
     # Print the free energy.
     if verbose
@@ -565,10 +531,8 @@ See also [`multi_F`](@ref).
 """
 function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
 
-    num_modes = length(ω)
-
     # Add contribution to the total free energy from the phonon mode.
-	F = sum(-(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, num_modes) + A_j(v, w, num_modes)) * ω[j] for j in 1:num_modes)
+	F = sum(-(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
     # Print the free energy.
     if verbose
@@ -608,39 +572,39 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
     # Use a random set of N initial v and w values.
     if v == 0.0 || w == 0.0
 		# Intial guess for v and w parameters.
-    	initial = sort(rand(2 * N), rev=true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
+    	initial = [x for x in 1.0:(2.0 * N)] # initial guess around 4 and ≥ 1.
 	else
         Δv = v .- w
-        initial = vcat(Δv .+ rtol, w)
+        initial = vcat(Δv, w)
     end
 
     # Limits of the optimisation.
     lower = fill(0.0, 2 * N)
-    upper = fill(1000.0, 2 * N)
+    upper = fill(Inf64, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω, rtol = rtol)
+	f(x) = multi_F([abs(x[2 * n - 1]) for n in 1:N] .+ [abs(x[2 * n]) for n in 1:N], [abs(x[2 * n]) for n in 1:N], α, β; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
 		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-		lower,
-		upper,
-		initial,
-		Fminbox(BFGS()),
-		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
+        initial,
+        Newton(),
+		Optim.Options(show_trace = true), # Set time limit for asymptotic convergence if needed.
 	)
+
+    @show(solution)
 
 	# Extract the v and w parameters that minimised the free energy.
 	var_params = Optim.minimizer(solution)
 
-    if Optim.converged(solution) == false
-        @warn "Failed to converge feynmanvw solution."
-    end
-
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	Δv = [var_params[2 * n - 1] for n in 1:N]
-	w = [var_params[2 * n] for n in 1:N]
+	Δv = [abs(var_params[2 * n - 1]) for n in 1:N]
+	w = [abs(var_params[2 * n]) for n in 1:N]
+
+    # if Optim.converged(solution) == false
+    #     @warn "Failed to converge T = $T K variational solution. v = $(Δv .+ w), w = $w."
+    # end
 
     # Print the variational parameters that minimised the free energy.
 	if verbose
@@ -651,7 +615,7 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
     end
 
     # Return the variational parameters that minimised the free energy.
-    return hcat(Δv .+ w, w)
+    return [Δv .+ w, w]
 end
 
 """
@@ -679,7 +643,7 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
     # Use a random set of N initial v and w values.
     if v == 0.0 || w == 0.0
 		# Intial guess for v and w parameters.
-    	initial = sort(rand(2 * N), rev=true) .* 4.0 .+ 1.0 # initial guess around 4 and ≥ 1.
+    	initial = [x for x in 1.0:(2.0 * N)] # initial guess around 4 and ≥ 1.
 	else
         Δv = v .- w
         initial = vcat(Δv .+ rtol, w)
@@ -687,27 +651,31 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
 
     # Limits of the optimisation.
     lower = fill(0.0, 2 * N)
-    upper = fill(1000, 2 * N)
+    upper = fill(100.0, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω, rtol = rtol)
+	f(x) = multi_F([abs(x[2 * n - 1]) for n in 1:N] .+ [abs(x[2 * n]) for n in 1:N], [abs(x[2 * n]) for n in 1:N], α; ω = ω, rtol = rtol)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
 		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-		lower,
-		upper,
-		initial,
-		Fminbox(BFGS()),
-		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
+        initial,
+		Newton(),
+		Optim.Options(show_trace = false), # Set time limit for asymptotic convergence if needed.
 	)
+
+    @show(solution)
 
 	# Extract the v and w parameters that minimised the free energy.
 	var_params = Optim.minimizer(solution)
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	Δv = [var_params[2 * n - 1] for n in 1:N]
-	w = [var_params[2 * n] for n in 1:N]
+	Δv = [abs(var_params[2 * n - 1]) for n in 1:N]
+	w = [abs(var_params[2 * n]) for n in 1:N]
+
+    # if Optim.converged(solution) == false
+    #     @warn "Failed to converge T = 0 K variational solution. v = $(Δv .+ w), w = $w."
+    # end
 
 	# Print the variational parameters that minimised the free energy.
 	if verbose
@@ -718,6 +686,6 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
     end
 
     # Return the variational parameters that minimised the free energy.
-    return hcat(Δv .+ w, w)
+    return [Δv .+ w, w]
 end
 
