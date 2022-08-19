@@ -363,28 +363,28 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
     
     if verbose
         println("\nv: ")
-        show(IOContext(stdout, :limit => true), round.(v_params, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(v_params...), digits = 3))
         print("\n\n")
         println("w: ")
-        show(IOContext(stdout, :limit => true), round.(w_params, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(w_params...), digits = 3))
         print("\n\n")
         println("Calculating spring constants...")
     end
 
     # Calculate fictitious spring constants for each temperature.
-    @tullio threads = threads spring_constants[i] := v_params[i]^2 - w_params[i]^2
+    @tullio threads = threads spring_constants[i] := v_params[i].^2 .- w_params[i].^2
 
     if verbose
-        show(IOContext(stdout, :limit => true), round.(spring_constants, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(spring_constants...), digits = 3))
         print("\n\n")
         println("Calculating fictitious masses...")
     end
 
     # Calculate fictitious masses for each temperature.
-    @tullio threads = threads masses[i] := spring_constants[i] / w_params[i]^2
+    @tullio threads = threads masses[i] := spring_constants[i] ./ w_params[i].^2
     
     if verbose
-        show(IOContext(stdout, :limit => true), round.(masses, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(masses...), digits = 3))
         print("\n\n")
         println("Calculating free energies...")
         global count = 0
@@ -431,7 +431,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, Trange, betas, phonon_freq, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
+    return NewPolaron(α, Trange, betas, phonon_freq, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
 end
 
 """
@@ -466,28 +466,28 @@ function make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, th
     
     if verbose
         println("\nv: ")
-        show(IOContext(stdout, :limit => true), round.(v_params, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(v_params...), digits = 3))
         print("\n\n")
         println("w: ")
-        show(IOContext(stdout, :limit => true), round.(w_params, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(w_params...), digits = 3))
         print("\n\n")
         println("Calculating spring constants...")
     end
 
     # Calculate fictitious spring constants for each alpha parameter and temperature. Returns a Matrix.
-    @tullio threads = threads spring_constants[j, i] := v_params[j, i]^2 - w_params[j, i]^2
+    @tullio threads = threads spring_constants[j, i] := v_params[j, i] .^2 .- w_params[j, i] .^2
 
     if verbose
-        show(IOContext(stdout, :limit => true), round.(spring_constants, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(spring_constants...), digits = 3))
         print("\n\n")
         println("Calculating fictitious masses...")
     end
 
     # Calculate fictitious masses for each alpha parameter and temperature. Returns a Matrix.
-    @tullio threads = threads masses[j, i] := spring_constants[j, i] / w_params[j, i]^2
+    @tullio threads = threads masses[j, i] := spring_constants[j, i] ./ w_params[j, i].^2
     
     if verbose
-        show(IOContext(stdout, :limit => true), round.(masses, digits = 3))
+        show(IOContext(stdout, :limit => true), round.(hcat(masses...), digits = 3))
         print("\n\n")
         println("Calculating free energies...")
         global count = 0
@@ -534,7 +534,7 @@ function make_polaron(α, Trange, Ω; ω = 1.0, rtol = 1e-4, verbose = false, th
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, Trange, betas, ω, v_params, w_params, spring_constants, masses, energies, Ω, impedances, conductivities, mobilities)
+    return NewPolaron(α, Trange, betas, ω, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
 end
 
 """
