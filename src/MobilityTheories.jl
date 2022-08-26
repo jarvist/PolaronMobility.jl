@@ -355,7 +355,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
     end
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    @tullio threads = threads params[i] := Trange[i] == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, rtol=rtol, N=N_params, verbose=verbose) : var_params(α, betas[:, i]; v=5.6, w=3.4, ω=ω, rtol=rtol, T=Trange[i], N=N_params, verbose=verbose) (i in eachindex(Trange))
+    @tullio threads = threads params[i] := Trange[i] == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose) : var_params(α, betas[:, i]; v=5.6, w=3.4, ω=ω, T=Trange[i], N=N_params, verbose=verbose) (i in eachindex(Trange))
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
     @tullio threads = threads v_params[i] := params[i][1] (i in eachindex(Trange))
@@ -392,7 +392,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
     end
 
     # Calculate ground-state free energies for each temperature.
-    @tullio threads = threads energies[i] := Trange[i] == 0.0 ? multi_F(v_params[i], w_params[i], α; ω=ω, rtol=rtol, verbose=verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[i], w_params[i], α, betas[:, i]; ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) * 1000 * ħ / eV * 1e12 (i in eachindex(Trange))
+    @tullio threads = threads energies[i] := Trange[i] == 0.0 ? multi_F(v_params[i], w_params[i], α; ω=ω, verbose=verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[i], w_params[i], α, betas[:, i]; ω=ω, T=Trange[i], verbose=verbose) * 1000 * ħ / eV * 1e12 (i in eachindex(Trange))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits=3))
@@ -458,7 +458,7 @@ function make_polaron(α, Trange, Ω; ω=1.0, rtol=1e-4, verbose=false, threads=
     end
 
     # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
-    @tullio threads = threads params[j, i] := Trange[i] == 0.0 ? var_params(α[j]; v=5.6, w=3.4, ω=ω, rtol=rtol, verbose=verbose) : var_params(α[j], betas[i]; v=5.6, w=3.4, ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
+    @tullio threads = threads params[j, i] := Trange[i] == 0.0 ? var_params(α[j]; v=5.6, w=3.4, ω=ω, verbose=verbose) : var_params(α[j], betas[i]; v=5.6, w=3.4, ω=ω, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
 
     # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
     @tullio threads = threads v_params[j, i] := params[j, i][1]
@@ -495,7 +495,7 @@ function make_polaron(α, Trange, Ω; ω=1.0, rtol=1e-4, verbose=false, threads=
     end
 
     # Calculate ground-state free energies for each alpha parameter and temperature. Returns a Matrix.
-    @tullio threads = threads energies[j, i] := Trange[i] == 0.0 ? multi_F(v_params[j, i], w_params[j, i], α[j]; ω=ω, rtol=rtol, verbose=verbose) : multi_F(v_params[j, i], w_params[j, i], α[j], betas[i]; ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
+    @tullio threads = threads energies[j, i] := Trange[i] == 0.0 ? multi_F(v_params[j, i], w_params[j, i], α[j]; ω=ω, verbose=verbose) : multi_F(v_params[j, i], w_params[j, i], α[j], betas[i]; ω=ω, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
 
     if verbose
         show(IOContext(stdout, :limit => true), round.(energies, digits=3))
