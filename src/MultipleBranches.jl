@@ -19,7 +19,7 @@ function frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
 end
 
 # deprecated signature wrapped via multiple dispatch
-frohlichPartial(ϵ_o, ϵ_s, ϵ_mode, f, meff) = frohlichPartial((f, ϵ_mode), ϵ_o = ϵ_o, ϵ_s = ϵ_s, meff = meff)
+frohlichPartial(ϵ_o, ϵ_s, ϵ_mode, f, meff) = frohlichPartial((f, ϵ_mode), ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
 
 rows(M::Matrix) = map(x -> reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1])
 
@@ -31,7 +31,7 @@ contribution to the low-frequency dielectric constant.
 
 IRmodes are tuples f, S with Frequency in THz; InfraRed activity in e^2 amu^-1.
 """
-function IRtoDielectric(IRmodes,volume)
+function IRtoDielectric(IRmodes, volume)
     ϵ = 0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
     for r in rows(IRmodes)
         f, S = r # frequency in THz; activity in e^2 amu^-1
@@ -98,7 +98,7 @@ Calculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-function Hellwarth1999mobilityRHS((α, (v, w) ,f), effectivemass, T)
+function Hellwarth1999mobilityRHS((α, (v, w), f), effectivemass, T)
     mb = effectivemass * MassElectron
     ω = f * 1e12 * 2π
     βred = ħ * ω / (kB * T)
@@ -106,11 +106,11 @@ function Hellwarth1999mobilityRHS((α, (v, w) ,f), effectivemass, T)
     R = (v^2 - w^2) / (w^2 * v) # inline, page 300 just after Eqn (2)
     b = R * βred / sinh(βred * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
     a = sqrt((βred / 2)^2 + R * βred * coth(βred * v / 2))
-    k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3/2) * cos(u) # integrand in (2)
+    k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3 / 2) * cos(u) # integrand in (2)
     K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
 
     # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
-    RHS = α / (3 * sqrt(π)) * βred^(5/2) / sinh(βred / 2) * (v^3 / w^3) * K
+    RHS = α / (3 * sqrt(π)) * βred^(5 / 2) / sinh(βred / 2) * (v^3 / w^3) * K
     μ = RHS^(-1) * q / (ω * mb)
 
     return 1 / μ
@@ -137,13 +137,13 @@ Calculate the ionic contribution to the dielectric function for a given phonon m
 function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mode
 
     # Angular phonon frequency for the phonon mode (rad Hz)
-    ω_j = 2π * phonon_mode_freq * 1e12 
+    ω_j = 2π * phonon_mode_freq * 1e12
 
     # Dielectric contribution from a single ionic phonon mode
     ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_j^2 * amu)
 
     # Normalise ionic dielectric contribution with 1 / (4π ϵ_0) (NB: the 4π has been pre-cancelled)
-    return ϵ_mode / ϵ_0 
+    return ϵ_mode / ϵ_0
 end
 
 """
@@ -158,14 +158,14 @@ Calculate the total ionic contribution to the dielectric function from all phono
 function ϵ_total(freqs_and_ir_activity, volume) # total ionic contribution to dielectric
 
     # Extract phonon frequencies (THz)
-    phonon_freqs = freqs_and_ir_activity[:, 1] 
+    phonon_freqs = freqs_and_ir_activity[:, 1]
 
     # Extra infra-red activities (e^2 amu^-1)
     ir_activity = freqs_and_ir_activity[:, 2]
 
     # Sum over all ionic contribution from each phonon mode
     total_ionic = 0.0
-    
+
     for t in eachindex(phonon_freqs)
         total_ionic += ϵ_ionic_mode(phonon_freqs[t], ir_activity[t], volume)
     end
@@ -194,17 +194,17 @@ function effective_freqs(freqs_and_ir_activity, num_var_params) # PCA Algorithm
     else
 
         # Centralise data by subtracting the columnwise mean
-        standardized_matrix = freqs_and_ir_activity' .- mean(freqs_and_ir_activity', dims = 2) 
+        standardized_matrix = freqs_and_ir_activity' .- mean(freqs_and_ir_activity', dims=2)
 
         # Calculate the covariance matrix S' * S. Matrix size is (n - 1) x (n - 1) for number of params (here n = 2)
-        covariance_matrix = standardized_matrix' * standardized_matrix 
+        covariance_matrix = standardized_matrix' * standardized_matrix
 
         # Extract eigenvectors of the covariance matrix
-        eigenvectors = eigvecs(covariance_matrix) 
+        eigenvectors = eigvecs(covariance_matrix)
 
         # Project the original data along the covariance matrix eigenvectors and undo the centralisation
-        reduced_matrix = standardized_matrix[:, 1:num_var_params] * eigenvectors[1:num_var_params, 1:num_var_params] * 
-        eigenvectors[1:num_var_params, 1:num_var_params]' .+ mean(freqs_and_ir_activity', dims = 2)
+        reduced_matrix = standardized_matrix[:, 1:num_var_params] * eigenvectors[1:num_var_params, 1:num_var_params] *
+                         eigenvectors[1:num_var_params, 1:num_var_params]' .+ mean(freqs_and_ir_activity', dims=2)
 
         # Resultant matrix is positive definite and transposed.
         return abs.(reduced_matrix')
@@ -226,19 +226,19 @@ branches.
 - `phonon_mode_freq::Float64`: is the frequency of the phonon mode (THz).
 - `m_eff::Float64` is the band mass of the electron (in units of electron mass m_e).
 """
-function multi_frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff) 
+function multi_frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff)
 
     # The Rydberg energy unit
     Ry = eV^4 * me / (2 * ħ^2)
 
     # Angular phonon frequency for the phonon mode (rad Hz).
-    ω = 2π * 1e12 * phonon_mode_freq 
+    ω = 2π * 1e12 * phonon_mode_freq
 
     # The static dielectric constant. Calculated here instead of inputted so that ionic modes are properly normalised.
     ϵ_static = ϵ_total + ϵ_optic
 
     # The contribution to the electron-phonon parameter from the currrent phonon mode. 1 / (4π ϵ_0) is the dielectric normalisation.
-    α_j  = (m_eff * Ry / (ħ * ω))^(1 / 2) * ϵ_ionic / (4π * ϵ_0) / (ϵ_optic * ϵ_static)
+    α_j = (m_eff * Ry / (ħ * ω))^(1 / 2) * ϵ_ionic / (4π * ϵ_0) / (ϵ_optic * ϵ_static)
 
     return α_j
 end
@@ -365,9 +365,9 @@ See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.29
 
 See also ['B'](@ref).
 """
-function B_j(α, β, v, w; rtol = 1e-3)
+function B_j(α, β, v, w; rtol=1e-3)
     B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D_j(τ, β, v, w)))
-    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ), 0.0, β / 2.0, atol = rtol)[1]
+    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ), 0.0, β / 2.0, atol=rtol)[1]
     return B
 end
 
@@ -384,9 +384,9 @@ Calculates `B_j(α, β, v, w)` but at zero-temperature, `β = Inf`.
 
 See also [`B_j`](@ref).
 """
-function B_j(α, v, w; rtol = 1e-3)
+function B_j(α, v, w; rtol=1e-3)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
-    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64, atol = rtol)[1]
+    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64, atol=rtol)[1]
     return B
 end
 
@@ -409,7 +409,7 @@ See also ['C'](@ref).
 """
 function C_j(β, v, w, n)
     # Sum over the contributions from each fictitious mass.
-    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2)  - 2 / (β * v[j])) for i in eachindex(v), j in eachindex(w))
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2) - 2 / (β * v[j])) for i in eachindex(v), j in eachindex(w))
 
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     return 3 * s / n
@@ -496,19 +496,19 @@ See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., B
 
 See also [`F`](@ref).
 """
-function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
+function multi_F(v, w, α, β; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
 
     # Add contribution to the total free energy from the phonon mode.
-    F = sum(-(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
+    F = sum(-(B_j(α[j], β[j], v, w; rtol=rtol) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
     # Print the free energy.
     if verbose
         println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | F = $(round.(F, digits = 3))")
-        print("\033[F") 
-        
+        print("\033[F")
+
         global count += 1
     end
-        
+
     # Free energy in units of meV
     return F
 end
@@ -529,18 +529,18 @@ See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 
 See also [`multi_F`](@ref).
 """
-function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
+function multi_F(v, w, α; ω=1.0, rtol=1e-3, verbose=false)
 
     # Add contribution to the total free energy from the phonon mode.
-	F = sum(-(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
+    F = sum(-(B_j(α[j], v, w; rtol=rtol) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
     # Print the free energy.
     if verbose
         println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | F = $(round.(F, digits = 3))")
-        print("\033[F") 
-        global count += 1  
+        print("\033[F")
+        global count += 1
     end
-        
+
     # Free energy in units of meV
     return F
 end
@@ -563,7 +563,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
-function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false) # N number of v and w params
+function var_params(α, β; v=0.0, w=0.0, ω=1.0, N=1, rtol=1e-3, show_trace=false, T=nothing, verbose=false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -571,9 +571,9 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
 
     # Use a random set of N initial v and w values.
     if v == 0.0 || w == 0.0
-		# Intial guess for v and w parameters.
-    	initial = [x for x in 1.0:(2.0 * N)] # initial guess around 4 and ≥ 1.
-	else
+        # Intial guess for v and w parameters.
+        initial = [x for x in 1.0:(2.0*N)] # initial guess around 4 and ≥ 1.
+    else
         Δv = v .- w
         initial = vcat(Δv, w)
     end
@@ -582,34 +582,34 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
     lower = fill(0.0, 2 * N)
     upper = fill(Inf64, 2 * N)
 
-	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([abs(x[2 * n - 1]) for n in 1:N] .+ [abs(x[2 * n]) for n in 1:N], [abs(x[2 * n]) for n in 1:N], α, β; ω = ω, rtol = rtol)
+    # The multiple phonon mode free energy function to minimise.
+    f(x) = multi_F([abs(x[2*n-1]) for n in 1:N] .+ [abs(x[2*n]) for n in 1:N], [abs(x[2*n]) for n in 1:N], α, β; ω=ω, rtol=rtol)
 
-	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
-	solution = Optim.optimize(
-		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         initial,
         Newton(),
-		Optim.Options(show_trace = true), # Set time limit for asymptotic convergence if needed.
-	)
+        Optim.Options(show_trace=true), # Set time limit for asymptotic convergence if needed.
+    )
 
     @show(solution)
 
-	# Extract the v and w parameters that minimised the free energy.
-	var_params = Optim.minimizer(solution)
+    # Extract the v and w parameters that minimised the free energy.
+    var_params = Optim.minimizer(solution)
 
-	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	Δv = [abs(var_params[2 * n - 1]) for n in 1:N]
-	w = [abs(var_params[2 * n]) for n in 1:N]
+    # Separate the v and w parameters into one-dimensional arrays (vectors).
+    Δv = [abs(var_params[2*n-1]) for n in 1:N]
+    w = [abs(var_params[2*n]) for n in 1:N]
 
     # if Optim.converged(solution) == false
     #     @warn "Failed to converge T = $T K variational solution. v = $(Δv .+ w), w = $w."
     # end
 
     # Print the variational parameters that minimised the free energy.
-	if verbose
+    if verbose
         println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | v = $(round.(Δv .+ w, digits = 3)) | w = $(round.(w, digits = 3))")
-        print("\033[F")   
+        print("\033[F")
 
         global count += 1
     end
@@ -634,17 +634,17 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref), [`var_param`](@ref).
 """
-function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false) # N number of v and w params
- 
+function var_params(α; v=0.0, w=0.0, ω=1.0, N=1, rtol=1e-3, show_trace=false, verbose=false) # N number of v and w params
+
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
     end
 
     # Use a random set of N initial v and w values.
     if v == 0.0 || w == 0.0
-		# Intial guess for v and w parameters.
-    	initial = [x for x in 1.0:(2.0 * N)] # initial guess around 4 and ≥ 1.
-	else
+        # Intial guess for v and w parameters.
+        initial = [x for x in 1.0:(2.0*N)] # initial guess around 4 and ≥ 1.
+    else
         Δv = v .- w
         initial = vcat(Δv .+ rtol, w)
     end
@@ -653,34 +653,34 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
     lower = fill(0.0, 2 * N)
     upper = fill(100.0, 2 * N)
 
-	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([abs(x[2 * n - 1]) for n in 1:N] .+ [abs(x[2 * n]) for n in 1:N], [abs(x[2 * n]) for n in 1:N], α; ω = ω, rtol = rtol)
+    # The multiple phonon mode free energy function to minimise.
+    f(x) = multi_F([abs(x[2*n-1]) for n in 1:N] .+ [abs(x[2*n]) for n in 1:N], [abs(x[2*n]) for n in 1:N], α; ω=ω, rtol=rtol)
 
-	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
-	solution = Optim.optimize(
-		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         initial,
-		Newton(),
-		Optim.Options(show_trace = false), # Set time limit for asymptotic convergence if needed.
-	)
+        Newton(),
+        Optim.Options(show_trace=false), # Set time limit for asymptotic convergence if needed.
+    )
 
     @show(solution)
 
-	# Extract the v and w parameters that minimised the free energy.
-	var_params = Optim.minimizer(solution)
+    # Extract the v and w parameters that minimised the free energy.
+    var_params = Optim.minimizer(solution)
 
-	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	Δv = [abs(var_params[2 * n - 1]) for n in 1:N]
-	w = [abs(var_params[2 * n]) for n in 1:N]
+    # Separate the v and w parameters into one-dimensional arrays (vectors).
+    Δv = [abs(var_params[2*n-1]) for n in 1:N]
+    w = [abs(var_params[2*n]) for n in 1:N]
 
     # if Optim.converged(solution) == false
     #     @warn "Failed to converge T = 0 K variational solution. v = $(Δv .+ w), w = $w."
     # end
 
-	# Print the variational parameters that minimised the free energy.
-	if verbose
+    # Print the variational parameters that minimised the free energy.
+    if verbose
         println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | v = $(round.(Δv .+ w, digits = 3)) | w = $(round.(w, digits = 3))")
-        print("\033[F")    
+        print("\033[F")
 
         global count += 1
     end

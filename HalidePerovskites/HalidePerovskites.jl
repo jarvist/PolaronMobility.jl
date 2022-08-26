@@ -9,9 +9,9 @@
 # Jarvist Moore Frost
 # (Submitted on 18 Apr 2017 [v1])
 
-push!(LOAD_PATH,"../src/") # load module from local directory
+push!(LOAD_PATH, "../src/") # load module from local directory
 
-using PolaronMobility 
+using PolaronMobility
 using PlotPolaron # Plots dependency
 
 ##### load in library routines... #####
@@ -19,37 +19,37 @@ using PlotPolaron # Plots dependency
 using Plots
 pyplot()
 default(grid=false) # No silly dotted grid lines
-default(size=(400,250)) # A good small size for two-column EPS output
+default(size=(400, 250)) # A good small size for two-column EPS output
 
 #default(size=(800,600)) # Nice size for small-ish PNGs for slides
 
 # Physical constants
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s 
 const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2 
-const me=MassElectron = 9.10938188e-31;                          # kg
-const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2 
+const me = MassElectron = 9.10938188e-31;                          # kg
+const Boltzmann = const kB = 1.3806504e-23;                  # kg m2 / K s2 
 const ε_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 
 " Copy and pasted out of a Jupyter notebook; this calculates 'alpha' parameters
 for various materials, as a comparison to the literature used when figuring out
 the oft-quoted units. "
 function checkalpha()
-	println(" Alpha-parameter, Cross check 'feynmanalpha()' fn vs. literature values.\n")
-	print("\t NaCl Frohlich paper α=",feynmanalpha(2.3, 5.6, (4.9E13/(2*pi)), 1.0)) 
+    println(" Alpha-parameter, Cross check 'feynmanalpha()' fn vs. literature values.\n")
+    print("\t NaCl Frohlich paper α=", feynmanalpha(2.3, 5.6, (4.9E13 / (2 * pi)), 1.0))
     println(" should be ~about 5 (Feynman1955)")
-	print("\t CdTe  α=",feynmanalpha(7.1,   10.4,  5.08E12, 0.095)) 
+    print("\t CdTe  α=", feynmanalpha(7.1, 10.4, 5.08E12, 0.095))
     println(" Stone 0.39 / Devreese 0.29 ")
-	print("\t GaAs  α=",feynmanalpha(10.89, 12.9,  8.46E12, 0.063)) 
+    print("\t GaAs  α=", feynmanalpha(10.89, 12.9, 8.46E12, 0.063))
     println(" Devreese 0.068 ")
 
     println()
-    println("Guess at PCBM: 4.0, 6.0 ; α=",feynmanalpha(4.0,6.0, 1E12, 50))
+    println("Guess at PCBM: 4.0, 6.0 ; α=", feynmanalpha(4.0, 6.0, 1E12, 50))
     println("MAPI:")
-    println("MAPI  4.5, 24.1, 9THz ; α=",feynmanalpha(4.5,   24.1,  9.0E12,    0.12))
-    println("MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=",feynmanalpha(4.5,   24.1,  2.25E12,    0.12))
-    println("MAPI  6.0, 25.7, 9THz ; α=",feynmanalpha(6.0,   25.7,  9.0E12,    0.12))
-    println("MAPI  6.0, 36.0, 9THz ; α=",feynmanalpha(6.0,   36,  9.0E12,    0.12))
-    println("MAPI  6.0, 36.0, 1THz ; α=",feynmanalpha(6.0,   36,  1.0E12,    0.12))
+    println("MAPI  4.5, 24.1, 9THz ; α=", feynmanalpha(4.5, 24.1, 9.0E12, 0.12))
+    println("MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=", feynmanalpha(4.5, 24.1, 2.25E12, 0.12))
+    println("MAPI  6.0, 25.7, 9THz ; α=", feynmanalpha(6.0, 25.7, 9.0E12, 0.12))
+    println("MAPI  6.0, 36.0, 9THz ; α=", feynmanalpha(6.0, 36, 9.0E12, 0.12))
+    println("MAPI  6.0, 36.0, 1THz ; α=", feynmanalpha(6.0, 36, 1.0E12, 0.12))
 end
 checkalpha()
 
@@ -60,18 +60,18 @@ checkalpha()
 # L. Huang, W.Lambrecht - PRB 88, 165203 (2013)
 # Dielectric consts, from TABLE VII
 # Effective masses from TABLE VI, mh*
-const cm1=2.997e10 # cm-1 to Herz
+const cm1 = 2.997e10 # cm-1 to Herz
 
 function CsSn()
-    CsSnCl3=polaronmobility(10:10:1000, 4.80, 29.4,  243cm1, 0.140, figures=true) # alpha= 1.386311
-    savepolaron("CsSnCl3",CsSnCl3)
+    CsSnCl3 = polaronmobility(10:10:1000, 4.80, 29.4, 243cm1, 0.140, figures=true) # alpha= 1.386311
+    savepolaron("CsSnCl3", CsSnCl3)
 
-    CsSnBr3=polaronmobility(10:10:1000, 5.35, 32.4,  183cm1, 0.082, figures=true) # alpha= 1.094468 
-    savepolaron("CsSnBr3",CsSnBr3)
- 
-    CsSnI3=polaronmobility(10:10:1000, 6.05, 48.2,  152cm1, 0.069, figures=true) # alpha= 1.020355 
-    savepolaron("CsSnI3",CsSnI3)
- 
+    CsSnBr3 = polaronmobility(10:10:1000, 5.35, 32.4, 183cm1, 0.082, figures=true) # alpha= 1.094468 
+    savepolaron("CsSnBr3", CsSnBr3)
+
+    CsSnI3 = polaronmobility(10:10:1000, 6.05, 48.2, 152cm1, 0.069, figures=true) # alpha= 1.020355 
+    savepolaron("CsSnI3", CsSnI3)
+
 end
 
 CsSn() # generate all that lovely tin data
@@ -88,13 +88,13 @@ CsSn() # generate all that lovely tin data
 # --> 0.12 for electrons and 0.15 for holes, in MAPI. See 2014 PRB.
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
 # MAPI  4.5, 24.1, 2.25THz - 75 cm^-1 ; α=
-MAPIe=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
+MAPIe = polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.12)
 plotpolaron("MAPI-electron", MAPIe)
-savepolaron("MAPI-electron",MAPIe)
+savepolaron("MAPI-electron", MAPIe)
 
-MAPIh=polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.15)
+MAPIh = polaronmobility(10:10:1000, 4.5, 24.1, 2.25E12, 0.15)
 plotpolaron("MAPI-hole", MAPIh)
-savepolaron("MAPI-hole",MAPIh)
+savepolaron("MAPI-hole", MAPIh)
 
 # PCBM: 4.0, 5.0, 2.25Thz, effective-mass=1.0
 #polaronmobility(4.0, 5.0, 2.25E12, 1.00)
@@ -105,14 +105,14 @@ savepolaron("MAPI-hole",MAPIh)
 #                         Kmesh=6x6x6; 7.2/12.1
 # Kmesh=9x9x9x, Ediff=10^-9;           6.1/12.0, 2.57 THz
 function CsPbI()
-    CsPbI=polaronmobility(10:10:1000, 6.1,6.1+12.0, 2.57E12, 0.12)
-    plotpolaron("CsPbI3-electron",CsPbI)
-    savepolaron("CsPbI3-electron",CsPbI)
+    CsPbI = polaronmobility(10:10:1000, 6.1, 6.1 + 12.0, 2.57E12, 0.12)
+    plotpolaron("CsPbI3-electron", CsPbI)
+    savepolaron("CsPbI3-electron", CsPbI)
 end
 CsPbI() # generate CsPbI3 data for later plotting
 
 function SendnerCrosscheck()
-    const cm1=2.997e10 # cm-1 to Herz
+    const cm1 = 2.997e10 # cm-1 to Herz
 
     # Rob's / Sendner's paper - values extracted form IR measures
     # https://doi.org/10.1039%2Fc6mh00275g
@@ -125,19 +125,19 @@ function SendnerCrosscheck()
     # Combined, this reproduces their mobilities, and the internal w and
     # v parameters (again, data from email from Rob):
     #  Paper: "For omega we used: MAPbI/Br/Cl = 112.9/149.4/214.0"
-    RobMAPI =polaronmobility(10:10:400, 5.0, 33.5, 112.9*cm1, 0.104)
-    RobMAPBr=polaronmobility(10:10:400, 4.7, 32.3,149.4*cm1, 0.117)
-    RobMAPCl=polaronmobility(10:10:400, 4.0, 29.8, 214.0*cm1, 0.2)
+    RobMAPI = polaronmobility(10:10:400, 5.0, 33.5, 112.9 * cm1, 0.104)
+    RobMAPBr = polaronmobility(10:10:400, 4.7, 32.3, 149.4 * cm1, 0.117)
+    RobMAPCl = polaronmobility(10:10:400, 4.0, 29.8, 214.0 * cm1, 0.2)
 
-    savepolaron("Rob-MAPI",RobMAPI)
-    savepolaron("Rob-MAPBr",RobMAPBr)
-    savepolaron("Rob-MAPCl",RobMAPCl)
+    savepolaron("Rob-MAPI", RobMAPI)
+    savepolaron("Rob-MAPBr", RobMAPBr)
+    savepolaron("Rob-MAPCl", RobMAPCl)
 
-    plot(RobMAPI.T,RobMAPI.Hμ,label="(Rob's values) MAPI",markersize=2,marker=:uptriangle,ylim=(0,400))
-    plot!(RobMAPBr.T,RobMAPBr.Hμ,label="(Rob's values) MAPBr",markersize=2,marker=:diamond)
-    plot!(RobMAPCl.T,RobMAPCl.Hμ,label="(Rob's values) MAPCl",markersize=2,marker=:diamond)
+    plot(RobMAPI.T, RobMAPI.Hμ, label="(Rob's values) MAPI", markersize=2, marker=:uptriangle, ylim=(0, 400))
+    plot!(RobMAPBr.T, RobMAPBr.Hμ, label="(Rob's values) MAPBr", markersize=2, marker=:diamond)
+    plot!(RobMAPCl.T, RobMAPCl.Hμ, label="(Rob's values) MAPCl", markersize=2, marker=:diamond)
     savefig("Rob-comparison.png")
-#    savefig("Rob-comparison.eps")
+    #    savefig("Rob-comparison.eps")
 end
 
 SendnerCrosscheck() # cross-check data for Rob
@@ -147,42 +147,42 @@ SendnerCrosscheck() # cross-check data for Rob
 # Milot/Herz 2015 Time-Resolved-Microwave-Conductivity mobilities
 # Data from table in SI of: DOI: 10.1002/adfm.201502340
 # Absolute values possibly dodge due to unknown yield of charge carriers; but hopefully trend A.OK!
-Milot= [
-8 184
-40 321
-80 143
-120 62
-140 40
-160 52
-180 44
-205 41
-230 39
-265 26
-295 35
-310 24
-320 24
-330 19
-340 16
-355 15 
+Milot = [
+    8 184
+    40 321
+    80 143
+    120 62
+    140 40
+    160 52
+    180 44
+    205 41
+    230 39
+    265 26
+    295 35
+    310 24
+    320 24
+    330 19
+    340 16
+    355 15
 ]
 
 # IV estimated mobilities (?!) from large single crystals, assumed ambient T
 # Nature Communications 6, Article number: 7586 (2015)
 # doi:10.1038/ncomms8586
-Saidaminov = 
-[ 300 67.2 ]
+Saidaminov =
+    [300 67.2]
 
 #Semonin2016,
 #  doi = {10.1021/acs.jpclett.6b01308},
-Semonin = 
-[ 300 115 ] # +- 15 cm^2/Vs, holes+electrons
+Semonin =
+    [300 115] # +- 15 cm^2/Vs, holes+electrons
 
 #####
 ## Calculated mobilities vs. expt
-plot(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",marker=:hexagon,markersize=3,
-xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)", ylims=(0,400) )
-plot!(Saidaminov[:,1],Saidaminov[:,2],label="",markersize=6,marker=:utriangle)
-plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
+plot(Milot[:, 1], Milot[:, 2], label="Milot T-dep TRMC Polycrystal", marker=:hexagon, markersize=3,
+    xlab="Temperature (K)", ylab="Mobility (cm\$^2\$/Vs)", ylims=(0, 400))
+plot!(Saidaminov[:, 1], Saidaminov[:, 2], label="", markersize=6, marker=:utriangle)
+plot!(Semonin[:, 1], Semonin[:, 2], label="", markersize=6, marker=:square)
 #plot!(Saidaminov[:,1],Saidaminov[:,2],label="Saidaminov JV Single Crystal", markersize=6,marker=:utriangle)
 #plot!(Semonin[:,1],Semonin[:,2],label="Semonin Single Crystal TRMC", markersize=6,marker=:hexagon)
 
@@ -190,15 +190,15 @@ plot!(Semonin[:,1],Semonin[:,2],label="",markersize=6,marker=:square)
 #plot!(MAPIe.T,MAPIe.Kμs,label="(electrons) Kadanoff Polaron mobility",marker=2)
 #plot!(Ts,hHμs,label="Calculated (hole) mobility",markersize=3,marker=:dtriangle)
 
-plot!(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:dtriangle)
-plot!(MAPIh.T,MAPIh.Hμ,label="Calculated (hole) mobility",markersize=3,marker=:utriangle)
+plot!(MAPIe.T, MAPIe.Hμ, label="Calculated (electron) mobility", markersize=3, marker=:dtriangle)
+plot!(MAPIh.T, MAPIh.Hμ, label="Calculated (hole) mobility", markersize=3, marker=:utriangle)
 
 savefig("MAPI-eh-mobility-calculated-experimental.png")
 savefig("MAPI-eh-mobility-calculated-experimental.eps")
 
-plot!(ylims=(),yscale=:log10)
-plot!(ylims=(),xscale=:log10) # on log-log axes; powerlaw becomes straight
-plot!(x->1e5*x^(-3/2),20:1000,yscale=:log10) # Trend line for the T^-3/2 powerlaw
+plot!(ylims=(), yscale=:log10)
+plot!(ylims=(), xscale=:log10) # on log-log axes; powerlaw becomes straight
+plot!(x -> 1e5 * x^(-3 / 2), 20:1000, yscale=:log10) # Trend line for the T^-3/2 powerlaw
 
 savefig("MAPI-eh-mobility-calculated-experimental-log10.png")
 savefig("MAPI-eh-mobility-calculated-experimental-log10.eps")
@@ -207,25 +207,25 @@ savefig("MAPI-eh-mobility-calculated-experimental-log10.eps")
 using LsqFit # Least squares fit, orig from Optim package.
 
 function fitPowerLaw()
-    model(x,p)=p[1]*x.^(p[2])
-    p0=[1.0,-3.0/2]
+    model(x, p) = p[1] * x .^ (p[2])
+    p0 = [1.0, -3.0 / 2]
 
     # Data we're fitting against
-    plot(MAPIe.T,MAPIe.Hμ,label="Calculated (electron) mobility",markersize=3,marker=:dtriangle,ylims=(1,400))
+    plot(MAPIe.T, MAPIe.Hμ, label="Calculated (electron) mobility", markersize=3, marker=:dtriangle, ylims=(1, 400))
 
     # They're nasty 'Any' data types; force to Float64
-    T=convert(Array{Float64},MAPIe.T)
-    μ=convert(Array{Float64},MAPIe.Hμ)
+    T = convert(Array{Float64}, MAPIe.T)
+    μ = convert(Array{Float64}, MAPIe.Hμ)
 
     # Ta da! Least squares fit.
-    fit=curve_fit(model,T,μ,p0)
-    p=fit.param
+    fit = curve_fit(model, T, μ, p0)
+    p = fit.param
     #plot!(T,model(T,p))
 
     # Fit just from 100K onwards
-    fit=curve_fit(model,T[10:end],μ[10:end],p0)
-    p=fit.param
-    plot!(T[10:end],model(T[10:end],p), label="Calc [10:end] Powerlaw: $p")
+    fit = curve_fit(model, T[10:end], μ[10:end], p0)
+    p = fit.param
+    plot!(T[10:end], model(T[10:end], p), label="Calc [10:end] Powerlaw: $p")
 
     # Fit all from 50K onwards - very dubious of quality of fit
     #fit=curve_fit(model,T[5:end],μ[5:end],p0)
@@ -233,22 +233,22 @@ function fitPowerLaw()
     #plot!(T[5:end],model(T[5:end],p), label="Calc [5:end] Powerlaw: $p")
 
     # TRMC Polycrystal data for comparison
-    plot!(Milot[:,1],Milot[:,2],label="Milot T-dep TRMC Polycrystal",marker=:hexagon,markersize=3,
-    xlab="Temperature (K)",ylab="Mobility (cm\$^2\$/Vs)", ylims=(0,400) )
+    plot!(Milot[:, 1], Milot[:, 2], label="Milot T-dep TRMC Polycrystal", marker=:hexagon, markersize=3,
+        xlab="Temperature (K)", ylab="Mobility (cm\$^2\$/Vs)", ylims=(0, 400))
 
     # Fit all data points except for spurious first one
-    MT=convert(Array{Float64},Milot[2:end,1])
-    Mu=convert(Array{Float64},Milot[2:end,2])
-    fit=curve_fit(model,MT,Mu,p)
-    p=fit.param
-    plot!(T[5:end], model(T[5:end],p), label="Milot Powerlaw Fit 2:end: $p")
+    MT = convert(Array{Float64}, Milot[2:end, 1])
+    Mu = convert(Array{Float64}, Milot[2:end, 2])
+    fit = curve_fit(model, MT, Mu, p)
+    p = fit.param
+    plot!(T[5:end], model(T[5:end], p), label="Milot Powerlaw Fit 2:end: $p")
 
     # Fit only sensible data points > 120 K and up
-    MT=convert(Array{Float64},Milot[4:end,1])
-    Mu=convert(Array{Float64},Milot[4:end,2])
-    fit=curve_fit(model,MT,Mu,p)
-    p=fit.param
-    plot!(T[5:end], model(T[5:end],p), label="Milot Powerlaw Fit 4:end: $p")
+    MT = convert(Array{Float64}, Milot[4:end, 1])
+    Mu = convert(Array{Float64}, Milot[4:end, 2])
+    fit = curve_fit(model, MT, Mu, p)
+    p = fit.param
+    plot!(T[5:end], model(T[5:end], p), label="Milot Powerlaw Fit 4:end: $p")
 
     savefig("MAPI-fit-lin.png")
     savefig("MAPI-fit-lin.pdf")

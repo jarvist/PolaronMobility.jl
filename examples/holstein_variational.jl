@@ -6,10 +6,10 @@ using InteractiveUtils
 
 # ╔═╡ 66d2d0e0-ee56-11ec-21f9-5d6ae25cff48
 begin
-	using Optim
-	using QuadGK
-	using SpecialFunctions
-	using Plots
+    using Optim
+    using QuadGK
+    using SpecialFunctions
+    using Plots
 end
 
 # ╔═╡ 9f6474e5-41f1-4b96-aeee-d299404a3718
@@ -19,61 +19,61 @@ md"""
 
 # ╔═╡ 9429ae6b-55e1-4fb2-9a88-ae7636c35bb5
 begin
-"""
-    fF(τ, v, w)
-Integrand of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
-See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-"""
-fF(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v*τ))))^(-0.5) * exp(-τ)
+    """
+        fF(τ, v, w)
+    Integrand of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
+    See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
+    """
+    fF(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))))^(-0.5) * exp(-τ)
 
 
-"""
-    AF(v, w, α)
-Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
-See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-"""
-AF(v, w, α) = π^(-0.5) * α * v * quadgk(τ -> fF(τ, v, w), 0.0, Inf)[1]
+    """
+        AF(v, w, α)
+    Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
+    See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
+    """
+    AF(v, w, α) = π^(-0.5) * α * v * quadgk(τ -> fF(τ, v, w), 0.0, Inf)[1]
 
-"""
-    F(τ, v, w)
-Ground state energy expression. Eqn. (33) in Feynman 1955.
-See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-"""
-F(v, w, α) = (3 / (4 * v)) * (v - w)^2 - AF(v, w, α)
+    """
+        F(τ, v, w)
+    Ground state energy expression. Eqn. (33) in Feynman 1955.
+    See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
+    """
+    F(v, w, α) = (3 / (4 * v)) * (v - w)^2 - AF(v, w, α)
 
-# Let's wrap the Feynman athermal variation approximation in a simple function
+    # Let's wrap the Feynman athermal variation approximation in a simple function
 
-"""
-    feynmanvw(α; v = 0.0, w = 0.0)
-Calculate v and w variational polaron parameters, for the supplied α Frohlich coupling. Returns (v, w).
-This version uses the original athermal action (Feynman 1955).
-"""
-function feynmanvw_old(α; v = 3.0, w = 3.0) # v, w defaults
+    """
+        feynmanvw(α; v = 0.0, w = 0.0)
+    Calculate v and w variational polaron parameters, for the supplied α Frohlich coupling. Returns (v, w).
+    This version uses the original athermal action (Feynman 1955).
+    """
+    function feynmanvw_old(α; v=3.0, w=3.0) # v, w defaults
 
-    # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [Inf, Inf]
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + 0.01, w]
+        # Limits of the optimisation.
+        lower = [0.0, 0.0]
+        upper = [Inf, Inf]
+        Δv = v - w # defines a constraint, so that v>w
+        initial = [Δv + 0.01, w]
 
-    # Feynman 1955 athermal action 
-    f(x) = F(x[1] + x[2], x[2], α)
+        # Feynman 1955 athermal action 
+        f(x) = F(x[1] + x[2], x[2], α)
 
-    # Use Optim to optimise v and w to minimise enthalpy.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-    )
+        # Use Optim to optimise v and w to minimise enthalpy.
+        solution = Optim.optimize(
+            Optim.OnceDifferentiable(f, initial; autodiff=:forward),
+            lower,
+            upper,
+            initial,
+            Fminbox(BFGS()),
+        )
 
-    # Get v and w values that minimise the free energy.
-    Δv, w = Optim.minimizer(solution) # v=Δv+w
+        # Get v and w values that minimise the free energy.
+        Δv, w = Optim.minimizer(solution) # v=Δv+w
 
-    # Return variational parameters that minimise the free energy.
-    return Δv + w, w
-end
+        # Return variational parameters that minimise the free energy.
+        return Δv + w, w
+    end
 end
 
 # ╔═╡ 1cf1e5cc-301c-4779-86cb-5b6436ecebf0
@@ -89,7 +89,7 @@ md"""
 
 # ╔═╡ 6cd58deb-fb04-44fc-a854-dce5b5cb8565
 function D(t, v, w)
-	abs(w^2 / v^2 * t + (v^2 - w^2) / v^3 * (1 - exp(-v * t)))
+    abs(w^2 / v^2 * t + (v^2 - w^2) / v^3 * (1 - exp(-v * t)))
 end
 
 # ╔═╡ f7a07dc5-ba45-4870-b94c-44ae5d85436d
@@ -120,8 +120,8 @@ frohlich_params = feynmanvw_old.(α)
 
 # ╔═╡ 2cdfdcbc-a6e7-444c-a9a0-47529ddb091a
 begin
-	vf = [i[1] for i in frohlich_params]
-	wf = [i[2] for i in frohlich_params]
+    vf = [i[1] for i in frohlich_params]
+    wf = [i[2] for i in frohlich_params]
 end
 
 # ╔═╡ 35ce9514-521c-4985-a85e-f236f67417c9
@@ -140,7 +140,7 @@ Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-A(v, w, β) = 3 / β * (log(v / w) - 1/2 * log(2π * β) - log(sinh(v * β / 2) / sinh(w * β / 2)))
+A(v, w, β) = 3 / β * (log(v / w) - 1 / 2 * log(2π * β) - log(sinh(v * β / 2) / sinh(w * β / 2)))
 
 # ╔═╡ b36f7997-f29c-4a92-bb00-9e82ae7d2a05
 """
@@ -176,38 +176,38 @@ if R==0, Frohlich model (power should be 0, as the K^2 cancels with the 1/K^2 de
 
 Power is the K^Power
 """
-function k_integral(t, v, w; power = 0, R = 0)
-	if R == 0 # Frohlich
-		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), -Inf, Inf)[1] / sqrt(2pi)
-	else # Holstein, note limits on integral, R=k-space volume
-		return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), 0, R)[1] / sqrt(2) / pi
-	end
+function k_integral(t, v, w; power=0, R=0)
+    if R == 0 # Frohlich
+        return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), -Inf, Inf)[1] / sqrt(2pi)
+    else # Holstein, note limits on integral, R=k-space volume
+        return quadgk(k -> k^power * exp(-k^2 * D(t, v, w) / 2), 0, R)[1] / sqrt(2) / pi
+    end
 end
 
 # ╔═╡ dcf7f24a-6ef4-4613-9778-e2637f5e6c16
-function Frohlich_el_integral(α, v, w; power = 0, R = 0)
-	α * quadgk(t -> exp(-t) * k_integral(t, v, w; power = power, R = R), 0.0, Inf, rtol = 1e-4)[1] / sqrt(pi)
+function Frohlich_el_integral(α, v, w; power=0, R=0)
+    α * quadgk(t -> exp(-t) * k_integral(t, v, w; power=power, R=R), 0.0, Inf, rtol=1e-4)[1] / sqrt(pi)
 end
 
 # ╔═╡ 6714b04e-9b26-42d0-89eb-f6c510cd5f56
-function Frohlich_energy(α, v, w; power = 0, R = 0)
-	3 * (v - w)^2 / (4 * v) - Frohlich_el_integral(α, v, w; power = power, R = R)
+function Frohlich_energy(α, v, w; power=0, R=0)
+    3 * (v - w)^2 / (4 * v) - Frohlich_el_integral(α, v, w; power=power, R=R)
 end
 
 # ╔═╡ 429d0098-9d78-47e5-915b-cf16c7fce660
-function var_params_k(α; v = 3.0, w = 3.0, power = 0, R = 0)
-	 # Limits of the optimisation.
+function var_params_k(α; v=3.0, w=3.0, power=0, R=0)
+    # Limits of the optimisation.
     lower = [0.0, 0.3]
     upper = [Inf, Inf]
     Δv = v - w # defines a constraint, so that v>w
     initial = [Δv + 0.01, w]
 
     # Feynman 1955 athermal action 
-    f(x) = Frohlich_energy(α, x[1] + x[2], x[2]; power = power, R = R)
+    f(x) = Frohlich_energy(α, x[1] + x[2], x[2]; power=power, R=R)
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
@@ -222,33 +222,33 @@ function var_params_k(α; v = 3.0, w = 3.0, power = 0, R = 0)
 end
 
 # ╔═╡ 71118d82-37fb-4504-b944-c3461de91233
-v_k, w_k = var_params_k(2.39; v = v, w = w)
+v_k, w_k = var_params_k(2.39; v=v, w=w)
 
 # ╔═╡ 80cd6d37-92d3-4757-a62e-490cffb4b63c
-vh_k, wh_k = var_params_k(2.39; v = v, w = w, power = 2, R = (6 * π^2)^(1/3))
+vh_k, wh_k = var_params_k(2.39; v=v, w=w, power=2, R=(6 * π^2)^(1 / 3))
 
 # ╔═╡ 2be860db-52b0-4514-872f-db79dc454323
 Frohlich_energy(2.39, v_k, w_k)
 
 # ╔═╡ 410d234c-25fe-4752-926e-f6c5d263ef05
-Frohlich_energy(2.39, vh_k, wh_k; power = 2, R = (6 * π^2)^(1/3))
+Frohlich_energy(2.39, vh_k, wh_k; power=2, R=(6 * π^2)^(1 / 3))
 
 # ╔═╡ 079d7328-c2e1-4681-a4e3-e19a53841d25
-function holstein_elph_integral(α, v, w; R = (6 * π^2)^(1/3))
-	d(t) = D(t, v, w)
-	integrand(t) = erf(sqrt(d(t) / 2) * R) / (2 * (d(t))^(3/2)) - R * exp(-R^2 * d(t) / (2)) / (sqrt(2π) * d(t))
-	integral = α * quadgk(t -> exp(-t) * integrand(t), 0, Inf, rtol = 1e-4)[1] / sqrt(π / 2)
-	return integral
+function holstein_elph_integral(α, v, w; R=(6 * π^2)^(1 / 3))
+    d(t) = D(t, v, w)
+    integrand(t) = erf(sqrt(d(t) / 2) * R) / (2 * (d(t))^(3 / 2)) - R * exp(-R^2 * d(t) / (2)) / (sqrt(2π) * d(t))
+    integral = α * quadgk(t -> exp(-t) * integrand(t), 0, Inf, rtol=1e-4)[1] / sqrt(π / 2)
+    return integral
 end
 
 # ╔═╡ bc20477e-2ce3-4377-9af0-5d479256175a
 function holstein_energy(α, v, w)
-	3 * (v - w)^2 / (4 * v) - holstein_elph_integral(α, v, w)
+    3 * (v - w)^2 / (4 * v) - holstein_elph_integral(α, v, w)
 end
 
 # ╔═╡ 380c5c1b-01e1-455b-a757-46c87fc45285
-function holstein_variational_solution(α; v = 3.0, w = 3.0)
-	 # Limits of the optimisation.
+function holstein_variational_solution(α; v=3.0, w=3.0)
+    # Limits of the optimisation.
     lower = [0.0, 0.3]
     upper = [Inf, Inf]
     Δv = v - w # defines a constraint, so that v>w
@@ -259,7 +259,7 @@ function holstein_variational_solution(α; v = 3.0, w = 3.0)
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
@@ -278,15 +278,15 @@ holstein_energies = [holstein_energy(α[i], vf[i], wf[i]) for i in 1:length(α)]
 
 # ╔═╡ b2454e06-146c-4fc1-8928-70c7982922ec
 begin
-	pe = plot(α, frohlich_energies .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Fro", linewidth = 2, xlabel = "alpha, α", ylabel = "Energy (meV)")
-	plot!(α, holstein_energies .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Hol", linewidth = 2, linestyle = :dash)
+    pe = plot(α, frohlich_energies .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label="Fro", linewidth=2, xlabel="alpha, α", ylabel="Energy (meV)")
+    plot!(α, holstein_energies .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label="Hol", linewidth=2, linestyle=:dash)
 end
 
 # ╔═╡ 67154f5a-e61e-4a5e-abf8-215bf8c8646e
 savefig(pe, "energy_comparison.pdf")
 
 # ╔═╡ 4e99725c-0895-4bc3-97ba-70eb675c7f47
-f_Hol(x, v, w, β) = (exp(β - x) + exp(x)) * (erf(sqrt(D(x, v, w, β) / 2) * (6 * π^2)^(1/3)) / (2 * D(x, v, w, β)^(3/2)) - (6 * π^2)^(1/3) * exp(-D(x, v, w, β) * (6 * π^2)^(2/3) / 2) / (sqrt(2π) * D(x, v, w, β)))
+f_Hol(x, v, w, β) = (exp(β - x) + exp(x)) * (erf(sqrt(D(x, v, w, β) / 2) * (6 * π^2)^(1 / 3)) / (2 * D(x, v, w, β)^(3 / 2)) - (6 * π^2)^(1 / 3) * exp(-D(x, v, w, β) * (6 * π^2)^(2 / 3) / 2) / (sqrt(2π) * D(x, v, w, β)))
 
 # ╔═╡ e8b8e4de-e548-447e-82c5-979124ce6cf3
 """
@@ -296,11 +296,11 @@ Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-B_Fro(v, w, β, α) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f_Fro(x, v, w, β), 0, β/2, rtol = 1e-5)[1]
+B_Fro(v, w, β, α) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f_Fro(x, v, w, β), 0, β / 2, rtol=1e-5)[1]
 
 
 # ╔═╡ f87703c9-fa55-420a-b3cc-c6b947ef456a
-B_Hol(v, w, β, α) = α / (sqrt(2) * pi * (exp(β) - 1)) * quadgk(x -> f_Hol(x, v, w, β), 0, β/2)[1]
+B_Hol(v, w, β, α) = α / (sqrt(2) * pi * (exp(β) - 1)) * quadgk(x -> f_Hol(x, v, w, β), 0, β / 2)[1]
 
 # ╔═╡ c1358b12-4f68-4485-8ee7-73ef672f3ed8
 """
@@ -310,7 +310,7 @@ Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-C(v, w, β) = 3/4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β))
+C(v, w, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β))
 
 # ╔═╡ fc699405-e1d6-48dd-aff3-a7ae7fb0114b
 """
@@ -331,7 +331,7 @@ Check that it roughly gives the Holstein ground-state energy (high beta)
 """
 
 # ╔═╡ 2455abad-abf2-4b0a-bb3f-30d97de9a9ec
-function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
+function feynmanvw(α, β; v=3.0, w=3.0) # v, w defaults
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
@@ -344,7 +344,7 @@ function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
@@ -359,7 +359,7 @@ function feynmanvw(α, β; v = 3.0, w = 3.0) # v, w defaults
 end
 
 # ╔═╡ 4d5e8c8e-2225-43fd-a934-0c8dd9f21585
-function holstein_variational_solution(α, β; v = 3.0, w = 3.0) # v, w defaults
+function holstein_variational_solution(α, β; v=3.0, w=3.0) # v, w defaults
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
@@ -372,7 +372,7 @@ function holstein_variational_solution(α, β; v = 3.0, w = 3.0) # v, w defaults
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
@@ -387,7 +387,7 @@ function holstein_variational_solution(α, β; v = 3.0, w = 3.0) # v, w defaults
 end
 
 # ╔═╡ 466bc0e9-4cd2-42f5-8bbc-1317b5c1c7b6
-vh, wh = holstein_variational_solution(2.39; v = v, w = w)
+vh, wh = holstein_variational_solution(2.39; v=v, w=w)
 
 # ╔═╡ a1d89e74-7ab6-4c8f-8748-63ede869decb
 holstein_energy(2.39, vh, wh)
@@ -400,16 +400,16 @@ holstein_params = holstein_variational_solution.(α)
 
 # ╔═╡ 2ce6cc8d-0582-4f08-9e2f-5317f2f5b2e0
 begin
-	vh_new = [i[1] for i in holstein_params]
-	wh_new = [i[2] for i in holstein_params]
+    vh_new = [i[1] for i in holstein_params]
+    wh_new = [i[2] for i in holstein_params]
 end
 
 # ╔═╡ f5e2a904-5e2f-4dcd-8691-b7620d24a7f0
 begin
-	pv = plot(α, vf, label = "Fro v", legend = :topleft, linewidth = 2, xlabel = "alpha, α", ylabel = "v and w", minorgrid = true)
-	plot!(α, wf, label = "Fro w", linewidth = 2)
-	plot!(α, vh_new, label = "Hol v", linewidth = 2, linestyle = :dash)
-	plot!(α, wh_new, label = "Hol w", linewidth = 2, linestyle = :dash)
+    pv = plot(α, vf, label="Fro v", legend=:topleft, linewidth=2, xlabel="alpha, α", ylabel="v and w", minorgrid=true)
+    plot!(α, wf, label="Fro w", linewidth=2)
+    plot!(α, vh_new, label="Hol v", linewidth=2, linestyle=:dash)
+    plot!(α, wh_new, label="Hol w", linewidth=2, linestyle=:dash)
 end
 
 # ╔═╡ a8852b06-3f60-4bac-a610-8b0a1b8cf560
@@ -431,14 +431,14 @@ fro_params = [feynmanvw(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23) for T
 
 # ╔═╡ 1d45213c-3921-4a67-a76c-f37db47a14ad
 begin
-	vh_β = [i[1] for i in hol_params]
-	wh_β = [i[2] for i in hol_params]
+    vh_β = [i[1] for i in hol_params]
+    wh_β = [i[2] for i in hol_params]
 end
 
 # ╔═╡ 3d423a59-b295-4026-8666-e08c38f01747
 begin
-	vf_β = [i[1] for i in fro_params]
-	wf_β = [i[2] for i in fro_params]
+    vf_β = [i[1] for i in fro_params]
+    wf_β = [i[2] for i in fro_params]
 end
 
 # ╔═╡ 0e771039-19b8-4cec-bb12-8ddcb4b6975e
@@ -449,16 +449,16 @@ fro_energy_β = [F_Fro(vf_β[T], wf_β[T], 2π * 2.25 * 1e12 * 1.05e-34 / T_rang
 
 # ╔═╡ 1d08e7de-026b-4b1c-ba29-d12ce9f2b4ef
 begin
-	pvt = plot(T_range, vf_β, label = "Fro v", linewidth = 2, legend = :topleft, xlabel = "Temperature (K)", ylabel = "v and w params")
-	plot!(T_range, wf_β, label = "Fro w", linewidth = 2)
-	plot!(T_range, vh_β, label = "Hol v", linestyle = :dash, linewidth = 2)
-	plot!(T_range, wh_β, label = "Hol w", linestyle = :dash, linewidth = 2)
+    pvt = plot(T_range, vf_β, label="Fro v", linewidth=2, legend=:topleft, xlabel="Temperature (K)", ylabel="v and w params")
+    plot!(T_range, wf_β, label="Fro w", linewidth=2)
+    plot!(T_range, vh_β, label="Hol v", linestyle=:dash, linewidth=2)
+    plot!(T_range, wh_β, label="Hol w", linestyle=:dash, linewidth=2)
 end
 
 # ╔═╡ a6ff82d8-ac2f-4034-ad64-c3800d67ecfa
 begin
-	pft = plot(T_range, fro_energy_β .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Fro", xlabel = "Temperature (K)", ylabel = "Free energy (ħω)", linewidth = 2)
-	plot!(T_range, hol_energy_β .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label = "Hol", linewidth = 2, linestyle = :dash)
+    pft = plot(T_range, fro_energy_β .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label="Fro", xlabel="Temperature (K)", ylabel="Free energy (ħω)", linewidth=2)
+    plot!(T_range, hol_energy_β .* 1000 * 1.05e-34 / 1.6e-19 * 1e12 * 2.25 * 2π, label="Hol", linewidth=2, linestyle=:dash)
 end
 
 # ╔═╡ a0cd088c-0412-4b1d-ba32-441f59e20c3c
@@ -474,17 +474,17 @@ Have a look at effective mass
 
 # ╔═╡ 5ac9e949-4b55-42f5-9dd4-1de517051112
 function fro_eff_mass(v, w, α)
-	integrand(τ) = τ^2 * exp(-τ) / (D(τ, v, w))^(3/2)
-	integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(π))
-	return 1 + integral
+    integrand(τ) = τ^2 * exp(-τ) / (D(τ, v, w))^(3 / 2)
+    integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(π))
+    return 1 + integral
 end
 
 # ╔═╡ 6a848cac-dc22-4419-8833-7279a4940834
 function hol_eff_mass(v, w, α)
-	R = (6 * π^2)^(1/3)
-	integrand(τ) = τ^2 * exp(-τ) * (3 * erf(sqrt(D(τ, v, w) / 2) * R) / (2 * D(τ, v, w)^(5/2)) - R * exp(-D(τ, v, w) * R^2 / 2) * (D(τ, v, w) * R^2 + 3) / (sqrt(2π) * D(τ, v, w)^2))
-	integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(2) * pi)
-	return 1 + integral
+    R = (6 * π^2)^(1 / 3)
+    integrand(τ) = τ^2 * exp(-τ) * (3 * erf(sqrt(D(τ, v, w) / 2) * R) / (2 * D(τ, v, w)^(5 / 2)) - R * exp(-D(τ, v, w) * R^2 / 2) * (D(τ, v, w) * R^2 + 3) / (sqrt(2π) * D(τ, v, w)^2))
+    integral = α * quadgk(τ -> integrand(τ), 0.0, Inf)[1] / (3 * sqrt(2) * pi)
+    return 1 + integral
 end
 
 # ╔═╡ 2041244d-1a95-4e9f-846b-0f64d5fca357
@@ -498,8 +498,8 @@ hol_m = [hol_eff_mass(vh_new[i], wh_new[i], α[i]) for i in 1:length(α)]
 
 # ╔═╡ 308b415e-8965-4d31-b374-078add023990
 begin
-	pm = plot(α, 1 ./ fro_m, label = "Fro", xlabel = "α", ylabel = "m₀ / m*", linewidth = 2)
-	plot!(α, 1 ./ hol_m, label = "Hol", linewidth = 2, linestyle = :dash)
+    pm = plot(α, 1 ./ fro_m, label="Fro", xlabel="α", ylabel="m₀ / m*", linewidth=2)
+    plot!(α, 1 ./ hol_m, label="Hol", linewidth=2, linestyle=:dash)
 end
 
 # ╔═╡ 4b001539-7208-4100-ae75-6c1232f540f8
@@ -512,47 +512,47 @@ md"""
 
 # ╔═╡ 750b1d30-79c4-4f5a-8df4-3b6fcffb7d49
 function P(x)
-	1 / (exp(x) - 1)
+    1 / (exp(x) - 1)
 end
 
 # ╔═╡ 31c30c6c-d68a-48f7-a9f7-c6a6572367cb
 function D_c(u, β, v, w)
-	w^2 / v^2 * ((v^2 - w^2) / (w^2 * v) * (1 - exp(im * v * u) + 4 * P(β * v) * (sin(v * u / 2))^2) - im * u + u^2 / β)
+    w^2 / v^2 * ((v^2 - w^2) / (w^2 * v) * (1 - exp(im * v * u) + 4 * P(β * v) * (sin(v * u / 2))^2) - im * u + u^2 / β)
 end
 
 # ╔═╡ 4e17762c-461b-43b5-b037-da144af61e27
 function fro_S(u, α, β, v, w)
-	2 * α / (3 * √π) * (exp(im * u) + 2 * P(β) * cos(u)) / D_c(u, β, v, w)^(3/2)
+    2 * α / (3 * √π) * (exp(im * u) + 2 * P(β) * cos(u)) / D_c(u, β, v, w)^(3 / 2)
 end
 
 # ╔═╡ babe6b05-bb06-42b2-84aa-27b2c51d7226
 function hol_S(u, α, β, v, w)
-	R = (6 * π^2)^(1/3)
-	2 * α / (3 * √π) * (exp(im * u) + 2 * P(β) * cos(u)) * (erf(sqrt(D_c(u, β, v, w) / 2) * (6 * π^2)^(1/3)) / (2 * D_c(u, β, v, w)^(3/2)) - (6 * π^2)^(1/3) * exp(-D_c(u, β, v, w) * (6 * π^2)^(2/3) / 2) / (sqrt(2π) * D_c(u, β, v, w))) * 2π
+    R = (6 * π^2)^(1 / 3)
+    2 * α / (3 * √π) * (exp(im * u) + 2 * P(β) * cos(u)) * (erf(sqrt(D_c(u, β, v, w) / 2) * (6 * π^2)^(1 / 3)) / (2 * D_c(u, β, v, w)^(3 / 2)) - (6 * π^2)^(1 / 3) * exp(-D_c(u, β, v, w) * (6 * π^2)^(2 / 3) / 2) / (sqrt(2π) * D_c(u, β, v, w))) * 2π
 end
 
 # ╔═╡ 2042d4f1-b830-4d76-a38f-240506168618
 function fro_chi(Ω, α, β, v, w)
-	integrand(u) = (1 - exp(im * Ω * u)) * imag(fro_S(u, α, β, v, w))
-	integral = quadgk(u -> integrand(u), 0.0, Inf, rtol = 1e-4)[1]
-	return integral
+    integrand(u) = (1 - exp(im * Ω * u)) * imag(fro_S(u, α, β, v, w))
+    integral = quadgk(u -> integrand(u), 0.0, Inf, rtol=1e-4)[1]
+    return integral
 end
 
 # ╔═╡ bab68f24-c8fb-4b8d-865f-5e9e760513ca
 function hol_chi(Ω, α, β, v, w)
-	integrand(u) = (1 - exp(im * Ω * u)) * imag(hol_S(u, α, β, v, w))
-	integral = quadgk(u -> integrand(u), 0.0, Inf)[1]
-	return integral
+    integrand(u) = (1 - exp(im * Ω * u)) * imag(hol_S(u, α, β, v, w))
+    integral = quadgk(u -> integrand(u), 0.0, Inf)[1]
+    return integral
 end
 
 # ╔═╡ 9655e230-37d7-4504-8440-34078996a22d
 function fro_impedance(Ω, α, β, v, w)
-	return (Ω^2 - fro_chi(Ω, α, β, v, w)) / (-im * Ω)
+    return (Ω^2 - fro_chi(Ω, α, β, v, w)) / (-im * Ω)
 end
 
 # ╔═╡ 8455cb9b-e0f7-4832-a880-84a31d7b5d11
 function hol_impedance(Ω, α, β, v, w)
-	return (Ω^2 - hol_chi(Ω, α, β, v, w)) / (-im * Ω)
+    return (Ω^2 - hol_chi(Ω, α, β, v, w)) / (-im * Ω)
 end
 
 # ╔═╡ 9452286f-e801-4db0-b884-f0c7b2373879
@@ -566,33 +566,33 @@ hol_z = hol_impedance.(Ω_range, 2.39, 100, vh, wh)
 
 # ╔═╡ fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
 begin
-	rubrene_real_imped=plot(xlabel = "Omega (THz)", ylabel = "Re(Χ)")
-	plot!(Ω_range, -real.(1 ./ fro_z), ylims = (0, 0.25), linewidth = 2, label="Fro")
-	plot!(Ω_range, -real.(1 ./ hol_z), linewidth = 2, linestyle = :dash, label = "Hol")
+    rubrene_real_imped = plot(xlabel="Omega (THz)", ylabel="Re(Χ)")
+    plot!(Ω_range, -real.(1 ./ fro_z), ylims=(0, 0.25), linewidth=2, label="Fro")
+    plot!(Ω_range, -real.(1 ./ hol_z), linewidth=2, linestyle=:dash, label="Hol")
 end
 
 # ╔═╡ 63eaadaa-9f2b-4de5-964e-7e1a8dfd0121
 function fro_chi_dc(α, β, v, w)
-	integrand(u) = -im * u * imag(fro_S(u, α, β, v, w))
-	integral = quadgk(u -> integrand(u), 0.0, Inf, rtol = 1e-4)[1]
-	return integral
+    integrand(u) = -im * u * imag(fro_S(u, α, β, v, w))
+    integral = quadgk(u -> integrand(u), 0.0, Inf, rtol=1e-4)[1]
+    return integral
 end
 
 # ╔═╡ 2e6d1157-62db-4774-887d-4872a1b64d4d
 function hol_chi_dc(α, β, v, w)
-	integrand(u) = -im * u * imag(hol_S(u, α, β, v, w))
-	integral = quadgk(u -> integrand(u), 0.0, Inf, rtol = 1e-4)[1]
-	return integral
+    integrand(u) = -im * u * imag(hol_S(u, α, β, v, w))
+    integral = quadgk(u -> integrand(u), 0.0, Inf, rtol=1e-4)[1]
+    return integral
 end
 
 # ╔═╡ 8e489020-256a-4014-9df3-99ef4bc35f6b
 function fro_mobility(α, β, v, w)
-	abs(1 / imag(fro_chi_dc(α, β, v, w)))
+    abs(1 / imag(fro_chi_dc(α, β, v, w)))
 end
 
 # ╔═╡ 71653a17-89dd-4cfd-8c5c-abd6c655c362
 function hol_mobility(α, β, v, w)
-	abs(1 / imag(hol_chi_dc(α, β, v, w)))
+    abs(1 / imag(hol_chi_dc(α, β, v, w)))
 end
 
 # ╔═╡ cec30175-2096-42a6-965a-5cf5aec4fcaf
@@ -603,8 +603,8 @@ hol_μ = [hol_mobility(2.39, 2π * 2.25 * 1e12 * 1.05e-34 / T / 1.38e-23, vh_β[
 
 # ╔═╡ 0459ac5b-48bf-4645-8d91-a4c61c07578e
 begin
-	MAPI_mob_plot = plot(T_range[15:end], fro_μ .* 1.6e-19 / (2π * 2.25 * 0.12 * 1e12 * 9.11e-31) * 100^2, label = "Fro", minorgrid = true, ylims = (50, 200), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "MAPI Mobility")
-	plot!(T_range[15:end], hol_μ .* 1.6e-19 / (2π * 2.25 * 0.12 * 1e12 * 9.11e-31) * 100^2, label = "Hol", linewidth = 2, linestyle = :dash)
+    MAPI_mob_plot = plot(T_range[15:end], fro_μ .* 1.6e-19 / (2π * 2.25 * 0.12 * 1e12 * 9.11e-31) * 100^2, label="Fro", minorgrid=true, ylims=(50, 200), linewidth=2, xlabel="Temperature (K)", ylabel="Mobility (cm^2/Vs)", title="MAPI Mobility")
+    plot!(T_range[15:end], hol_μ .* 1.6e-19 / (2π * 2.25 * 0.12 * 1e12 * 9.11e-31) * 100^2, label="Hol", linewidth=2, linestyle=:dash)
 end
 
 # ╔═╡ 4bd4af25-59ef-4008-b039-52ada489f81c
@@ -623,14 +623,14 @@ rubrene_params_fro = [feynmanvw(2.21, 1e13 * 1.41 * 1.05e-34 / T / 1.38e-23) for
 
 # ╔═╡ d1b784a5-ba76-46f4-8613-53503997ec05
 begin
-	rubrene_vh = [i[1] for i in rubrene_params_hol]
-	rubrene_wh = [i[2] for i in rubrene_params_hol]
+    rubrene_vh = [i[1] for i in rubrene_params_hol]
+    rubrene_wh = [i[2] for i in rubrene_params_hol]
 end
 
 # ╔═╡ d41fc336-e9d1-4f00-8a68-fe2f26103a82
 begin
-	rubrene_vf = [i[1] for i in rubrene_params_fro]
-	rubrene_wf = [i[2] for i in rubrene_params_fro]
+    rubrene_vf = [i[1] for i in rubrene_params_fro]
+    rubrene_wf = [i[2] for i in rubrene_params_fro]
 end
 
 # ╔═╡ 0014b87c-e9e1-45a2-be18-ca587adcc1af
@@ -641,8 +641,8 @@ rubrene_mob_fro = [fro_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / T_range[T] / 1.38
 
 # ╔═╡ 0cc49e62-1191-43f6-976a-4b649b8348f6
 begin
-	rubrene_mob_plot = plot(T_range[15:end], rubrene_mob_fro, label = "Fro", minorgrid = true, ylims = (0, 40), linewidth = 2, xlabel = "Temperature (K)", ylabel = "Mobility (cm^2/Vs)", title = "Rubrene Mobility")
-	plot!(T_range[15:end], rubrene_mob_hol, label = "Hol", linewidth = 2, linestyle = :dash)
+    rubrene_mob_plot = plot(T_range[15:end], rubrene_mob_fro, label="Fro", minorgrid=true, ylims=(0, 40), linewidth=2, xlabel="Temperature (K)", ylabel="Mobility (cm^2/Vs)", title="Rubrene Mobility")
+    plot!(T_range[15:end], rubrene_mob_hol, label="Hol", linewidth=2, linestyle=:dash)
 end
 
 # ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a

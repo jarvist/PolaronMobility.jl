@@ -3,7 +3,8 @@ PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
   Codes by Jarvist Moore Frost, 2017-2022; Bradley A.A. Martin 2020-2022
   PolaronMobility.jl is a Julia package which calculates the temperature-dependent polaron
   mobility for a material. It implements the Feynman variational approach with
-  Osaka/Hellwarth free-energy for the polaron system.  """
+  Osaka/Hellwarth free-energy for the polaron system.  
+"""
 module PolaronMobility
 
 export Polaron, NewPolaron # Type to hold the data
@@ -31,12 +32,12 @@ import QuadGK.quadgk
 using Optim
 
 # Physical constants
-const hbar = const ħ = 1.05457162825e-34;                   # kg m2 / s
-const eV = const q = const ElectronVolt = 1.602176487e-19;  # kg m2 / s2
-const me = MassElectron = 9.10938188e-31;                   # kg
-const Boltzmann = const kB =  1.3806504e-23;                # kg m2 / K s2
-const ϵ_0 = 8.854E-12;     # permittivity of free space     # C2N−1m−2, 
-const amu = 1.660_539_066_60e-27;                           # kg
+const hbar = const ħ = 1.05457162825e-34                   # kg m2 / s
+const eV = const q = const ElectronVolt = 1.602176487e-19  # kg m2 / s2
+const me = MassElectron = 9.10938188e-31                   # kg
+const Boltzmann = const kB = 1.3806504e-23                # kg m2 / K s2
+const ϵ_0 = 8.854E-12     # permittivity of free space     # C2N−1m−2, 
+const amu = 1.660_539_066_60e-27                           # kg
 
 include("types.jl")            # Polaron types
 include("FeynmanTheory.jl")    # Actions + variational functions
