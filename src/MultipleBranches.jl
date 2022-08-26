@@ -348,7 +348,7 @@ function D_j(τ, v, w)
 end
 
 """
-    B_j(α, β, v, w; rtol = 1e-3)
+    B_j(α, β, v, w)
 
 Generalisation of the B function from Eqn. (62c) in Hellwarth et al. 1999. This is the expected value of the exact action <S_j> taken w.r.t trial action, given for the 'jth' phonon mode.
 
@@ -359,15 +359,14 @@ Required for calculating the polaron free energy.
 - `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
-- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 
 See also ['B'](@ref).
 """
-function B_j(α, β, v, w; rtol = 1e-3)
+function B_j(α, β, v, w)
     B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D_j(τ, β, v, w)))
-    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ), 0.0, β / 2.0, atol = rtol)[1]
+    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ), 0.0, β / 2.0)[1]
     return B
 end
 
@@ -380,13 +379,12 @@ Calculates `B_j(α, β, v, w)` but at zero-temperature, `β = Inf`.
 - `α::Float64`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
-- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 
 See also [`B_j`](@ref).
 """
-function B_j(α, v, w; rtol = 1e-3)
+function B_j(α, v, w)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D_j(abs(τ), v, w)))
-    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64, atol = rtol)[1]
+    B = α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64)[1]
     return B
 end
 
@@ -453,7 +451,9 @@ See also ['A'](@ref).
 """
 function A_j(β, v, w, n)
     # Sum over the contributions from each fictitious mass.
-    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0.0 : log(abs(v[i] / w[i])) - log(abs(sinh(v[i] * β / 2) / sinh(w[i] * β / 2))) for i in eachindex(v))
+    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0.0 : 
+    log(v[i]) -  log(w[i]) - β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * β)) + log(1 - exp(-w[i] * β))
+    for i in eachindex(v))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     3 / β * s / n
 end
@@ -476,7 +476,7 @@ function A_j(v, w, n)
 end
 
 """
-    multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
+    multi_F(v, w, α, β; ω = 1.0, T = nothing, verbose = false)
 
 Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. 
     
@@ -488,7 +488,6 @@ This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn
 - `α::Float64`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
 - `β::Float64`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
 - `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
-- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 - `T`: is a token used by `make_polaron()` to keep track of the temperature for printing during a calculation. Do not alter.
 - `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
 
@@ -496,10 +495,10 @@ See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., B
 
 See also [`F`](@ref).
 """
-function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
+function multi_F(v, w, α, β; ω = 1.0, T = nothing, verbose = false)
 
     # Add contribution to the total free energy from the phonon mode.
-    F = sum(-(B_j(α[j], β[j], v, w; rtol = rtol) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
+    F = sum(-(B_j(α[j], β[j], v, w) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
     # Print the free energy.
     if verbose
@@ -514,7 +513,7 @@ function multi_F(v, w, α, β; ω = 1.0, rtol = 1e-3, T = nothing, verbose = fal
 end
 
 """
-    multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
+    multi_F(v, w, α; ω = 1.0, verbose = false)
 
 Calculates the zero-temperature ground-state energy of the polaron for a material with multiple phonon branches. Similar to `multi_F(v, w, α, β)` but with `β = Inf`. Generalises Eqn. (33) in Feynman 1955.
 
@@ -529,10 +528,10 @@ See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 
 See also [`multi_F`](@ref).
 """
-function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
+function multi_F(v, w, α; ω = 1.0, verbose = false)
 
     # Add contribution to the total free energy from the phonon mode.
-	F = sum(-(B_j(α[j], v, w; rtol = rtol) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
+	F = sum(-(B_j(α[j], v, w) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
     # Print the free energy.
     if verbose
@@ -546,7 +545,7 @@ function multi_F(v, w, α; ω = 1.0, rtol = 1e-3, verbose = false)
 end
 
 """
-    var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false)
+    var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, T = nothing, verbose = false)
 
 Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters. The variational parameters follow the inequality: v₁ > w₁ > v₂ > w₂ > ... > vₙ > wₙ. Generalises `feynmanvw` to multiple variational parameters.
 
@@ -556,14 +555,13 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 - `v::Float64, w::Float64`: determines if the function should start with a random initial set of variational parameters (v, w = 0.0) or a given set of variational parameter values.
 - `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
 - `N::Integer`: specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
-- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 - `show_trace::Bool`: shows the optimsation trace from `Optim.jl`.
 - `T`: is a token used by `make_polaron()` to keep track of the temperature for printing during a calculation. Do not alter.
 - `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
-function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, T = nothing, verbose = false) # N number of v and w params
+function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, T = nothing, verbose = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -583,24 +581,24 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
     upper = fill(Inf64, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([abs(x[2 * n - 1]) for n in 1:N] .+ [abs(x[2 * n]) for n in 1:N], [abs(x[2 * n]) for n in 1:N], α, β; ω = ω, rtol = rtol)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
 		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
         initial,
-        Newton(),
-		Optim.Options(show_trace = true), # Set time limit for asymptotic convergence if needed.
+        Fminbox(BFGS()),
+		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
 	)
-
-    @show(solution)
 
 	# Extract the v and w parameters that minimised the free energy.
 	var_params = Optim.minimizer(solution)
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	Δv = [abs(var_params[2 * n - 1]) for n in 1:N]
-	w = [abs(var_params[2 * n]) for n in 1:N]
+	Δv = [var_params[2 * n - 1] for n in 1:N]
+	w = [var_params[2 * n] for n in 1:N]
 
     # if Optim.converged(solution) == false
     #     @warn "Failed to converge T = $T K variational solution. v = $(Δv .+ w), w = $w."
@@ -615,11 +613,11 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show
     end
 
     # Return the variational parameters that minimised the free energy.
-    return [Δv .+ w, w]
+    return (Δv .+ w, w)
 end
 
 """
-    var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false)
+    var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, verbose = false)
 
 Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters at zero-temperature. Similar to `var_params(α, β)` but with `β = Inf`.
 
@@ -628,13 +626,12 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 - `v::Float64, w::Float64`: determines if the function should start with a random initial set of variational parameters (v, w = 0.0) or a given set of variational parameter values.
 - `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
 - `N::Integer`: specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
-- `rtol`: relative tolerance for the accuracy of any quadrature integrations.
 - `show_trace::Bool`: shows the optimsation trace from `Optim.jl`.
 - `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref), [`var_param`](@ref).
 """
-function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_trace = false, verbose = false) # N number of v and w params
+function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, verbose = false) # N number of v and w params
  
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -654,24 +651,24 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
     upper = fill(100.0, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([abs(x[2 * n - 1]) for n in 1:N] .+ [abs(x[2 * n]) for n in 1:N], [abs(x[2 * n]) for n in 1:N], α; ω = ω, rtol = rtol)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω)
 
 	# Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
 	solution = Optim.optimize(
 		Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
         initial,
-		Newton(),
-		Optim.Options(show_trace = false), # Set time limit for asymptotic convergence if needed.
+        Fminbox(BFGS()),
+		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
 	)
-
-    @show(solution)
 
 	# Extract the v and w parameters that minimised the free energy.
 	var_params = Optim.minimizer(solution)
 
 	# Separate the v and w parameters into one-dimensional arrays (vectors).
-	Δv = [abs(var_params[2 * n - 1]) for n in 1:N]
-	w = [abs(var_params[2 * n]) for n in 1:N]
+	Δv = [var_params[2 * n - 1] for n in 1:N]
+	w = [var_params[2 * n] for n in 1:N]
 
     # if Optim.converged(solution) == false
     #     @warn "Failed to converge T = 0 K variational solution. v = $(Δv .+ w), w = $w."
@@ -686,6 +683,6 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, rtol = 1e-3, show_tra
     end
 
     # Return the variational parameters that minimised the free energy.
-    return [Δv .+ w, w]
+    return (Δv .+ w, w)
 end
 
