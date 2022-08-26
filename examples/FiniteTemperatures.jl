@@ -8,14 +8,14 @@ struct susceptibility
     ImX
     μ
 end
-Susceptibility()=susceptibility([],[],[])
+Susceptibility() = susceptibility([], [], [])
 
 # Physical constants
 const T = 1
 const hbar = const ħ = 1.05457162825e-34;          # kg m2 / s
 const eV = const q = const ElectronVolt = 1.602176487e-19;                         # kg m2 / s2
-const me=MassElectron = 9.10938188e-31;                          # kg
-const Boltzmann = const kB =  1.3806504e-23;                  # kg m2 / K s2
+const me = MassElectron = 9.10938188e-31;                          # kg
+const Boltzmann = const kB = 1.3806504e-23;                  # kg m2 / K s2
 const ϵ_0 = 8.854E-12 #Units: C2N−1m−2, permittivity of free space
 const amu = 1.660_539_066_60e-27 # kg
 
@@ -45,12 +45,12 @@ println("Loading Plots for plotting...")
 using Plots
 
 p1 = plot(s.nu, s.ImX, label="ImX",
-         markersize=3,marker=:downtriangle, xlab="nu (units Omega)", ylab="ImX")
+    markersize=3, marker=:downtriangle, xlab="nu (units Omega)", ylab="ImX")
 yaxis!(:log10)
 display(p1)
 # savefig("MAPIe-ImX.png")
 p2 = plot(s.nu, s.μ, label="mu",
-         markersize=3,marker=:uptriangle, xlab="nu (units Omega)",ylab="Mob")
+    markersize=3, marker=:uptriangle, xlab="nu (units Omega)", ylab="Mob")
 yaxis!(:log10)
 display(p2)
 

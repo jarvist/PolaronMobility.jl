@@ -26,8 +26,8 @@ Calculate the absorption coefficient Γ(Ω) for the polaron at at finite tempera
 
 See DSG 1972: https://doi.org/10.1103/PhysRevB.5.2367.
 """
-function optical_absorption(Ω, β, α, v, w; rtol = 1e-3)
-    real(complex_conductivity(Ω, β, α, v, w; rtol = rtol))
+function optical_absorption(Ω, β, α, v, w; rtol=1e-3)
+    real(complex_conductivity(Ω, β, α, v, w; rtol=rtol))
 end
 
 """
@@ -54,8 +54,8 @@ Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 
 """
-function polaron_complex_impedence(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
-	impedance = -im * Ω * 2π + im * polaron_memory_function(Ω, β, α, v, w; ω = ω, rtol = rtol)
+function polaron_complex_impedence(Ω, β, α, v, w; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
+    impedance = -im * Ω * 2π + im * polaron_memory_function(Ω, β, α, v, w; ω=ω, rtol=rtol)
 
     if verbose
         println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | Ω = $(round.(Ω, digits = 3)) | Z = $(round.(impedance, digits = 3))")
@@ -82,8 +82,8 @@ Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures 
 
 See also [`polaron_complex_impedence`](@ref)
 """
-function polaron_complex_conductivity(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3)
-	return 1 / polaron_complex_impedence(Ω, β, α, v, w; ω = ω, rtol = rtol)
+function polaron_complex_conductivity(Ω, β, α, v, w; ω=1.0, rtol=1e-3)
+    return 1 / polaron_complex_impedence(Ω, β, α, v, w; ω=ω, rtol=rtol)
 end
 
 """
@@ -104,9 +104,9 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 
 See also [`polaron_complex_conductivity`](@ref)
 """
-function polaron_mobility(β, α, v, w; ω = 1.0, rtol = 1e-3, T = nothing, verbose = false)
-    
-	mobility = abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω = ω, rtol = rtol)))
+function polaron_mobility(β, α, v, w; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
+
+    mobility = abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω=ω, rtol=rtol)))
 
     if verbose
         println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | μ = $(round.(mobility, digits = 3))")
