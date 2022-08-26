@@ -643,7 +643,7 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, v
         initial = [x for x in 1.0:(2.0*N)] # initial guess around 4 and ≥ 1.
     else
         Δv = v .- w
-        initial = vcat(Δv .+ rtol, w)
+        initial = vcat(Δv .+ 1e-5, w)
     end
 
     # Limits of the optimisation.
