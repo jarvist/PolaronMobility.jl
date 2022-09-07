@@ -94,20 +94,21 @@ end
 function combine_polarons(x::Matrix{NewPolaron})
 
     Ωlen, Tlen = size(x)
+    N = length(x[1,1].v)
 
     α = x[1,1].α
-    T = vcat([x[i, 1].T for i in 1:Tlen]...)
-    β = hcat([x[i, 1].β for i in 1:Tlen]...)
+    T = vcat([x[1, j].T for j in 1:Tlen]...)
+    β = hcat([x[1, j].β for j in 1:Tlen]...)
     ω = x[1,1].ω
-    v = hcat([x[i, 1].v for i in 1:Tlen]...)
-    w = hcat([x[i, 1].w for i in 1:Tlen]...)
-    κ = hcat([x[i, 1].κ for i in 1:Tlen]...)
-    M = hcat([x[i, 1].M for i in 1:Tlen]...)
-    F = vcat([x[i, 1].F for i in 1:Tlen]...)
-    Ω = vcat([x[1, j].Ω for j in 1:Ωlen]...)
-    Z = hcat([x[i, j].Z for i in 1:Tlen, j in 1:Ωlen]...)
-    σ = hcat([x[i, j].σ for i in 1:Tlen, j in 1:Ωlen]...)
-    μ = vcat([x[i, 1].μ for i in 1:Tlen]...)
+    v = [x[1, j].v[k] for j in 1:Tlen, k in 1:N]
+    w = [x[1, j].w[k] for j in 1:Tlen, k in 1:N]
+    κ = [x[1, j].κ[k] for j in 1:Tlen, k in 1:N]
+    M = [x[1, j].M[k] for j in 1:Tlen, k in 1:N]
+    F = [x[1, j].F for j in 1:Tlen]
+    Ω = [x[i, 1].Ω for i in 1:Ωlen]
+    Z = [x[i, j].Z for i in 1:Ωlen, j in 1:Tlen]
+    σ = [x[i, j].σ for i in 1:Ωlen, j in 1:Tlen]
+    μ = [x[1, j].μ for j in 1:Tlen]
 
     return NewPolaron(α, T, β, ω, v, w, κ, M, F, Ω, Z, σ, μ)
 end

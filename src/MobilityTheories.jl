@@ -368,6 +368,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ω::Real
             print("\e[0;0H\e[2J")
             println("Process: ", count, " / ", max_count, " ($(round.(count / max_count * 100, digits = 1)) %) | T = ", T, "K | Ω = ", Ω)
             println(polaron)
+            print("\n")
         end
         global count += 1
     end

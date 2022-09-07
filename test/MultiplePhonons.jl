@@ -172,35 +172,35 @@
 
     @testset "Single effective mode MAPI" begin
 
-        singlemode_polaron = make_polaron(ϵ_optic, ϵ_static, Hellwarth_B_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume=volume, ir_activity=nothing, rtol=1e-4, verbose=true, threads=true)
+        singlemode_polaron = make_polaron(ϵ_optic, ϵ_static, Hellwarth_B_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; rtol=1e-4, volume=volume, verbose=true)
 
         println('\n', singlemode_polaron)
 
-        @test singlemode_polaron.α ≈ 2.393156008589176 rtol = 1e-3
-        @test singlemode_polaron.v ≈ [3.3086418977712486 19.847576939769997] rtol = 1e-3
-        @test singlemode_polaron.w ≈ [2.6633947460574086 16.948191925764764] rtol = 1e-3
-        @test singlemode_polaron.F ≈ [-23.040935514526865, -35.50418023494468] rtol = 1e-3
-        @test singlemode_polaron.Z ≈ [0.0 + 0.0im 0.11385135083284387 + 0.0im; 0.0187881476301459 - 0.03208533725128671im 0.11055356479463488 - 0.002374554320726263im] rtol = 1e-3
-        @test singlemode_polaron.σ ≈ [Inf + 0.0im 8.783382829319228 - 0.0im; 13.590340404155462 + 23.208815675232696im 9.041217957422957 + 0.19419421893185695im] rtol = 1e-3
-        @test singlemode_polaron.μ ≈ [Inf, 136.42796295749645] rtol = 1e-3
+        @test singlemode_polaron.α ≈ [2.393156008589176] rtol = 1e-3
+        @test singlemode_polaron.v ≈ [3.3086408041087445; 19.8475538058543;;] rtol = 1e-3
+        @test singlemode_polaron.w ≈ [2.663393636284299; 16.948170313776515;;] rtol = 1e-3
+        @test singlemode_polaron.F ≈ [-23.041731976144206, -35.50791458303716] rtol = 1e-3
+        @test singlemode_polaron.Z ≈ [0.0 + 0.0im 0.11385129686004561 + 0.0im; 0.018788152235200903 - 0.03208533854748797im 0.11055350804269752 - 0.0023745467957310192im] rtol = 1e-3
+        @test singlemode_polaron.σ ≈ [Inf + 0.0im 8.783386993204598 - 0.0im; 13.590341216437999 + 23.208812311426854im 9.041222620818116 + 0.19419380337947187im] rtol = 1e-3
+        @test singlemode_polaron.μ ≈ [Inf, 136.42801511578227] rtol = 1e-3
     end
 
     # Multimode Tests
 
     @testset "Multiple mode (15) MAPI" begin
 
-        multimode_polaron = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume=volume, ir_activity=ir_activity, rtol=1e-4, verbose=true, threads=true)
+        multimode_polaron = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume=volume, ir_activity=ir_activity, rtol=1e-4, verbose=true)
 
         println('\n', multimode_polaron)
 
-        @test multimode_polaron.α ≈ [0.03401013445306177, 0.002850969846883158, 0.03075081562607006, 0.02275292381052607, 0.33591418423943553, 0.46526818717696034, 0.5046331098089347, 0.14223560721522646, 0.16083871312929882, 0.1622911897190622, 0.09123913334086006, 0.14070972715961402, 0.18159786148348117, 0.039500396977008016, 0.3487735470060312] rtol = 1e-3
-        @test sum(multimode_polaron.α) ≈ 2.663366500992453 rtol = 1e-3
-        @test multimode_polaron.v ≈ [3.292279463990455 35.19214720682867] rtol = 1e-3
-        @test multimode_polaron.w ≈ [2.67918465461597 32.45419371237463] rtol = 1e-3
-        @test multimode_polaron.F ≈ [-19.516214524763846, -42.83438594992077] rtol = 1e-3
-        @test multimode_polaron.Z ≈ [0.0 + 0.0im 0.09684805201838374 + 0.0im; 0.013916089370749986 - 0.02698207327877506im 0.09373671239869281 - 0.005862533504884882im] rtol = 1e-3
-        @test multimode_polaron.σ ≈ [Inf + 0.0im 10.325452904413394 - 0.0im; 15.098451823667595 + 29.27457007846871im 10.626611965355972 + 0.6646154649133901im] rtol = 1e-3
-        @test multimode_polaron.μ ≈ [Inf, 160.3801785412862] rtol = 1e-3
+        @test multimode_polaron.α ≈ [0.03401013640864639, 0.0028509700108140822, 0.030750817394243672, 0.02275292511882046, 0.33591420355451984, 0.46526821392990697, 0.5046331388253664, 0.14223561539378177, 0.16083872237753374, 0.16229119905081466, 0.0912391385871153, 0.14070973525043112, 0.18159787192536828, 0.03950039924828304, 0.3487735670605295] rtol = 1e-3
+        @test sum(multimode_polaron.α) ≈ 2.663366654136176 rtol = 1e-3
+        @test multimode_polaron.v ≈ [3.292278408796388; 35.19210536768459;;] rtol = 1e-3
+        @test multimode_polaron.w ≈ [2.6791835531148824; 32.45415323789612;;] rtol = 1e-3
+        @test multimode_polaron.F ≈ [-19.51689103566374, -42.83789660693146] rtol = 1e-3
+        @test multimode_polaron.Z ≈ [0.0 + 0.0im 0.09684668460340243 + 0.0im; 0.013916081318303443 - 0.026982092757439874im 0.09373730177630192 - 0.005861827702310395im] rtol = 1e-3
+        @test multimode_polaron.σ ≈ [Inf + 0.0im 10.32559869338953 - 0.0im; 15.098429539225423 + 29.274564944028118im 10.62655563954693 + 0.6645277498673103im] rtol = 1e-3
+        @test multimode_polaron.μ ≈ [Inf, 160.38242829458747] rtol = 1e-3
     end
 
     print('\n')
