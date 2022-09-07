@@ -54,7 +54,7 @@ Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 
 """
-function polaron_complex_impedence(Ω, β, α, v, w; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
+function polaron_complex_impedence(Ω, β, α, v, w; ω=1.0, rtol=1e-3, verbose=false)
     impedance = -im * Ω * 2π + im * polaron_memory_function(Ω, β, α, v, w; ω=ω, rtol=rtol)
 
     return impedance
@@ -97,7 +97,7 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 
 See also [`polaron_complex_conductivity`](@ref)
 """
-function polaron_mobility(β, α, v, w; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
+function polaron_mobility(β, α, v, w; ω=1.0, rtol=1e-3, verbose=false)
 
     mobility = abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω=ω, rtol=rtol)))
 
