@@ -57,13 +57,6 @@ See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 function polaron_complex_impedence(Ω, β, α, v, w; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
     impedance = -im * Ω * 2π + im * polaron_memory_function(Ω, β, α, v, w; ω=ω, rtol=rtol)
 
-    if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | Ω = $(round.(Ω, digits = 3)) | Z = $(round.(impedance, digits = 3))")
-        print("\033[F")
-
-        global count += 1
-    end
-
     return impedance
 end
 
@@ -107,13 +100,6 @@ See also [`polaron_complex_conductivity`](@ref)
 function polaron_mobility(β, α, v, w; ω=1.0, rtol=1e-3, T=nothing, verbose=false)
 
     mobility = abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω=ω, rtol=rtol)))
-
-    if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | μ = $(round.(mobility, digits = 3))")
-        print("\033[F")
-
-        global count += 1
-    end
 
     return mobility
 end

@@ -91,9 +91,52 @@ struct NewPolaron
     μ
 end
 
+function combine_polarons(x::Matrix{NewPolaron})
+
+    Ωlen, Tlen = size(x)
+
+    α = x[1,1].α
+    T = vcat([x[i, 1].T for i in 1:Tlen]...)
+    β = hcat([x[i, 1].β for i in 1:Tlen]...)
+    ω = x[1,1].ω
+    v = hcat([x[i, 1].v for i in 1:Tlen]...)
+    w = hcat([x[i, 1].w for i in 1:Tlen]...)
+    κ = hcat([x[i, 1].κ for i in 1:Tlen]...)
+    M = hcat([x[i, 1].M for i in 1:Tlen]...)
+    F = vcat([x[i, 1].F for i in 1:Tlen]...)
+    Ω = vcat([x[1, j].Ω for j in 1:Ωlen]...)
+    Z = hcat([x[i, j].Z for i in 1:Tlen, j in 1:Ωlen]...)
+    σ = hcat([x[i, j].σ for i in 1:Tlen, j in 1:Ωlen]...)
+    μ = vcat([x[i, 1].μ for i in 1:Tlen]...)
+
+    return NewPolaron(α, T, β, ω, v, w, κ, M, F, Ω, Z, σ, μ)
+end
+
+function combine_polarons(x::Array{NewPolaron, 3})
+
+    Ωlen, Tlen, αlen = size(x)
+    N = length(x[1,1,1].v)
+
+    α = vcat([x[1, 1, k].α for k in 1:αlen]...)
+    T = vcat([x[1, j, 1].T for j in 1:Tlen]...)
+    β = vcat([x[1, j, 1].β for j in 1:Tlen]...)
+    ω = x[1,1,1].ω
+    v = [x[1, j, k].v[n] for j in 1:Tlen, k in 1:αlen, n in 1:N]
+    w = [x[1, j, k].w[n] for j in 1:Tlen, k in 1:αlen, n in 1:N]
+    κ = [x[1, j, k].κ[n] for j in 1:Tlen, k in 1:αlen, n in 1:N]
+    M = [x[1, j, k].M[n] for j in 1:Tlen, k in 1:αlen, n in 1:N]
+    F = [x[1, j, k].F for j in 1:Tlen, k in 1:αlen]
+    Ω = [x[i, 1, 1].Ω for i in 1:Ωlen]
+    Z = [x[i, j, k].Z for i in 1:Ωlen, j in 1:Tlen, k in 1:αlen]
+    σ = [x[i, j, k].σ for i in 1:Ωlen, j in 1:Tlen, k in 1:αlen]
+    μ = [x[i, j, 1].μ for i in 1:Ωlen, j in 1:Tlen]
+
+    return NewPolaron(α, T, β, ω, v, w, κ, M, F, Ω, Z, σ, μ)
+end
+
 # Broadcast Polaron data.
 function Base.show(io::IO, x::NewPolaron)
     flush(stdout)
-    print(io, "-------------------------------------------------\n Polaron Information: \n-------------------------------------------------\n", "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round(sum(x.α), digits=3), "\nTemperatures | T = ", round.(x.T, digits=3), " K \nReduced thermodynamic | β = ", round.(x.β, digits=3), "\nPhonon frequencies | ω = ", round.(x.ω, digits=3), " 2π THz\nVariational parameters | v = ", round.(x.v, digits=3), " ω | w = ", round.(x.w, digits=3), " ω\nFictitious spring constant | κ = ", round.(x.κ, digits=3), " kg/s²\nFictitious mass | M = ", round.(x.M, digits=3), " kg\nFree energy | F = ", round.(x.F, digits=3), " meV\nElectric field frequency | Ω = ", round.(Float64.(x.Ω), digits=3), " 2π THz\nComplex impedance | Z = ", x.Z .|> y -> round.(ComplexF64.(y), digits=3), " V/A\nComplex conductivity | σ = ", x.σ .|> y -> round.(ComplexF64.(y), digits=3), " A/V\nMobility | μ = ", round.(Float64.(x.μ), digits=3), " cm²/Vs")
+    print(io, "-------------------------------------------------\n Polaron Information: \n-------------------------------------------------\n", "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round.(sum(x.α), digits=3), "\nTemperatures | T = ", round.(x.T, digits=3), " K \nReduced thermodynamic | β = ", round.(x.β, digits=3), "\nPhonon frequencies | ω = ", round.(x.ω, digits=3), " 2π THz\nVariational parameters | v = ", round.(x.v, digits=3), " ω | w = ", round.(x.w, digits=3), " ω\nFictitious spring constant | κ = ", round.(x.κ, digits=3), " kg/s²\nFictitious mass | M = ", round.(x.M, digits=3), " kg\nFree energy | F = ", round.(x.F, digits=3), " meV\nElectric field frequency | Ω = ", round.(Float64.(x.Ω), digits=3), " 2π THz\nComplex impedance | Z = ", x.Z .|> y -> round.(ComplexF64.(y), digits=3), " V/A\nComplex conductivity | σ = ", x.σ .|> y -> round.(ComplexF64.(y), digits=3), " A/V\nMobility | μ = ", round.(Float64.(x.μ), digits=3), " cm²/Vs")
 end
 

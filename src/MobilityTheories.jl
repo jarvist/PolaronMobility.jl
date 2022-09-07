@@ -309,14 +309,10 @@ make_polaron(
 ```
     
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volume=nothing, ir_activity=nothing, rtol=1e-4, N_params=1, verbose=false, threads=false)
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ω::Real; volume=nothing, ir_activity=nothing, rtol=1e-4, N_params=1, verbose=false)
 
     # Number of phonon modes.
     N_modes = length(phonon_freq)
-
-    if verbose
-        println("Calculating Fröhlich alpha...")
-    end
 
     # Convert THz phonon frequencies to 2π THz.
     ω = 2π .* phonon_freq
@@ -325,7 +321,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         # One phonon mode.
 
         # Calculate Frohlich alpha coupling parameters.
-        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
+        α = [frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)]
     else
         # Multiple phonon modes
 
@@ -336,102 +332,63 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange, Ω; volum
         α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
     end
 
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(α, digits=3))
-        print("\n\n")
-        println("Calculating thermodynamic betas...")
-    end
-
     # Calculate reduced thermodynamic betas for each phonon mode.
     # If temperature is zero, return Inf.
-    @tullio threads = threads betas[m, i] := Trange[i] == 0.0 ? Inf64 : ħ * ω[m] / (kB * Trange[i]) * 1e12 (i in eachindex(Trange))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(betas, digits=3))
-        print("\n\n")
-        println("Calculating variational parameters...")
-        global count = 0
-        global processes = length(Trange)
-    end
+    betas = [T == 0.0 ? Inf64 : ħ * ω[j] / (kB * T) * 1e12 for j in eachindex(ω)]
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    @tullio threads = threads params[i] := Trange[i] == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose) : var_params(α, betas[:, i]; v=5.6, w=3.4, ω=ω, T=Trange[i], N=N_params, verbose=verbose) (i in eachindex(Trange))
+    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose) : var_params(α, betas; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose)
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
-    @tullio threads = threads v_params[i] := params[i][1] (i in eachindex(Trange))
-    @tullio threads = threads w_params[i] := params[i][2] (i in eachindex(Trange))
-
-    if verbose
-        println("\nv: ")
-        show(IOContext(stdout, :limit => true), round.(hcat(v_params...), digits=3))
-        print("\n\n")
-        println("w: ")
-        show(IOContext(stdout, :limit => true), round.(hcat(w_params...), digits=3))
-        print("\n\n")
-        println("Calculating spring constants...")
-    end
+    v_params = params[1]
+    w_params = params[2]
 
     # Calculate fictitious spring constants for each temperature.
-    @tullio threads = threads spring_constants[i] := v_params[i] .^ 2 .- w_params[i] .^ 2
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(hcat(spring_constants...), digits=3))
-        print("\n\n")
-        println("Calculating fictitious masses...")
-    end
+    spring_constants = v_params .^ 2 .- w_params .^ 2
 
     # Calculate fictitious masses for each temperature.
-    @tullio threads = threads masses[i] := spring_constants[i] ./ w_params[i] .^ 2
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(hcat(masses...), digits=3))
-        print("\n\n")
-        println("Calculating free energies...")
-        global count = 0
-        global processes = length(Trange)
-    end
+    masses = spring_constants ./ w_params .^ 2
 
     # Calculate ground-state free energies for each temperature.
-    @tullio threads = threads energies[i] := Trange[i] == 0.0 ? multi_F(v_params[i], w_params[i], α; ω=ω, verbose=verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params[i], w_params[i], α, betas[:, i]; ω=ω, T=Trange[i], verbose=verbose) * 1000 * ħ / eV * 1e12 (i in eachindex(Trange))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(energies, digits=3))
-        print("\n\n")
-        println("Calculating complex impedances...")
-        global count = 0
-        global processes = length(Trange) * length(Ω)
-    end
+    energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω, verbose=verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params, w_params, α, betas; ω=ω, verbose=verbose) * 1000 * ħ / eV * 1e12
 
     # Calculate complex impedances for each frequency and temperature. Returns a matrix.
-    @tullio threads = threads impedances[f, i] := Ω[f] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[f], betas[:, i], α, v_params[i], w_params[i]; ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3 (i in eachindex(Trange), f in eachindex(Ω))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(impedances, digits=3))
-        print("\n\n")
-        println("Calculating complex conductivities...")
-    end
-
+    impedances = Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, betas, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3
+    
     # Calculate complex conductivities for each frequency and temperature. Returns a matrix.
-    @tullio threads = threads conductivities[f, i] := Ω[f] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[f, i] (i in eachindex(Trange), f in eachindex(Ω))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(conductivities, digits=3))
-        print("\n\n")
-        println("Calculating mobilities...")
-        global count = 0
-        global processes = length(Trange)
-    end
+    conductivities = Ω == T == 0.0 ? Inf64 + 1im * 0.0 : 1 ./ impedances
 
     # Calculates the dc mobility for each temperature.
-    @tullio threads = threads mobilities[i] := Trange[i] == 0.0 ? Inf64 : polaron_mobility(betas[:, i], α, v_params[i], w_params[i]; ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) * eV / (1e12 * me * m_eff) * 100^2 (i in eachindex(Trange))
+    mobilities = T == 0.0 ? Inf64 : polaron_mobility(betas, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose) * eV / (1e12 * me * m_eff) * 100^2
+
+    polaron = NewPolaron(α, [T], betas, phonon_freq, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
 
     if verbose
-        show(IOContext(stdout, :limit => true), round.(mobilities, digits=3))
-        print("\n")
+        if Threads.threadid() == 1
+            print("\e[0;0H\e[2J")
+            println("Process: ", count, " / ", max_count, " ($(round.(count / max_count * 100, digits = 1)) %) | T = ", T, "K | Ω = ", Ω)
+            println(polaron)
+        end
+        global count += 1
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, Trange, betas, phonon_freq, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
+    return polaron
+end
+
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; volume=nothing, ir_activity=nothing, rtol=1e-4, N_params=1, verbose=false)
+
+    if verbose
+        global count = 1
+        global max_count = length(Trange) * length(Ωrange)
+    end
+
+    polarons = [make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange[j]; volume=volume, ir_activity=ir_activity, rtol=rtol, N_params=N_params, verbose=verbose) for j in eachindex(Ωrange), i in eachindex(Trange)]
+
+    polaron = combine_polarons(polarons)
+
+    # Return Polaron mutable struct with evaluated data.
+    return polaron
 end
 
 """
@@ -439,102 +396,66 @@ end
 
 Same as above but from a model system with specified alpha values rather than from material properties. Here we only have one phonon mode with a normalised frequency `ω = 1.0`.
 """
-function make_polaron(α, Trange, Ω; ω=1.0, rtol=1e-4, verbose=false, threads=false)
-
-    if verbose
-        println("\nCalculating thermodynamic betas...")
-    end
+function make_polaron(α::Real, T::Real, Ω::Real; ω=1.0, rtol=1e-4, verbose=false)
 
     # Calculate reduced thermodynamic betas for each phonon mode.
     # If temperature is zero, return Inf.
-    @tullio threads = threads betas[i] := Trange[i] == 0.0 ? Inf64 : ω / Trange[i]
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(betas, digits=3))
-        print("\n\n")
-        println("Calculating variational parameters...")
-        global count = 0
-        global processes = length(Trange) * length(α)
-    end
+    β = T == 0.0 ? Inf64 : ω / T
 
     # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
-    @tullio threads = threads params[j, i] := Trange[i] == 0.0 ? var_params(α[j]; v=5.6, w=3.4, ω=ω, verbose=verbose) : var_params(α[j], betas[i]; v=5.6, w=3.4, ω=ω, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
+    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, verbose=verbose) : var_params(α, β; v=5.6, w=3.4, ω=ω, verbose=verbose)
 
     # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
-    @tullio threads = threads v_params[j, i] := params[j, i][1]
-    @tullio threads = threads w_params[j, i] := params[j, i][2]
-
-    if verbose
-        println("\nv: ")
-        show(IOContext(stdout, :limit => true), round.(hcat(v_params...), digits=3))
-        print("\n\n")
-        println("w: ")
-        show(IOContext(stdout, :limit => true), round.(hcat(w_params...), digits=3))
-        print("\n\n")
-        println("Calculating spring constants...")
-    end
+    v_params = params[1]
+    w_params = params[2]
 
     # Calculate fictitious spring constants for each alpha parameter and temperature. Returns a Matrix.
-    @tullio threads = threads spring_constants[j, i] := v_params[j, i] .^ 2 .- w_params[j, i] .^ 2
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(hcat(spring_constants...), digits=3))
-        print("\n\n")
-        println("Calculating fictitious masses...")
-    end
+    spring_constants = v_params .^ 2 .- w_params .^ 2
 
     # Calculate fictitious masses for each alpha parameter and temperature. Returns a Matrix.
-    @tullio threads = threads masses[j, i] := spring_constants[j, i] ./ w_params[j, i] .^ 2
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(hcat(masses...), digits=3))
-        print("\n\n")
-        println("Calculating free energies...")
-        global count = 0
-        global processes = length(Trange) * length(α)
-    end
+    masses = spring_constants ./ w_params .^ 2
 
     # Calculate ground-state free energies for each alpha parameter and temperature. Returns a Matrix.
-    @tullio threads = threads energies[j, i] := Trange[i] == 0.0 ? multi_F(v_params[j, i], w_params[j, i], α[j]; ω=ω, verbose=verbose) : multi_F(v_params[j, i], w_params[j, i], α[j], betas[i]; ω=ω, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(energies, digits=3))
-        print("\n\n")
-        println("Calculating complex impedances...")
-        global count = 0
-        global processes = length(Trange) * length(Ω) * length(α)
-    end
+    energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω, verbose=verbose) : multi_F(v_params, w_params, α, β; ω=ω, verbose=verbose)
 
     # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
-    @tullio threads = threads impedances[k, j, i] := Ω[j] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω[j], [betas[i]], α[k], v_params[k, i], w_params[k, i]; ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(Ω), k in eachindex(α))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(impedances, digits=3))
-        print("\n\n")
-        println("Calculating complex conductivities...")
-    end
+    impedances = Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, β, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose)
 
     # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
-    @tullio threads = threads conductivities[k, j, i] := Ω[j] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[k, j, i] (i in eachindex(Trange), j in eachindex(Ω), k in eachindex(α))
-
-    if verbose
-        show(IOContext(stdout, :limit => true), round.(conductivities, digits=3))
-        print("\n\n")
-        println("Calculating mobilities...")
-        global count = 0
-        global processes = length(Trange) * length(α)
-    end
+    conductivities = Ω == T == 0.0 ? Inf64 + 1im * 0.0 : 1 ./ impedances
 
     # Calculates the dc mobility for each alpha parameter and each temperature.
-    @tullio threads = threads mobilities[j, i] := Trange[i] == 0.0 ? Inf64 : polaron_mobility(betas[i], α[j], v_params[j, i], w_params[j, i]; ω=ω, rtol=rtol, T=Trange[i], verbose=verbose) (i in eachindex(Trange), j in eachindex(α))
+    mobilities = T == 0.0 ? Inf64 : polaron_mobility(β, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose)
+
+    polaron = NewPolaron(α, T, β, ω, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
 
     if verbose
-        show(IOContext(stdout, :limit => true), round.(mobilities, digits=3))
-        print("\n")
+        if Threads.threadid() == 1
+            println("\e[0;0H\e[2J")
+            println("Process: ", count, " / ", max_count, " ($(round.(count / max_count * 100, digits = 1)) %) | α = ", α," | T = ", T, "K | Ω = ", Ω)
+            println(polaron)
+            print("\n")
+        end
+        global count += 1
     end
 
     # Return Polaron mutable struct with evaluated data.
-    return NewPolaron(α, Trange, betas, ω, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
+    return polaron
+end
+
+function make_polaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω=1.0, rtol=1e-4, verbose=false)
+
+    if verbose
+        global count = 1
+        global max_count = length(αrange) * length(Trange) * length(Ωrange)
+    end
+
+    polarons = [make_polaron(αrange[i], Trange[j], Ωrange[k]; ω=ω, rtol=rtol, verbose=verbose) for k in eachindex(Ωrange), j in eachindex(Trange), i in eachindex(αrange)]
+
+    polaron = combine_polarons(polarons)
+
+    # Return Polaron mutable struct with evaluated data.
+    return polaron
 end
 
 """

@@ -366,7 +366,7 @@ See also ['B'](@ref).
 """
 function B_j(α, β, v, w)
     B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D_j(τ, β, v, w)))
-    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ), 0.0, β / 2.0)[1]
+    B = α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ * β / 2), 0.0, 1.0)[1] * β / 2
     return B
 end
 
@@ -495,18 +495,10 @@ See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., B
 
 See also [`F`](@ref).
 """
-function multi_F(v, w, α, β; ω = 1.0, T = nothing, verbose = false)
+function multi_F(v, w, α, β; ω = 1.0, verbose = false)
 
     # Add contribution to the total free energy from the phonon mode.
     F = sum(-(B_j(α[j], β[j], v, w) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
-
-    # Print the free energy.
-    if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | F = $(round.(F, digits = 3))")
-        print("\033[F")
-
-        global count += 1
-    end
 
     # Free energy in units of meV
     return F
@@ -533,13 +525,6 @@ function multi_F(v, w, α; ω = 1.0, verbose = false)
     # Add contribution to the total free energy from the phonon mode.
 	F = sum(-(B_j(α[j], v, w) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
 
-    # Print the free energy.
-    if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | F = $(round.(F, digits = 3))")
-        print("\033[F")
-        global count += 1
-    end
-
     # Free energy in units of meV
     return F
 end
@@ -561,7 +546,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
-function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, T = nothing, verbose = false) # N number of v and w params
+function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, verbose = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -600,16 +585,8 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = fals
     Δv = [var_params[2*n-1] for n in 1:N]
     w = [var_params[2*n] for n in 1:N]
 
-    # if Optim.converged(solution) == false
-    #     @warn "Failed to converge T = $T K variational solution. v = $(Δv .+ w), w = $w."
-    # end
-
-    # Print the variational parameters that minimised the free energy.
-    if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = $(round.(T, digits = 3)) | v = $(round.(Δv .+ w, digits = 3)) | w = $(round.(w, digits = 3))")
-        print("\033[F")
-
-        global count += 1
+    if Optim.converged(solution) == false
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w."
     end
 
     # Return the variational parameters that minimised the free energy.
@@ -670,16 +647,8 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, v
     Δv = [var_params[2*n-1] for n in 1:N]
     w = [var_params[2*n] for n in 1:N]
 
-    # if Optim.converged(solution) == false
-    #     @warn "Failed to converge T = 0 K variational solution. v = $(Δv .+ w), w = $w."
-    # end
-
-    # Print the variational parameters that minimised the free energy.
-    if verbose
-        println("\e[2K", "Process: $(count) / $processes ($(round.(count / processes * 100, digits = 1)) %) | T = 0.0 | v = $(round.(Δv .+ w, digits = 3)) | w = $(round.(w, digits = 3))")
-        print("\033[F")
-
-        global count += 1
+    if Optim.converged(solution) == false
+        @warn "Failed to converge T = 0 K variational solution. v = $(Δv .+ w), w = $w."
     end
 
     # Return the variational parameters that minimised the free energy.

@@ -8,7 +8,7 @@ PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
 module PolaronMobility
 
 export Polaron, NewPolaron # Type to hold the data
-export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron, plotpolaron
+export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron
 export HellwarthBScheme, HellwarthAScheme
 export polaron_memory_function  # Polaron memory functions
 export optical_absorption       # Polaron optical absorption
@@ -23,7 +23,6 @@ export make_polaron, save_polaron, load_polaron
 using LinearAlgebra
 using Printf
 using JLD
-using Tullio, LoopVectorization
 
 #Key numerics used:
 # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
