@@ -98,8 +98,6 @@ function combine_polarons(x::Vector{NewPolaron})
     N_modes = length(x[1].ω)
     Ωlen = length(x[1].Ω)
 
-    @show(Tlen, N_params, N_modes, Ωlen)
-
     α = [x[1].α[i] for i in 1:N_modes]
     T = [x[i].T for i in 1:Tlen]
     β = [x[i].β[j] for i in 1:Tlen, j in 1:N_modes]
