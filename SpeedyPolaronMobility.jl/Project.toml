@@ -1,0 +1,8 @@
+name = "SpeedyPolaronMobility"
+uuid = "1dcd8e3d-d24c-4706-b07b-3ecb7fb0f728"
+authors = ["neutrino "]
+version = "0.1.0"
+
+[deps]
+PolaronMobility = "a1b829d7-2a44-59aa-80d3-9ddd83901c9b"
+Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
