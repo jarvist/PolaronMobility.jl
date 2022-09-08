@@ -309,7 +309,7 @@ make_polaron(
 ```
     
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ω::Real; volume=nothing, ir_activity=nothing, rtol=1e-4, N_params=1, verbose=false)
+@noinline function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ωrange; v_guess = 5.4, w_guess = 3.4, volume=nothing, ir_activity=nothing, N_params=1, verbose=false, processes=(1,1))
 
     # Number of phonon modes.
     N_modes = length(phonon_freq)
@@ -332,12 +332,17 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ω::Real
         α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
     end
 
+    if verbose
+        println("\e[0;0H\e[2J")
+        print("Process: ", processes[1], " / ", processes[2], " ($(round.(processes[1] / processes[2] * 100, digits = 1)) %) | α = ", sum(α), " | T = ", T, "K")
+    end
+
     # Calculate reduced thermodynamic betas for each phonon mode.
     # If temperature is zero, return Inf.
     betas = [T == 0.0 ? Inf64 : ħ * ω[j] / (kB * T) * 1e12 for j in eachindex(ω)]
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose) : var_params(α, betas; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose)
+    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose) : var_params(α, betas; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
     v_params = params[1]
@@ -350,41 +355,40 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ω::Real
     masses = spring_constants ./ w_params .^ 2
 
     # Calculate ground-state free energies for each temperature.
-    energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω, verbose=verbose) * 1000 * ħ / eV * 1e12 : multi_F(v_params, w_params, α, betas; ω=ω, verbose=verbose) * 1000 * ħ / eV * 1e12
+    energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω) * 1000 * ħ / eV * 1e12 : multi_F(v_params, w_params, α, betas; ω=ω) * 1000 * ħ / eV * 1e12
 
     # Calculate complex impedances for each frequency and temperature. Returns a matrix.
-    impedances = Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, betas, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose) / eV^2 * 1e12 * me * m_eff * volume * 100^3
+    impedances = [Ωrange[i] == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[i], betas, α, v_params, w_params; ω=ω) / eV^2 * 1e12 * me * m_eff * volume * 100^3 for i in eachindex(Ωrange)]
     
     # Calculate complex conductivities for each frequency and temperature. Returns a matrix.
-    conductivities = Ω == T == 0.0 ? Inf64 + 1im * 0.0 : 1 ./ impedances
+    conductivities = [Ωrange[i] == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i] for i in eachindex(Ωrange)]
 
     # Calculates the dc mobility for each temperature.
-    mobilities = T == 0.0 ? Inf64 : polaron_mobility(betas, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose) * eV / (1e12 * me * m_eff) * 100^2
+    mobilities = T == 0.0 ? Inf64 : polaron_mobility(betas, α, v_params, w_params; ω=ω) * eV / (1e12 * me * m_eff) * 100^2
 
-    polaron = NewPolaron(α, [T], betas, phonon_freq, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
+    polaron = NewPolaron(α, T, betas, phonon_freq, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ωrange, impedances, conductivities, mobilities)
 
     if verbose
-        if Threads.threadid() == 1
-            print("\e[0;0H\e[2J")
-            println("Process: ", count, " / ", max_count, " ($(round.(count / max_count * 100, digits = 1)) %) | T = ", T, "K | Ω = ", Ω)
-            println(polaron)
-            print("\n")
-        end
-        global count += 1
+        print("\e[0;0H\e[2J")
+        println(polaron)
+        print("\n")
     end
 
     # Return Polaron mutable struct with evaluated data.
     return polaron
 end
 
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; volume=nothing, ir_activity=nothing, rtol=1e-4, N_params=1, verbose=false)
+@noinline function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange; volume=nothing, ir_activity=nothing, N_params=1, verbose=false)
 
-    if verbose
-        global count = 1
-        global max_count = length(Trange) * length(Ωrange)
+    polarons = Vector{NewPolaron}(undef, length(Trange))
+
+    @simd for i in eachindex(Trange)
+        if !isassigned(polarons, i-1)
+            @inbounds polarons[i] = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange; volume=volume, ir_activity=ir_activity, N_params=N_params, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange)))
+        else
+            @inbounds polarons[i] = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange; volume=volume, ir_activity=ir_activity, v_guess=polarons[i-1].v, w_guess=polarons[i-1].w, N_params=N_params, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange)))
+        end
     end
-
-    polarons = [make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange[j]; volume=volume, ir_activity=ir_activity, rtol=rtol, N_params=N_params, verbose=verbose) for j in eachindex(Ωrange), i in eachindex(Trange)]
 
     polaron = combine_polarons(polarons)
 
@@ -397,14 +401,19 @@ end
 
 Same as above but from a model system with specified alpha values rather than from material properties. Here we only have one phonon mode with a normalised frequency `ω = 1.0`.
 """
-function make_polaron(α::Real, T::Real, Ω::Real; ω=1.0, rtol=1e-4, verbose=false)
+@noinline function make_polaron(α::Real, T::Real, Ωrange; ω=1.0, v_guess = 5.4, w_guess = 3.4, verbose=false, processes=(1,1))
+
+    if verbose
+        println("\e[0;0H\e[2J")
+        print("Process: ", processes[1], " / ", processes[2], " ($(round.(processes[1] / processes[2] * 100, digits = 1)) %) | α = ", sum(α), " | T = ", T, "K")
+    end
 
     # Calculate reduced thermodynamic betas for each phonon mode.
     # If temperature is zero, return Inf.
     β = T == 0.0 ? Inf64 : ω / T
 
     # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
-    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, verbose=verbose) : var_params(α, β; v=5.6, w=3.4, ω=ω, verbose=verbose)
+    params = T == 0.0 ? var_params(α; v=v_guess, w=w_guess, ω=ω) : var_params(α, β; v=v_guess, w=w_guess, ω=ω)
 
     # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
     v_params = params[1]
@@ -417,41 +426,42 @@ function make_polaron(α::Real, T::Real, Ω::Real; ω=1.0, rtol=1e-4, verbose=fa
     masses = spring_constants ./ w_params .^ 2
 
     # Calculate ground-state free energies for each alpha parameter and temperature. Returns a Matrix.
-    energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω, verbose=verbose) : multi_F(v_params, w_params, α, β; ω=ω, verbose=verbose)
+    energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω) : multi_F(v_params, w_params, α, β; ω=ω)
 
     # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
-    impedances = Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, β, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose)
-
+    impedances = [Ωrange[i] == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[i], β, α, v_params, w_params; ω=ω) for i in eachindex(Ωrange)]
+    
     # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
-    conductivities = Ω == T == 0.0 ? Inf64 + 1im * 0.0 : 1 ./ impedances
+    conductivities = [Ωrange[i] == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i] for i in eachindex(Ωrange)]
 
     # Calculates the dc mobility for each alpha parameter and each temperature.
-    mobilities = T == 0.0 ? Inf64 : polaron_mobility(β, α, v_params, w_params; ω=ω, rtol=rtol, verbose=verbose)
+    mobilities = T == 0.0 ? Inf64 : polaron_mobility(β, α, v_params, w_params; ω=ω)
 
-    polaron = NewPolaron(α, T, β, ω, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ω, impedances, conductivities, mobilities)
+    polaron = NewPolaron(α, T, β, ω, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ωrange, impedances, conductivities, mobilities)
 
     if verbose
-        if Threads.threadid() == 1
-            println("\e[0;0H\e[2J")
-            println("Process: ", count, " / ", max_count, " ($(round.(count / max_count * 100, digits = 1)) %) | α = ", α," | T = ", T, "K | Ω = ", Ω)
-            println(polaron)
-            print("\n")
-        end
-        global count += 1
+        print("\e[0;0H\e[2J")
+        println(polaron)
+        print("\n")
     end
 
     # Return Polaron mutable struct with evaluated data.
     return polaron
 end
 
-function make_polaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω=1.0, rtol=1e-4, verbose=false)
+@noinline function make_polaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω=1.0, verbose=false)
 
-    if verbose
-        global count = 1
-        global max_count = length(αrange) * length(Trange) * length(Ωrange)
+    polarons = Matrix{NewPolaron}(undef, (length(Trange), length(αrange)))
+
+    @simd for j in eachindex(Trange)
+        @simd for i in eachindex(αrange)
+            if !isassigned(polarons, j-1, i)
+                @inbounds polarons[j, i] = make_polaron(αrange[i], Trange[j], Ωrange; ω=ω, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(αrange)))
+            else
+                @inbounds polarons[j, i] = make_polaron(αrange[i], Trange[j], Ωrange; ω=ω, v_guess=polarons[j-1, i].v, w_guess=polarons[j-1, i].w, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(αrange)))
+            end
+        end
     end
-
-    polarons = [make_polaron(αrange[i], Trange[j], Ωrange[k]; ω=ω, rtol=rtol, verbose=verbose) for k in eachindex(Ωrange), j in eachindex(Trange), i in eachindex(αrange)]
 
     polaron = combine_polarons(polarons)
 
