@@ -113,7 +113,7 @@ speedymakepolaron(
         if Ωrange[i] == T == 0.0
             @inbounds 0.0 + 1im * 0.0
         else 
-            @inbounds polaron_complex_impedence(Ωrange[i], β, α, v_params, w_params; ω=ω) 
+            @inbounds polaron_complex_impedence(Ωrange[i], betas, α, v_params, w_params; ω=ω) 
         end
     end (i in eachindex(Ωrange))
    
