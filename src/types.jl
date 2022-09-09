@@ -142,6 +142,21 @@ end
 # Broadcast Polaron data.
 function Base.show(io::IO, x::NewPolaron)
     flush(stdout)
-    print(io, "-------------------------------------------------\n Polaron Information: \n-------------------------------------------------\n", "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round.(sum(x.α), digits=3), "\nTemperatures | T = ", round.(x.T, digits=3), " K \nReduced thermodynamic | β = ", round.(x.β, digits=3), "\nPhonon frequencies | ω = ", round.(x.ω, digits=3), " 2π THz\nVariational parameters | v = ", round.(x.v, digits=3), " ω | w = ", round.(x.w, digits=3), " ω\nFictitious spring constant | κ = ", round.(x.κ, digits=3), " kg/s²\nFictitious mass | M = ", round.(x.M, digits=3), " kg\nFree energy | F = ", round.(x.F, digits=3), " meV\nElectric field frequency | Ω = ", round.(Float64.(x.Ω), digits=3), " 2π THz\nComplex impedance | Z = ", x.Z .|> y -> round.(ComplexF64.(y), digits=3), " V/A\nComplex conductivity | σ = ", x.σ .|> y -> round.(ComplexF64.(y), digits=3), " A/V\nMobility | μ = ", round.(Float64.(x.μ), digits=3), " cm²/Vs", "\n-------------------------------------------------")
+    println("-------------------------------------------------")
+    println(" Polaron Information: ")
+    println("-------------------------------------------------") 
+    println(IOContext(stdout, :limit => true), "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round.(sum(x.α), digits=3)) 
+    println(IOContext(stdout, :limit => true), "Temperatures | T = ", round.(x.T, digits=3), " K")
+    println(IOContext(stdout, :limit => true), "Reduced thermodynamic | β = ", round.(x.β, digits=3))
+    println(IOContext(stdout, :limit => true), "Phonon frequencies | ω = ", round.(x.ω, digits=3), " 2π THz")
+    println(IOContext(stdout, :limit => true), "Variational parameters | v = ", round.(x.v, digits=3), " ω | w = ", round.(x.w, digits=3), " ω")
+    println(IOContext(stdout, :limit => true), "Fictitious spring constant | κ = ", round.(x.κ, digits=3), " kg/s²")
+    println(IOContext(stdout, :limit => true), "Fictitious mass | M = ", round.(x.M, digits=3), " kg")
+    println(IOContext(stdout, :limit => true), "Free energy | F = ", round.(x.F, digits=3), " meV")
+    println(IOContext(stdout, :limit => true), "Electric field frequency | Ω = ", round.(Float64.(x.Ω), digits=3), " 2π THz")
+    println(IOContext(stdout, :limit => true), "Complex impedance | Z = ", x.Z .|> y -> round.(ComplexF64.(y), digits=3), " V/A")
+    println(IOContext(stdout, :limit => true), "Complex conductivity | σ = ", x.σ .|> y -> round.(ComplexF64.(y), digits=3), " A/V")
+    println(IOContext(stdout, :limit => true), "Mobility | μ = ", round.(Float64.(x.μ), digits=3), " cm²/Vs")
+    println("-------------------------------------------------")
 end
 

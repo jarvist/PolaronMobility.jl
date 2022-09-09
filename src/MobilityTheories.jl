@@ -369,7 +369,7 @@ make_polaron(
     polaron = NewPolaron(α, T, betas, phonon_freq, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ωrange, impedances, conductivities, mobilities)
 
     if verbose
-        print("\e[0;0H\e[2J")
+        print("\e[0;0H\e[2J\n")
         println(polaron)
         print("\n")
     end
@@ -440,7 +440,7 @@ Same as above but from a model system with specified alpha values rather than fr
     polaron = NewPolaron(α, T, β, ω, hcat(v_params...), hcat(w_params...), hcat(spring_constants...), hcat(masses...), energies, Ωrange, impedances, conductivities, mobilities)
 
     if verbose
-        print("\e[0;0H\e[2J")
+        print("\e[0;0H\e[2J\n")
         println(polaron)
         print("\n")
     end

@@ -72,10 +72,12 @@ speedymakepolaron(
     end
 
     if verbose
+        process, max_process = processes
         if Threads.threadid() == 1
             println("\e[0;0H\e[2J")
-            print("Thread id: ", Threads.threadid(), " | Process: ", processes[1], " / ", processes[2], " ($(round.(processes[1] / processes[2] * 100, digits = 1)) %) | α = ", sum(α), " | T = ", T, "K")
+            print("Thread id: ", Threads.threadid(), " | Process: ", process, " / ", max_process, " ($(round.(process / max_process * 100, digits = 1)) %) | α = ", sum(α), " | T = ", T, "K")
         end
+        process = process - 1
     end
 
     # Calculate reduced thermodynamic betas for each phonon mode.
@@ -99,10 +101,24 @@ speedymakepolaron(
     energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω) * 1000 * ħ / eV * 1e12 : multi_F(v_params, w_params, α, betas; ω=ω) * 1000 * ħ / eV * 1e12
 
     # Calculate complex impedances for each frequency and temperature. Returns a matrix.
-    @tullio impedances[i] := Ωrange[i] == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[i], betas, α, v_params, w_params; ω=ω) / eV^2 * 1e12 * me * m_eff * volume * 100^3
+    @tullio impedances[i] := begin
+        if verbose
+            process = process + 1
+            if Threads.threadid() == 1
+                print("\e[0;0H\e[2J")
+                print("Thread id: ", Threads.threadid(), " | Process: ", process, " / ", max_process, " ($(round.(process / max_process * 100, digits = 1)) %) | α = ", sum(α), " | T = ", T, "K | Ω = ", round.(Ωrange[i], digits=3))
+            end
+        end
+
+        if Ωrange[i] == T == 0.0
+            @inbounds 0.0 + 1im * 0.0
+        else 
+            @inbounds polaron_complex_impedence(Ωrange[i], β, α, v_params, w_params; ω=ω) 
+        end
+    end (i in eachindex(Ωrange))
    
     # Calculate complex conductivities for each frequency and temperature. Returns a matrix.
-    @tullio conductivities[i] := Ωrange[i] == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i]
+    @tullio conductivities[i] := Ωrange[i] == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i] (i in eachindex(Ωrange))
 
     # Calculates the dc mobility for each temperature.
     mobilities = T == 0.0 ? Inf64 : polaron_mobility(betas, α, v_params, w_params; ω=ω) * eV / (1e12 * me * m_eff) * 100^2
@@ -111,7 +127,7 @@ speedymakepolaron(
 
     if verbose
         if Threads.threadid() == 1
-            print("\e[0;0H\e[2J")
+            print("\e[0;0H\e[2J\n")
             println(polaron)
             print("\n")
         end
@@ -167,7 +183,13 @@ speedymakepolaron(
     polarons = Vector{NewPolaron}(undef, length(Trange))
 
     # Fill polarons vector with Polaron types evaluated from `make_polaron` function. Uses @tullio macro for speedup.
-    @tullio polarons[i] = speedymakepolaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange; volume=volume, ir_activity=ir_activity, N_params=N_params, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange)))
+    @tullio polarons[i] = @inbounds(begin
+
+        processes = (i*length(Ωrange)+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(Ωrange))
+
+        speedymakepolaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange; volume=volume, ir_activity=ir_activity, N_params=N_params, verbose=verbose, processes=processes)
+
+    end) (i in eachindex(Trange))
 
     # Take Vector of Polaron types and combine them into a single Polaron type.
     polaron = combine_polarons(polarons)
@@ -184,9 +206,10 @@ Same as first `speedymakepolaron` function but for a model system with specified
 @noinline function speedymakepolaron(α::Real, T::Real, Ωrange; ω=1.0, v_guess = 5.4, w_guess = 3.4, verbose=false, processes=(1, 1))
 
     if verbose
+        process, max_process = processes
         if Threads.threadid() == 1
             println("\e[0;0H\e[2J")
-            print("Thread id: ", Threads.threadid(), " | Process: ", processes[1], " / ", processes[2], " ($(round.(processes[1] / processes[2] * 100, digits = 1)) %) | α = ", α, " | T = ", T, "K")
+            print("Thread id: ", Threads.threadid(), " | Process: ", process, " / ", max_process, " ($(round.(process / max_process * 100, digits = 1)) %) | α = ", α, " | T = ", T, "K")
         end
     end
 
@@ -211,10 +234,24 @@ Same as first `speedymakepolaron` function but for a model system with specified
     energies = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω) : multi_F(v_params, w_params, α, β; ω=ω)
 
     # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
-    @tullio impedances[i] := Ωrange[i] == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[i], β, α, v_params, w_params; ω=ω) (i in eachindex(Ωrange))
+    @tullio impedances[i] := begin
+        if verbose
+            process = process + 1
+            if Threads.threadid() == 1
+                print("\e[0;0H\e[2J")
+                print("Thread id: ", Threads.threadid(), " | Process: ", process, " / ", max_process, " ($(round.(process / max_process * 100, digits = 1)) %) | α = ", α, " | T = ", T, "K | Ω = ", round.(Ωrange[i], digits=3))
+            end
+        end
+
+        if Ωrange[i] == T == 0.0
+            @inbounds 0.0 + 1im * 0.0
+        else 
+            @inbounds polaron_complex_impedence(Ωrange[i], β, α, v_params, w_params; ω=ω) 
+        end
+    end (i in eachindex(Ωrange))
 
     # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
-    @tullio conductivities[i] := Ωrange[i] == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i] (i in eachindex(Ωrange))
+    conductivities = [Ωrange[i] == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i] for i in eachindex(Ωrange)]
 
     # Calculates the dc mobility for each alpha parameter and each temperature.
     mobilities = T == 0.0 ? Inf64 : polaron_mobility(β, α, v_params, w_params; ω=ω)
@@ -224,7 +261,7 @@ Same as first `speedymakepolaron` function but for a model system with specified
 
     if verbose
         if Threads.threadid() == 1
-            print("\e[0;0H\e[2J")
+            print("\e[0;0H\e[2J\n")
             println(polaron)
             print("\n")
         end
@@ -244,8 +281,13 @@ Same as above `speedymakepolaron` function for a model system with specified alp
     # Initialise Matrix for polarons at each α value and temperature T. 
     polarons = Matrix{NewPolaron}(undef, (length(Trange), length(αrange)))
 
+    process, max_process = 1-length(Ωrange)+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(αrange) * length(Ωrange)
+
     # Fill polarons Matrix with Polaron types evaluated from `make_polaron` function. Uses @tullio macro for speedup.
-    @tullio polarons[j, i] = speedymakepolaron(αrange[i], Trange[j], Ωrange; ω=ω, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(αrange)))  (j in eachindex(Trange), i in eachindex(αrange))
+    @tullio polarons[j, i] = begin
+        process = process + length(Ωrange)
+        @inbounds speedymakepolaron(αrange[i], Trange[j], Ωrange; ω=ω, verbose=verbose, processes=(process, max_process))
+    end (j in eachindex(Trange), i in eachindex(αrange))
 
     # Take Matrix of Polaron types and combine them into a single Polaron type.
     polaron = combine_polarons(polarons)
