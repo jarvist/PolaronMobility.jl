@@ -378,21 +378,94 @@ make_polaron(
     return polaron
 end
 
-@noinline function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange; volume=nothing, ir_activity=nothing, N_params=1, verbose=false)
+@noinline function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; volume=nothing, ir_activity=nothing, N_params=1, verbose=false)
 
-    polarons = Vector{NewPolaron}(undef, length(Trange))
+    # Number of phonon modes.
+    N_modes = length(phonon_freq)
+    T_length = length(Trange)
+    Ω_length = length(Ωrange)
 
-    @simd for i in eachindex(Trange)
-        if !isassigned(polarons, i-1)
-            @inbounds polarons[i] = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange; volume=volume, ir_activity=ir_activity, N_params=N_params, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange)))
-        else
-            @inbounds polarons[i] = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange[i], Ωrange; volume=volume, ir_activity=ir_activity, v_guess=polarons[i-1].v, w_guess=polarons[i-1].w, N_params=N_params, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange)))
-        end
+    # Convert THz phonon frequencies to 2π THz.
+    ω = 2π .* phonon_freq
+
+    if N_modes == 1
+        # One phonon mode.
+
+        # Calculate Frohlich alpha coupling parameters.
+        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
+    else
+        # Multiple phonon modes
+
+        # Calculate contribution to the ionic delectric constant for each phonon mode.
+        ϵ_ionic = ϵ_ionic_mode.(phonon_freq, ir_activity, volume) 
+
+        # Calculate contribution to Frohlich alpha for each phonon mode.
+        α = multi_frohlichalpha.(ϵ_optic, ϵ_ionic, sum(ϵ_ionic), phonon_freq, m_eff)
     end
 
-    polaron = combine_polarons(polarons)
+    # Calculate reduced thermodynamic betas for each phonon mode.
+    # If temperature is zero, return Inf.
+    betas = Matrix{Float64}(undef, (T_length, N_modes))
+    params = Vector{Any}(undef, T_length)
+    v_params = Matrix{Float64}(undef, (T_length, N_params))
+    w_params = Matrix{Float64}(undef, (T_length, N_params))
+    energies = Vector{Float64}(undef, T_length)
+    spring_constants = Matrix{Float64}(undef, (T_length, N_params))
+    masses = Matrix{Float64}(undef, (T_length, N_params))
+    impedances = Matrix{ComplexF64}(undef, (T_length, Ω_length))
+    conductivities = Matrix{ComplexF64}(undef, (T_length, Ω_length))
+    mobilities = Vector{Float64}(undef, T_length)
 
-    # Return Polaron mutable struct with evaluated data.
+    if verbose
+        process = Threads.Atomic{Int64}(1)
+    end
+
+    @fastmath @inbounds @simd for i in eachindex(Trange)
+
+        if verbose
+            println("\e[2K\u1b[1F[Progress: $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Initialising... | Temperature T = $(Trange[i]) K | Thread: # $(Threads.threadid()) / $(Threads.nthreads())      ")
+        end
+        
+        @fastmath @inbounds @simd for j in eachindex(phonon_freq)
+            betas[i, j] = Trange[i] == 0.0 ? Inf64 : ħ * ω[j] / (kB * Trange[i]) * 1e12 
+        end
+
+        if !isassigned(params, i-1)
+            v_guess = 5.6
+            w_guess = 2.4
+        else
+            v_guess, w_guess, E_guess = params[i-1]
+        end
+        
+        params[i] = Trange[i] == 0.0 ? var_params(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : var_params(α, @view(betas[i, :]); v=v_guess, w=w_guess, ω=ω, N=N_params)
+
+        @fastmath @inbounds @simd for j in 1:N_params
+            v_params[i, j] = params[i][1][j]
+            w_params[i, j] = params[i][2][j]
+            spring_constants[i, j] = v_params[i, j] ^2 - w_params[i, j] ^2 
+            masses[i, j] = spring_constants[i, j] / w_params[i, j]^2 
+        end
+
+        energies[i] = params[i][3] * 1000 * ħ / eV * 1e12
+
+        @fastmath @inbounds @simd for j in eachindex(Ωrange)
+
+            impedances[i, j] = Ωrange[j] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[j], @view(betas[i, :]), α, @view(v_params[i, :]), @view(w_params[i, :]); ω=ω) / eV^2 * 1e12 * me * m_eff * volume * 100^3
+            
+            conductivities[i, j] = Ωrange[j] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i, j]
+
+            if verbose
+                println("\e[2K\u1b[1F[Progress: $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[j]) THz | Thread: # $(Threads.threadid()) / $(Threads.nthreads())       ")
+                Threads.atomic_add!(process, 1)
+            end
+        end
+
+        @fastmath @inbounds mobilities[i] = Trange[i] == 0.0 ? Inf64 : polaron_mobility(@view(betas[i, :]), α, @view(v_params[i, :]), @view(w_params[i, :]); ω=ω) * eV / (1e12 * me * m_eff) * 100^2
+    end
+
+    polaron = NewPolaron(α, Trange, betas, phonon_freq, v_params, w_params, spring_constants, masses, energies, Ωrange, impedances, conductivities, mobilities)
+
+    # Return Polaron struct with evaluated data.
     return polaron
 end
 
@@ -449,23 +522,74 @@ Same as above but from a model system with specified alpha values rather than fr
     return polaron
 end
 
-@noinline function make_polaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω=1.0, verbose=false)
+@noinline function speedymakepolaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω=1.0, N_params=1, verbose=false)
 
-    polarons = Matrix{NewPolaron}(undef, (length(Trange), length(αrange)))
+    # Number of phonon modes.
+    T_length = length(Trange)
+    Ω_length = length(Ωrange)
+    α_length = length(αrange)
 
-    @simd for j in eachindex(Trange)
-        @simd for i in eachindex(αrange)
-            if !isassigned(polarons, j-1, i)
-                @inbounds polarons[j, i] = make_polaron(αrange[i], Trange[j], Ωrange; ω=ω, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(αrange)))
-            else
-                @inbounds polarons[j, i] = make_polaron(αrange[i], Trange[j], Ωrange; ω=ω, v_guess=polarons[j-1, i].v, w_guess=polarons[j-1, i].w, verbose=verbose, processes=(1+sum([isassigned(polarons, j) for j in eachindex(polarons)]), length(Trange) * length(αrange)))
+    # Calculate reduced thermodynamic betas for each phonon mode.
+    # If temperature is zero, return Inf.
+    betas = Vector{Float64}(undef, T_length)
+    params = Matrix{Any}(undef, (α_length, T_length))
+    v_params = Array{Float64, 3}(undef, (α_length, T_length, N_params))
+    w_params = Array{Float64, 3}(undef, (α_length, T_length, N_params))
+    energies = Matrix{Float64}(undef, (α_length, T_length))
+    spring_constants = Array{Float64, 3}(undef, (α_length, T_length, N_params))
+    masses = Array{Float64, 3}(undef, (α_length, T_length, N_params))
+    impedances = Array{ComplexF64, 3}(undef, (α_length, T_length, Ω_length))
+    conductivities = Array{ComplexF64, 3}(undef, (α_length, T_length, Ω_length))
+    mobilities = Matrix{Float64}(undef, (α_length, T_length))
+
+    if verbose
+        process = Threads.Atomic{Int64}(1)
+    end
+
+    @fastmath @inbounds @simd for j in eachindex(Trange)
+
+        betas[j] = Trange[j] == 0.0 ? Inf64 : ω / Trange[j]
+
+        if !isassigned(params, j-1)
+            v_guess = 5.6
+            w_guess = 2.4
+        else
+            v_guess, w_guess, E_guess = params[j-1]
+        end
+
+        @fastmath @inbounds @simd for i in eachindex(αrange)
+        
+            params[i, j] = Trange[j] == 0.0 ? var_params(αrange[i]; v=v_guess, w=w_guess, ω=ω, N=N_params) : var_params(αrange[i], betas[j]; v=v_guess, w=w_guess, ω=ω, N=N_params)
+
+            for k in 1:N_params
+                v_params[i, j, k] = params[i, j][1][k]
+                w_params[i, j, k] = params[i, j][2][k]
+                spring_constants[i, j, k] = v_params[i, j, k]^2 - w_params[i, j, k]^2 
+                masses[i, j, k] = spring_constants[i, j, k] / w_params[i, j, k]^2 
             end
+
+            energies[i, j] = params[i, j][3]
+
+            @fastmath @inbounds @simd for k in eachindex(Ωrange)
+
+                impedances[i, j, k] = Ωrange[k] == Trange[j] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[k], betas[j], αrange[i], @view(v_params[i, j, :]), @view(w_params[i, j, :]); ω=ω)
+                
+                conductivities[i, j, k] = Ωrange[k] == Trange[j] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i, j, k]
+
+                if verbose
+                    println("\e[2K\u1b[1F[Progress: $(process[]) / $(α_length * T_length * Ω_length) ($(round(process[] / (α_length * T_length * Ω_length) * 100, digits=1)) %)] | α = $(αrange[i]) | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[k]) THz | Thread: # $(Threads.threadid()) / $(Threads.nthreads())      ")
+                    Threads.atomic_add!(process, 1)
+                end
+            end
+
+            mobilities[i, j] = Trange[j] == 0.0 ? Inf64 : polaron_mobility(betas[j], αrange[i], @view(v_params[i, j, :]), @view(w_params[i, j, :]); ω=ω)
+
         end
     end
 
-    polaron = combine_polarons(polarons)
+    polaron = NewPolaron(αrange, Trange, betas, ω, v_params, w_params, spring_constants, masses, energies, Ωrange, impedances, conductivities, mobilities)
 
-    # Return Polaron mutable struct with evaluated data.
+    # Return Polaron struct with evaluated data.
     return polaron
 end
 
