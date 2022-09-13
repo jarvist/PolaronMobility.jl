@@ -176,7 +176,7 @@
 
         println('\n', singlemode_polaron)
 
-        @test singlemode_polaron.α ≈ [2.393156008589176] rtol = 1e-3
+        @test singlemode_polaron.α ≈ 2.393156008589176 rtol = 1e-3
         @test singlemode_polaron.v ≈ [3.3086408041087445; 19.8475538058543;;] rtol = 1e-3
         @test singlemode_polaron.w ≈ [2.663393636284299; 16.948170313776515;;] rtol = 1e-3
         @test singlemode_polaron.F ≈ [-23.041731976144206, -35.50791458303716] rtol = 1e-3
