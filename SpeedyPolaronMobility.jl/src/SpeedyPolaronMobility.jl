@@ -1,7 +1,6 @@
 module SpeedyPolaronMobility
 
 using PolaronMobility
-using Tullio
 
 export speedymakepolaron
 
