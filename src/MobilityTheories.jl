@@ -342,7 +342,7 @@ make_polaron(
     betas = [T == 0.0 ? Inf64 : ħ * ω[j] / (kB * T) * 1e12 for j in eachindex(ω)]
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params, verbose=verbose) : var_params(α, betas; v=v_guess, w=w_guess, ω=ω, N=N_params)
+    params = T == 0.0 ? var_params(α; v=5.6, w=3.4, ω=ω, N=N_params) : var_params(α, betas; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
     v_params = params[1]

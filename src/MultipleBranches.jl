@@ -495,7 +495,7 @@ See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., B
 
 See also [`F`](@ref).
 """
-function multi_F(v, w, α, β; ω = 1.0, verbose = false)
+function multi_F(v, w, α, β; ω = 1.0)
 
     # Add contribution to the total free energy from the phonon mode.
     F = sum(-(B_j(α[j], β[j], v, w) + C_j(β[j], v, w, length(ω)) + A_j(β[j], v, w, length(ω))) * ω[j] for j in eachindex(ω))
@@ -520,7 +520,7 @@ See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 
 See also [`multi_F`](@ref).
 """
-function multi_F(v, w, α; ω = 1.0, verbose = false)
+function multi_F(v, w, α; ω = 1.0)
 
     # Add contribution to the total free energy from the phonon mode.
 	F = sum(-(B_j(α[j], v, w) + C_j(v, w, length(ω)) + A_j(v, w, length(ω))) * ω[j] for j in eachindex(ω))
@@ -546,7 +546,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
-function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, verbose = false) # N number of v and w params
+function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -580,6 +580,7 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = fals
 
     # Extract the v and w parameters that minimised the free energy.
     var_params = Optim.minimizer(solution)
+    energy = Optim.minimum(solution)
 
     # Separate the v and w parameters into one-dimensional arrays (vectors).
     Δv = [var_params[2*n-1] for n in 1:N]
@@ -590,7 +591,7 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = fals
     end
 
     # Return the variational parameters that minimised the free energy.
-    return (Δv .+ w, w)
+    return (Δv .+ w, w, energy)
 end
 
 """
@@ -608,7 +609,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref), [`var_param`](@ref).
 """
-function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, verbose = false) # N number of v and w params
+function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
  
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -642,6 +643,7 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, v
 
     # Extract the v and w parameters that minimised the free energy.
     var_params = Optim.minimizer(solution)
+    energy = Optim.minimum(solution)
 
     # Separate the v and w parameters into one-dimensional arrays (vectors).
     Δv = [var_params[2*n-1] for n in 1:N]
@@ -652,6 +654,6 @@ function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, v
     end
 
     # Return the variational parameters that minimised the free energy.
-    return (Δv .+ w, w)
+    return (Δv .+ w, w, energy)
 end
 

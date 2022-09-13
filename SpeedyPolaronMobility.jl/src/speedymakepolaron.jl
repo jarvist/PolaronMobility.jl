@@ -191,7 +191,7 @@ speedymakepolaron(
     Threads.@threads for i in eachindex(Trange)
 
         if verbose
-            println("[Progress : $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Initialising... | Temperature T = $(Trange[i]) K | Thread #$(Threads.threadid())")
+            println("\e[2K\u1b[1F[Progress: $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Initialising... | Temperature T = $(Trange[i]) K | Thread: # $(Threads.threadid()) / $(Threads.nthreads())      ")
         end
         
         @fastmath @inbounds @simd for j in eachindex(phonon_freq)
@@ -223,7 +223,7 @@ speedymakepolaron(
             conductivities[i, j] = Ωrange[j] == Trange[i] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i, j]
 
             if verbose
-                println("[Progress : $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[j]) THz | Thread #$(Threads.threadid())")
+                println("\e[2K\u1b[1F[Progress: $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[j]) THz | Thread: # $(Threads.threadid()) / $(Threads.nthreads())       ")
                 Threads.atomic_add!(process, 1)
             end
         end
@@ -321,10 +321,6 @@ Same as above `speedymakepolaron` function for a model system with specified alp
         end
 
         @fastmath @inbounds @simd for i in eachindex(αrange)
-
-            # if verbose
-            #     println("[Progress : $(process[]) / $(α_length * T_length * Ω_length) ($(round(process[] / (α_length * T_length * Ω_length) * 100, digits=1)) %)] | Initialising... | α = $(αrange[i]) | Temperature T = $(Trange[j]) K | Thread #$(Threads.threadid())")
-            # end
         
             params[i, j] = Trange[j] == 0.0 ? var_params(αrange[i]; v=v_guess, w=w_guess, ω=ω, N=N_params) : var_params(αrange[i], betas[j]; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
@@ -344,7 +340,7 @@ Same as above `speedymakepolaron` function for a model system with specified alp
                 conductivities[i, j, k] = Ωrange[k] == Trange[j] == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedances[i, j, k]
 
                 if verbose
-                    println("[Progress : $(process[]) / $(α_length * T_length * Ω_length) ($(round(process[] / (α_length * T_length * Ω_length) * 100, digits=1)) %)] | α = $(αrange[i]) | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[k]) THz | Thread #$(Threads.threadid())")
+                    println("\e[2K\u1b[1F[Progress: $(process[]) / $(α_length * T_length * Ω_length) ($(round(process[] / (α_length * T_length * Ω_length) * 100, digits=1)) %)] | α = $(αrange[i]) | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[k]) THz | Thread: # $(Threads.threadid()) / $(Threads.nthreads())      ")
                     Threads.atomic_add!(process, 1)
                 end
             end
