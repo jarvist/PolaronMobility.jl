@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.0
+# v0.19.11
 
 using Markdown
 using InteractiveUtils
@@ -507,7 +507,7 @@ savefig(pm, "mass_comparison_alpha.pdf")
 
 # ╔═╡ 614fe5ba-f265-420d-b914-0ecadedfbacc
 md"""
-# Mobility comparisons
+# FHIP mobility theory
 """
 
 # ╔═╡ 750b1d30-79c4-4f5a-8df4-3b6fcffb7d49
@@ -555,8 +555,11 @@ function hol_impedance(Ω, α, β, v, w)
     return (Ω^2 - hol_chi(Ω, α, β, v, w)) / (-im * Ω)
 end
 
+# ╔═╡ 75830e58-af79-4f94-b6a9-92df688355ce
+md"""# Study freq-dep impedance in rubrene"""
+
 # ╔═╡ 9452286f-e801-4db0-b884-f0c7b2373879
-Ω_range = 0.01:0.01:5.0
+Ω_range = 0.01:0.1:10.0
 
 # ╔═╡ 36ce62de-bf89-4e9d-beb5-47da3cfebc3d
 fro_z = fro_impedance.(Ω_range, 2.39, 100, v, w)
@@ -570,6 +573,26 @@ begin
     plot!(Ω_range, -real.(1 ./ fro_z), ylims=(0, 0.25), linewidth=2, label="Fro")
     plot!(Ω_range, -real.(1 ./ hol_z), linewidth=2, linestyle=:dash, label="Hol")
 end
+
+# ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a
+savefig(rubrene_real_imped, "rubrene_real_imped.pdf")
+
+# ╔═╡ 68ab6be9-2f77-4bc3-900a-9087b45a2a33
+md"# Imag Imped"
+
+# ╔═╡ 86dd4b1d-51e9-4f41-b88e-fd51d639baa3
+begin
+    rubrene_imag_imped = plot(xlabel="Omega (THz)", ylabel="Im(Χ)")
+	
+    plot!(Ω_range, -imag.(1 ./ fro_z), linewidth=2, label="Fro")
+    plot!(Ω_range, -imag.(1 ./ hol_z), linewidth=2, linestyle=:dash, label="Hol")
+end
+
+# ╔═╡ 207db8eb-8de1-4e29-8a95-679fcbc902f2
+savefig(rubrene_imag_imped, "rubrene_imag_imped.pdf")
+
+# ╔═╡ 5b150eed-0d08-4edc-a7a4-8e421bca66d0
+md""" # DC Chi functions, for DC mobility."""
 
 # ╔═╡ 63eaadaa-9f2b-4de5-964e-7e1a8dfd0121
 function fro_chi_dc(α, β, v, w)
@@ -645,9 +668,6 @@ begin
     plot!(T_range[15:end], rubrene_mob_hol, label="Hol", linewidth=2, linestyle=:dash)
 end
 
-# ╔═╡ 907cc295-5315-467f-8dc1-bec11b3b284a
-savefig(rubrene_mob_plot, "rubrene_real_imped.pdf")
-
 # ╔═╡ fe290c3a-7a5d-4d74-b5e3-495714598f8a
 savefig(rubrene_mob_plot, "rubrene_mob_plot.pdf")
 
@@ -662,6 +682,9 @@ hol_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23, vrh, wrh) * 1.6e-19 
 
 # ╔═╡ f170dfc6-cdd2-4a13-9db7-3035f159d9b2
 fro_mobility(2.21, 1e13 * 1.41 * 1.05e-34 / 300 / 1.38e-23, vrf, wrf) * 1.6e-19 / (1e13 * 1.41 * 9.11e-31 * 0.88) * 100^2
+
+# ╔═╡ c29f44ce-759e-4a52-bbf5-2cdc4136114e
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -682,8 +705,9 @@ SpecialFunctions = "~2.1.6"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "3e5771b1aef2791473f625fe21ae770d66c7d8d9"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -693,6 +717,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArrayInterfaceCore]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
@@ -769,6 +794,7 @@ version = "3.45.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.Contour]]
 deps = ["StaticArrays"]
@@ -823,8 +849,9 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.EarCut_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -849,6 +876,9 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "d8a578692e3077ac998b50c0217dfd67f21d1e5f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.0+0"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -1037,10 +1067,12 @@ version = "0.15.15"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -1049,6 +1081,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -1139,6 +1172,7 @@ version = "1.0.3"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "e498ddeee6f9fdb4551ce855a46f54dbd900245f"
@@ -1156,6 +1190,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NLSolversBase]]
 deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
@@ -1170,6 +1205,7 @@ version = "0.3.7"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1180,10 +1216,12 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1241,6 +1279,7 @@ version = "0.40.1+0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1326,6 +1365,7 @@ version = "1.3.0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Scratch]]
 deps = ["Dates"]
@@ -1400,6 +1440,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -1416,6 +1457,7 @@ version = "1.7.0"
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.TensorCore]]
 deps = ["LinearAlgebra"]
@@ -1608,6 +1650,7 @@ version = "1.4.0+3"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.Zstd_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1624,6 +1667,7 @@ version = "0.15.1+0"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1646,10 +1690,12 @@ version = "1.3.7+1"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 
 [[deps.x264_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1741,7 +1787,7 @@ version = "0.9.1+5"
 # ╠═4a4d9cd9-b991-40c9-9e09-18ab10f0e7ba
 # ╠═308b415e-8965-4d31-b374-078add023990
 # ╠═4b001539-7208-4100-ae75-6c1232f540f8
-# ╠═614fe5ba-f265-420d-b914-0ecadedfbacc
+# ╟─614fe5ba-f265-420d-b914-0ecadedfbacc
 # ╠═750b1d30-79c4-4f5a-8df4-3b6fcffb7d49
 # ╠═31c30c6c-d68a-48f7-a9f7-c6a6572367cb
 # ╠═4e17762c-461b-43b5-b037-da144af61e27
@@ -1750,11 +1796,16 @@ version = "0.9.1+5"
 # ╠═bab68f24-c8fb-4b8d-865f-5e9e760513ca
 # ╠═9655e230-37d7-4504-8440-34078996a22d
 # ╠═8455cb9b-e0f7-4832-a880-84a31d7b5d11
+# ╟─75830e58-af79-4f94-b6a9-92df688355ce
 # ╠═9452286f-e801-4db0-b884-f0c7b2373879
 # ╠═36ce62de-bf89-4e9d-beb5-47da3cfebc3d
 # ╠═dae9f84a-f7b9-4ec1-8399-d39410df2ab9
 # ╠═fb473fb1-1e78-48c8-b20d-aa64f0d35ba2
 # ╠═907cc295-5315-467f-8dc1-bec11b3b284a
+# ╠═68ab6be9-2f77-4bc3-900a-9087b45a2a33
+# ╠═86dd4b1d-51e9-4f41-b88e-fd51d639baa3
+# ╠═207db8eb-8de1-4e29-8a95-679fcbc902f2
+# ╟─5b150eed-0d08-4edc-a7a4-8e421bca66d0
 # ╠═63eaadaa-9f2b-4de5-964e-7e1a8dfd0121
 # ╠═2e6d1157-62db-4774-887d-4872a1b64d4d
 # ╠═8e489020-256a-4014-9df3-99ef4bc35f6b
@@ -1776,5 +1827,6 @@ version = "0.9.1+5"
 # ╠═5e3e532c-10bc-4ba7-8a97-84c5b84e0b1b
 # ╠═30c5b617-5d93-40fc-9b65-91f5dd1d2a1b
 # ╠═f170dfc6-cdd2-4a13-9db7-3035f159d9b2
+# ╠═c29f44ce-759e-4a52-bbf5-2cdc4136114e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
