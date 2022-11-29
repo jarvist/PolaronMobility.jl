@@ -546,7 +546,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
-function var_params(α...; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
+function extended_feynmanvw(α...; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")

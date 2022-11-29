@@ -174,7 +174,7 @@ function feynmanvw(α, β; v=3.0, w=3.0) # v, w defaults
     Δv = v - w # defines a constraint, so that v>w
     initial = [Δv + 0.01, w]
 
-    # Tthermal action 
+    # Thermal action 
     f(x) = F(x[1] + x[2], x[2], β, α)
 
     # Use Optim to optimise v and w to minimise enthalpy.
