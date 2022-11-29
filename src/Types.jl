@@ -11,9 +11,11 @@ const me = MassElectron = 9.1093837015e-31
 "Boltzmann's constant, (kgm²K⁻¹)."
 const Boltzmann = const kB = 1.380649e-23
 "Permittivity of free space, (C²N⁻¹m⁻²)."
-const ε_0 = 8.85418682e-12
+const ε_0 = ϵ_0 = 8.85418682e-12
 "Speed of light, (ms⁻¹)."
 const c = 299792458
+"Atomic mass unit, (kg)"
+const amu = 1.660_539_066_60e-27
 
 # Structures
 

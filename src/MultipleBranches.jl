@@ -546,7 +546,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`multi_F`](@ref), [`feynmanvw`](@ref).
 """
-function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
+function var_params(α...; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
 
     if N != length(v) != length(w)
         return error("The number of variational parameters v & w must be equal to N.")
@@ -566,7 +566,7 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = fals
     upper = fill(Inf64, 2 * N)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α, β; ω = ω)
+	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α...; ω = ω)
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -594,66 +594,4 @@ function var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = fals
     return (Δv .+ w, w, energy)
 end
 
-"""
-    var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, verbose = false)
-
-Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters at zero-temperature. Similar to `var_params(α, β)` but with `β = Inf`.
-
-# Arguments
-- `α::Vector{Float64}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
-- `v::Float64, w::Float64`: determines if the function should start with a random initial set of variational parameters (v, w = 0.0) or a given set of variational parameter values.
-- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
-- `N::Integer`: specifies the number of variational parameter pairs, v_p and w_p, to use in minimising the free energy.
-- `show_trace::Bool`: shows the optimsation trace from `Optim.jl`.
-- `verbose`: is used by `make_polaron()` to specify whether or not to print. Ignore.
-
-See also [`multi_F`](@ref), [`feynmanvw`](@ref), [`var_param`](@ref).
-"""
-function var_params(α; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false) # N number of v and w params
- 
-    if N != length(v) != length(w)
-        return error("The number of variational parameters v & w must be equal to N.")
-    end
-
-    # Use a random set of N initial v and w values.
-    if v == 0.0 || w == 0.0
-        # Intial guess for v and w parameters.
-        initial = [x for x in 1.0:(2.0*N)] # initial guess around 4 and ≥ 1.
-    else
-        Δv = v .- w
-        initial = vcat(Δv .+ 1e-5, w)
-    end
-
-    # Limits of the optimisation.
-    lower = fill(0.0, 2 * N)
-    upper = fill(100.0, 2 * N)
-
-	# The multiple phonon mode free energy function to minimise.
-	f(x) = multi_F([x[2 * n - 1] for n in 1:N] .+ [x[2 * n] for n in 1:N], [x[2 * n] for n in 1:N], α; ω = ω)
-
-    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-		Optim.Options(show_trace = show_trace), # Set time limit for asymptotic convergence if needed.
-	)
-
-    # Extract the v and w parameters that minimised the free energy.
-    var_params = Optim.minimizer(solution)
-    energy = Optim.minimum(solution)
-
-    # Separate the v and w parameters into one-dimensional arrays (vectors).
-    Δv = [var_params[2*n-1] for n in 1:N]
-    w = [var_params[2*n] for n in 1:N]
-
-    if Optim.converged(solution) == false
-        @warn "Failed to converge T = 0 K variational solution. v = $(Δv .+ w), w = $w."
-    end
-
-    # Return the variational parameters that minimised the free energy.
-    return (Δv .+ w, w, energy)
-end
 

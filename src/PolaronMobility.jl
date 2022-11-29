@@ -30,15 +30,7 @@ import QuadGK.quadgk
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
 
-# Physical constants
-const hbar = const ħ = 1.05457162825e-34                   # kg m2 / s
-const eV = const q = const ElectronVolt = 1.602176487e-19  # kg m2 / s2
-const me = MassElectron = 9.10938188e-31                   # kg
-const Boltzmann = const kB = 1.3806504e-23                # kg m2 / K s2
-const ϵ_0 = 8.854E-12     # permittivity of free space     # C2N−1m−2, 
-const amu = 1.660_539_066_60e-27                           # kg
-
-include("types.jl")            # Polaron types
+include("Types.jl")            # Polaron types
 include("FeynmanTheory.jl")    # Actions + variational functions
 include("HellwarthTheory.jl")  # multimode -> equivalent mode.
 include("MobilityTheories.jl") # Main polaronmobility function
