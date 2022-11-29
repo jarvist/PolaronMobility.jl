@@ -146,3 +146,4 @@ function polaron_memory_function_dc(β, α, v, w; ω=1.0)
 
     return memory
 end
+

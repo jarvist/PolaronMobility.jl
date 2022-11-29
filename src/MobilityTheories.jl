@@ -664,3 +664,4 @@ function savepolaron(fileprefix, p::Polaron)
     end
     close(f)
 end
+
