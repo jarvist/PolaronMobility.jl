@@ -75,8 +75,11 @@ See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_thermal(Ω, β, α, v, w; ω=1.0)
 
+    v, w = v[1], w[1]
+    D(τ, β) = τ * (1 - τ / β) + (v^2 - w^2) * ((1 + exp(-v * β) - exp(-v * τ) - exp(v * (τ - β))) / (v * (1 - exp(-v * β))) - τ * (1 - τ / β)) / v^2
+
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D_j(-1im * t, β, v, w)^(3 / 2)
+    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D(-1im * t, β)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β, Ω) = (1 - exp(1im * Ω * 2π * t)) * imag(S(t, β))
@@ -105,14 +108,22 @@ Calculate polaron complex memory function at zero-temperature inclusive of multi
 See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_athermal(Ω, α, v, w; ω=1.0)
+
+    v, w = v[1], w[1]
+    D(τ) = τ + ((v^2 - w^2) / v^2) * ((1 - exp(-v * τ)) / v - τ)
+
     # FHIP1962, page 1009, eqn (36).
-    S(t) = exp(1im * t) / D_j(-1im * t, v, w)^(3 / 2)
+    S(t) = exp(1im * t) / D(-1im * t)^(3 / 2)
+
+    # R = (v^2 - w^2) / w^2 / v
+
+    # # FHIP1962, page 1009, eqn (36).
+    # S(t) = exp(1im * t) / (R * (1 - exp(1im * v * t)) - 1im * t)^(3/2)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, Ω) = (1 - exp(1im * 2π * Ω * t)) * imag(S(t))
 
-    integral = quadgk.(t -> integrand.(t, Ω ./ ω), 0.0, 1e4, rtol=1e-4)[1]
-    memory = sum(2 .* α .* ω .^2 .* integral ./ (3 * √π * Ω * 2π))
+    memory = sum(2 .* α .* ω .^2 .* quadgk.(t -> integrand.(t, Ω ./ ω), 0.0, 1e3, rtol=1e-4)[1] ./ (3 * √π * Ω * 2π))
 
     return memory
 end
@@ -134,8 +145,12 @@ Calculate zero-frequency polaron complex memory function at finite temperature i
 See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_dc(β, α, v, w; ω=1.0)
+
+    v, w = v[1], w[1]
+    D(τ, β) = τ * (1 - τ / β) + (v^2 - w^2) * ((1 + exp(-v * β) - exp(-v * τ) - exp(v * (τ - β))) / (v * (1 - exp(-v * β))) - τ * (1 - τ / β)) / v^2
+
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D_j(-1im * t, β, v, w)^(3 / 2)
+    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D(-1im * t, β)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β) = -im * t * imag(S(t, β))
