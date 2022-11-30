@@ -205,7 +205,7 @@ speedymakepolaron(
             v_guess, w_guess, E_guess = params[i-1]
         end
         
-        @fastmath @inbounds params[i] = Trange[i] == 0.0 ? var_params(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : var_params(α, @view(betas[i, :]); v=v_guess, w=w_guess, ω=ω, N=N_params)
+        @fastmath @inbounds params[i] = Trange[i] == 0.0 ? extended_feynmanvw(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(α, @view(betas[i, :]); v=v_guess, w=w_guess, ω=ω, N=N_params)
 
         @fastmath @inbounds @simd for j in 1:N_params
             v_params[i, j] = params[i][1][j]

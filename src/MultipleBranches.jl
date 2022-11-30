@@ -530,7 +530,7 @@ function multi_F(v, w, α; ω = 1.0)
 end
 
 """
-    var_params(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, T = nothing, verbose = false)
+    extended_feynmanvw(α, β; v = 0.0, w = 0.0, ω = 1.0, N = 1, show_trace = false, T = nothing, verbose = false)
 
 Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters. The variational parameters follow the inequality: v₁ > w₁ > v₂ > w₂ > ... > vₙ > wₙ. Generalises `feynmanvw` to multiple variational parameters.
 
