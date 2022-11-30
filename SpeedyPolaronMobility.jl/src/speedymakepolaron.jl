@@ -76,7 +76,7 @@ function speedymakepolaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, 
     betas = [T == 0.0 ? Inf64 : ħ * ω[j] / (kB * T) * 1e12 for j in eachindex(ω)]
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    params = T == 0.0 ? var_params(α; v=v_guess, w=v_guess, ω=ω, N=N_params) : var_params(α, betas; v=v_guess, w=w_guess, ω=ω, N=N_params)
+    params = T == 0.0 ? extended_feynmanvw(α; v=v_guess, w=v_guess, ω=ω, N=N_params) : extended_feynmanvw(α, betas; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
     v_params = params[1]
@@ -249,7 +249,7 @@ function speedymakepolaron(α::Float64, T::Float64, Ω::Float64; ω=1.0, v_guess
     beta = T == 0.0 ? Inf64 : ω / T
 
     # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
-    params = T == 0.0 ? var_params(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : var_params(α, beta; v=v_guess, w=w_guess, ω=ω, N=N_params)
+    params = T == 0.0 ? extended_feynmanvw(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(α, beta; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
     # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
     v_param = params[1]
@@ -322,7 +322,7 @@ Same as above `speedymakepolaron` function for a model system with specified alp
 
         @fastmath @inbounds @simd for i in eachindex(αrange)
         
-            params[i, j] = Trange[j] == 0.0 ? var_params(αrange[i]; v=v_guess, w=w_guess, ω=ω, N=N_params) : var_params(αrange[i], betas[j]; v=v_guess, w=w_guess, ω=ω, N=N_params)
+            params[i, j] = Trange[j] == 0.0 ? extended_feynmanvw(αrange[i]; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(αrange[i], betas[j]; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
             for k in 1:N_params
                 v_params[i, j, k] = params[i, j][1][k]
