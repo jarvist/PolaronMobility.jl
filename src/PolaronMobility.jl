@@ -38,6 +38,7 @@ include("MemoryFunction.jl")   # Memory function X calculation.
 include("Susceptibility.jl")   # ImX calculation
 include("OedipusRex.jl")       # Optical Absorption
 include("MultipleBranches.jl")  # Oct 2019 extension to multiple phonon branches
+include("MultipleParameters.jl")
 
 end # module
 

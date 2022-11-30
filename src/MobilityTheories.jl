@@ -409,13 +409,13 @@ end
         process = Threads.Atomic{Int64}(1)
     end
 
-    @fastmath @inbounds @simd for i in eachindex(Trange)
+    for i in eachindex(Trange)
 
         if verbose
             println("\e[2K\u1b[1F[Progress: $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Initialising... | Temperature T = $(Trange[i]) K | Thread: # $(Threads.threadid()) / $(Threads.nthreads())      ")
         end
         
-        @fastmath @inbounds @simd for j in eachindex(phonon_freq)
+        for j in eachindex(phonon_freq)
             betas[i, j] = Trange[i] == 0.0 ? Inf64 : ħ * ω[j] / (kB * Trange[i]) * 1e12 
         end
 
@@ -428,7 +428,7 @@ end
         
         params[i] = Trange[i] == 0.0 ? extended_feynmanvw(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(α, @view(betas[i, :]); v=v_guess, w=w_guess, ω=ω, N=N_params)
 
-        @fastmath @inbounds @simd for j in 1:N_params
+        for j in 1:N_params
             v_params[i, j] = params[i][1][j]
             w_params[i, j] = params[i][2][j]
             spring_constants[i, j] = v_params[i, j] ^2 - w_params[i, j] ^2 
@@ -437,7 +437,7 @@ end
 
         energies[i] = params[i][3] * 1000 * ħ / eV * 1e12
 
-        @fastmath @inbounds @simd for j in eachindex(Ωrange)
+        for j in eachindex(Ωrange)
 
             impedances[i, j] = Ωrange[j] == Trange[i] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[j], @view(betas[i, :]), α, @view(v_params[i, :]), @view(w_params[i, :]); ω=ω) / eV^2 * 1e12 * me * m_eff * volume * 100^3
             
@@ -449,7 +449,7 @@ end
             end
         end
 
-        @fastmath @inbounds mobilities[i] = Trange[i] == 0.0 ? Inf64 : polaron_mobility(@view(betas[i, :]), α, @view(v_params[i, :]), @view(w_params[i, :]); ω=ω) * eV / (1e12 * me * m_eff) * 100^2
+        mobilities[i] = Trange[i] == 0.0 ? Inf64 : polaron_mobility(@view(betas[i, :]), α, @view(v_params[i, :]), @view(w_params[i, :]); ω=ω) * eV / (1e12 * me * m_eff) * 100^2
     end
 
     polaron = NewPolaron(α, Trange, betas, phonon_freq, v_params, w_params, spring_constants, masses, energies, Ωrange, impedances, conductivities, mobilities)
@@ -525,7 +525,7 @@ end
         process = Threads.Atomic{Int64}(1)
     end
 
-    @fastmath @inbounds @simd for j in eachindex(Trange)
+    for j in eachindex(Trange)
 
         betas[j] = Trange[j] == 0.0 ? Inf64 : ω / Trange[j]
 
@@ -536,7 +536,7 @@ end
             v_guess, w_guess, E_guess = params[j-1]
         end
 
-        @fastmath @inbounds @simd for i in eachindex(αrange)
+        for i in eachindex(αrange)
         
             params[i, j] = Trange[j] == 0.0 ? extended_feynmanvw(αrange[i]; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(αrange[i], betas[j]; v=v_guess, w=w_guess, ω=ω, N=N_params)
 
@@ -549,7 +549,7 @@ end
 
             energies[i, j] = params[i, j][3]
 
-            @fastmath @inbounds @simd for k in eachindex(Ωrange)
+            for k in eachindex(Ωrange)
 
                 impedances[i, j, k] = Ωrange[k] == Trange[j] == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ωrange[k], betas[j], αrange[i], @view(v_params[i, j, :]), @view(w_params[i, j, :]); ω=ω)
                 

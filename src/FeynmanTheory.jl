@@ -41,7 +41,7 @@ Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy e
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-AF(v, w, α) = π^(-0.5) * α * v * quadgk(τ -> fF(τ, v, w), 0, Inf)[1]
+AF(v, w, α) = π^(-0.5) * α * v * quadgk(τ -> fF(τ, v, w), 0.0, Inf64)[1]
 
 """
     F(τ, v, w)
@@ -129,7 +129,7 @@ Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-B(v, w, β, α) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f(x, v, w, β), 0, β / 2)[1]
+B(v, w, β, α) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f(x, v, w, β), 0.0, β / 2)[1]
 
 """
     C(v, w, β)
