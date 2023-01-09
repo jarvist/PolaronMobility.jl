@@ -61,7 +61,7 @@
     ω = 2π .* phonon_freq
     ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
 
-    α = [multi_frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
+    α = [frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
 
     @testset "Ionic dielectric and decomposed alphas" begin
 
@@ -81,10 +81,10 @@
 
     # Variations
 
-    v_0, w_0 = extended_feynmanvw(α; ω=ω) # Athermal
+    v_0, w_0, E_0 = feynmanvw(α, ω) # Athermal
 
     β = [i .* ħ / (kB * 300) * 1e12 for i in ω]
-    v, w = extended_feynmanvw(α, β; ω=ω) # Thermal
+    v, w, E = feynmanvw(α, ω, β) # Thermal
 
     @testset "Multiple mode variations" begin
 
@@ -101,19 +101,19 @@
 
     # Energies
 
-    E = multi_F(v_0, w_0, α; ω=ω) * 1000 * ħ / eV * 1e12 # Enthalpy
+    E_0 *= 1000 * ħ / eV * 1e12 # Enthalpy
 
-    F = multi_F(v, w, α, β; ω=ω) * 1000 * ħ / eV * 1e12 # Free energy
+    E *=  1000 * ħ / eV * 1e12 # Free energy
 
     @testset "Multiple mode energies" begin
 
-        @test E ≈ -19.51150570496287 rtol = 1e-3
+        @test E_0 ≈ -19.51150570496287 rtol = 1e-3
 
-        @test F ≈ -42.79764110613318 rtol = 1e-3
+        @test E ≈ -42.79764110613318 rtol = 1e-3
 
         println("\nPolaron energies")
-        println("0K energy: $E meV")
-        println("300K energy: $F meV")
+        println("0K energy: $E_0 meV")
+        println("300K energy: $E meV")
     end
 
     # Mobility
@@ -176,7 +176,7 @@
 
         println('\n', singlemode_polaron)
 
-        @test singlemode_polaron.α ≈ 2.393156008589176 rtol = 1e-3
+        @test singlemode_polaron.α ≈ [2.393156008589176] rtol = 1e-3
         @test singlemode_polaron.v ≈ [3.3086408041087445; 19.8475538058543;;] rtol = 1e-3
         @test singlemode_polaron.w ≈ [2.663393636284299; 16.948170313776515;;] rtol = 1e-3
         @test singlemode_polaron.F ≈ [-23.041731976144206, -35.50791458303716] rtol = 1e-3

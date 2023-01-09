@@ -329,7 +329,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::F
         ϵ_ionic = ϵ_ionic_mode.(phonon_freq, ir_activity, volume) 
 
         # Calculate contribution to Frohlich alpha for each phonon mode.
-        α = multi_frohlichalpha.(ϵ_optic, ϵ_ionic, sum(ϵ_ionic), phonon_freq, m_eff)
+        α = frohlichalpha.(ϵ_optic, ϵ_ionic, sum(ϵ_ionic), phonon_freq, m_eff)
     end
 
     # Calculate reduced thermodynamic betas for each phonon mode.
@@ -337,7 +337,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::F
     betas = [T == 0.0 ? Inf64 : ħ * ω[j] / (kB * T) * 1e12 for j in eachindex(ω)]
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    params = T == 0.0 ? extended_feynmanvw(α; v=v_guess, w=v_guess, ω=ω, N=N_params) : extended_feynmanvw(α, betas; v=v_guess, w=w_guess, ω=ω, N=N_params)
+    params = T == 0.0 ? feynmanvw(α, ω; v = v_guess, w = w_guess) : feynmanvw(α, ω, betas; v = v_guess, w = w_guess)
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
     v_params = params[1]
@@ -350,10 +350,10 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::F
     masses = spring_constants ./ w_params .^ 2
 
     # Calculate ground-state free energies for each temperature.
-    energy = T == 0.0 ? multi_F(v_params, w_params, α; ω=ω) * 1000 * ħ / eV * 1e12 : multi_F(v_params, w_params, α, betas; ω=ω) * 1000 * ħ / eV * 1e12
+    energy = params[3]
 
     # Calculate complex impedances for each frequency and temperature. Returns a matrix.
-    impedance = Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, betas, α, v_params, w_params; ω=ω)
+    impedance = Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, betas, α, v_params, w_params; ω = ω)
 
     # Calculate complex conductivities for each frequency and temperature. Returns a matrix.
     conductivity = Ω == T == 0.0 ? Inf64 + 1im * 0.0 : 1.0 / impedance
@@ -381,7 +381,8 @@ end
         # One phonon mode.
 
         # Calculate Frohlich alpha coupling parameters.
-        α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
+        α = [frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)]
+        ω = [ω]
     else
         # Multiple phonon modes
 
@@ -389,7 +390,7 @@ end
         ϵ_ionic = ϵ_ionic_mode.(phonon_freq, ir_activity, volume) 
 
         # Calculate contribution to Frohlich alpha for each phonon mode.
-        α = multi_frohlichalpha.(ϵ_optic, ϵ_ionic, sum(ϵ_ionic), phonon_freq, m_eff)
+        α = frohlichalpha.(ϵ_optic, ϵ_ionic, sum(ϵ_ionic), phonon_freq, m_eff)
     end
 
     # Calculate reduced thermodynamic betas for each phonon mode.
@@ -406,7 +407,7 @@ end
     mobilities = Vector{Float64}(undef, T_length)
 
     if verbose
-        process = Threads.Atomic{Int64}(1)
+        process = 1
     end
 
     for i in eachindex(Trange)
@@ -426,7 +427,7 @@ end
             v_guess, w_guess, E_guess = params[i-1]
         end
         
-        params[i] = Trange[i] == 0.0 ? extended_feynmanvw(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(α, @view(betas[i, :]); v=v_guess, w=w_guess, ω=ω, N=N_params)
+        params[i] = Trange[i] == 0.0 ? feynmanvw(α, ω; v = v_guess, w = w_guess) : feynmanvw(α, ω, @view(betas[i, :]); v = v_guess, w = w_guess)
 
         for j in 1:N_params
             v_params[i, j] = params[i][1][j]
@@ -445,7 +446,7 @@ end
 
             if verbose
                 println("\e[2K\u1b[1F[Progress: $(process[]) / $(T_length * Ω_length) ($(round(process[] / (T_length * Ω_length) * 100, digits=1)) %)] | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[j]) THz | Thread: # $(Threads.threadid()) / $(Threads.nthreads())       ")
-                Threads.atomic_add!(process, 1)
+                process += 1
             end
         end
 
@@ -470,7 +471,7 @@ function make_polaron(α::Float64, T::Float64, Ω::Float64; ω=1.0, v_guess = 5.
     beta = T == 0.0 ? Inf64 : ω / T
 
     # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
-    params = T == 0.0 ? extended_feynmanvw(α; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(α, beta; v=v_guess, w=w_guess, ω=ω, N=N_params)
+    params = T == 0.0 ? feynmanvw(α, ω; v = v_guess, w = w_guess) : feynmanvw(α, ω, beta; v = v_guess, w = w_guess)
 
     # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
     v_param = params[1]
@@ -486,13 +487,13 @@ function make_polaron(α::Float64, T::Float64, Ω::Float64; ω=1.0, v_guess = 5.
     energy = params[3]
 
     # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
-    impedance =  Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, beta, α, v_param, w_param; ω=ω) 
+    impedance =  Ω == T == 0.0 ? 0.0 + 1im * 0.0 : polaron_complex_impedence(Ω, beta, α, v_param, w_param; ω = ω) 
 
     # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
     conductivity = Ω == T == 0.0 ? Inf64 + 1im * 0.0 : 1 / impedance
 
     # Calculates the dc mobility for each alpha parameter and each temperature.
-    mobility = T == 0.0 ? Inf64 : polaron_mobility(beta, α, v_param, w_param; ω=ω)
+    mobility = T == 0.0 ? Inf64 : polaron_mobility(beta, α, v_param, w_param; ω = ω)
 
     # Create Polaron type.
     polaron = NewPolaron(α, T, β, ω, v_param, w_param, spring_constant, mass, energy, Ω, impedance, conductivity, mobility)
@@ -522,7 +523,7 @@ end
     mobilities = Matrix{Float64}(undef, (α_length, T_length))
 
     if verbose
-        process = Threads.Atomic{Int64}(1)
+        process = 1
     end
 
     for j in eachindex(Trange)
@@ -538,7 +539,7 @@ end
 
         for i in eachindex(αrange)
         
-            params[i, j] = Trange[j] == 0.0 ? extended_feynmanvw(αrange[i]; v=v_guess, w=w_guess, ω=ω, N=N_params) : extended_feynmanvw(αrange[i], betas[j]; v=v_guess, w=w_guess, ω=ω, N=N_params)
+            params[i, j] = Trange[j] == 0.0 ? feynmanvw(αrange[i], ω; v = v_guess, w = w_guess) : feynmanvw(αrange[i], ω, betas[j]; v = v_guess, w = w_guess)
 
             for k in 1:N_params
                 v_params[i, j, k] = params[i, j][1][k]
@@ -557,7 +558,7 @@ end
 
                 if verbose
                     println("\e[2K\u1b[1F[Progress: $(process[]) / $(α_length * T_length * Ω_length) ($(round(process[] / (α_length * T_length * Ω_length) * 100, digits=1)) %)] | α = $(αrange[i]) | Temperature T = $(Trange[i]) K | Frequency Ω = $(Ωrange[k]) THz | Thread: # $(Threads.threadid()) / $(Threads.nthreads())      ")
-                    Threads.atomic_add!(process, 1)
+                    process += 1
                 end
             end
 
@@ -665,3 +666,27 @@ function savepolaron(fileprefix, p::Polaron)
     close(f)
 end
 
+"""
+    Hellwarth1999mobilityRHS((α, (v, w) ,f), effectivemass, T)
+
+Calculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+function Hellwarth1999mobilityRHS((α, (v, w), f), effectivemass, T)
+    mb = effectivemass * MassElectron
+    ω = f * 1e12 * 2π
+    βred = ħ * ω / (kB * T)
+
+    R = (v^2 - w^2) / (w^2 * v) # inline, page 300 just after Eqn (2)
+    b = R * βred / sinh(βred * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
+    a = sqrt((βred / 2)^2 + R * βred * coth(βred * v / 2))
+    k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3 / 2) * cos(u) # integrand in (2)
+    K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
+
+    # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
+    RHS = α / (3 * sqrt(π)) * βred^(5 / 2) / sinh(βred / 2) * (v^3 / w^3) * K
+    μ = RHS^(-1) * q / (ω * mb)
+
+    return 1 / μ
+end
