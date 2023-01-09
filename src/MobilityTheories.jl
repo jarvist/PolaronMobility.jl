@@ -56,9 +56,9 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("T: %f β: %.3g βred: %.3g ħω  = %.3g meV\t", T, β, βred, 1E3 * ħ * ω / q)
 
         if T == 0
-            v, w = feynmanvw(α, v=v, w=w)
+            v, w = feynmanvw(v, w, α)
         else
-            v, w = feynmanvw(α, βred, v=v, w=w)
+            v, w = feynmanvw(v, w, α, βred)
         end
 
         @printf("\n Polaron Parameters:  v= %.4f  w= %.4f", v, w)
@@ -309,7 +309,7 @@ make_polaron(
 ```
     
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::Float64; v_guess = 5.4, w_guess = 3.4, volume=nothing, ir_activity=nothing, N_params=1, verbose=false)
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::Float64; v_guess = 5.4, w_guess = 3.4, volume = nothing, ir_activity = nothing, N_params = 1, verbose = false)
 
     # Number of phonon modes.
     N_modes = length(phonon_freq)
@@ -337,7 +337,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::F
     betas = [T == 0.0 ? Inf64 : ħ * ω[j] / (kB * T) * 1e12 for j in eachindex(ω)]
 
     # Calculate variational parameters for each temperature from multiple phonon frequencies.
-    params = T == 0.0 ? feynmanvw(α, ω; v = v_guess, w = w_guess) : feynmanvw(α, ω, betas; v = v_guess, w = w_guess)
+    params = T == 0.0 ? feynmanvw(v_guess, w_guess, α, ω) : feynmanvw(v_guess, w_guess, α, ω, betas)
 
     # Separate tuples of variational parameters into a list of 'v' and 'w' parameters for each temperature.
     v_params = params[1]
@@ -367,7 +367,7 @@ function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::F
     return polaron
 end
 
-@noinline function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; volume=nothing, ir_activity=nothing, N_params=1, verbose=false)
+@noinline function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; volume = nothing, ir_activity = nothing, N_params = 1, verbose = false)
 
     # Number of phonon modes.
     N_modes = length(phonon_freq)
@@ -427,7 +427,7 @@ end
             v_guess, w_guess, E_guess = params[i-1]
         end
         
-        params[i] = Trange[i] == 0.0 ? feynmanvw(α, ω; v = v_guess, w = w_guess) : feynmanvw(α, ω, @view(betas[i, :]); v = v_guess, w = w_guess)
+        params[i] = Trange[i] == 0.0 ? feynmanvw(v_guess, w_guess, α, ω) : feynmanvw(v_guess, w_guess, α, ω, @view(betas[i, :]))
 
         for j in 1:N_params
             v_params[i, j] = params[i][1][j]
@@ -464,14 +464,14 @@ end
 
 Same as above but from a model system with specified alpha values rather than from material properties. Here we only have one phonon mode with a normalised frequency `ω = 1.0`.
 """
-function make_polaron(α::Float64, T::Float64, Ω::Float64; ω=1.0, v_guess = 5.4, w_guess = 3.4, N_params = 1, verbose=false)
+function make_polaron(α::Float64, T::Float64, Ω::Float64; ω=1.0, v_guess = 5.4, w_guess = 3.4, N_params = 1, verbose = false)
 
     # Calculate reduced thermodynamic betas for each phonon mode.
     # If temperature is zero, return Inf.
     beta = T == 0.0 ? Inf64 : ω / T
 
     # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
-    params = T == 0.0 ? feynmanvw(α, ω; v = v_guess, w = w_guess) : feynmanvw(α, ω, beta; v = v_guess, w = w_guess)
+    params = T == 0.0 ? feynmanvw(v_guess, w_guess, α, ω) : feynmanvw(v_guess, w_guess, α, ω, beta)
 
     # Separate tuples of variational parameters into a Matrices of 'v' and 'w' parameters for each alpha parameter and temperature.
     v_param = params[1]
@@ -502,7 +502,7 @@ function make_polaron(α::Float64, T::Float64, Ω::Float64; ω=1.0, v_guess = 5.
     return polaron
 end
 
-@noinline function make_polaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω=1.0, N_params=1, verbose=false)
+@noinline function make_polaron(αrange::Union{Vector, StepRangeLen}, Trange::Union{Vector, StepRangeLen}, Ωrange::Union{Vector, StepRangeLen}; ω = 1.0, N_params = 1, verbose = false)
 
     # Number of phonon modes.
     T_length = length(Trange)
@@ -539,7 +539,7 @@ end
 
         for i in eachindex(αrange)
         
-            params[i, j] = Trange[j] == 0.0 ? feynmanvw(αrange[i], ω; v = v_guess, w = w_guess) : feynmanvw(αrange[i], ω, betas[j]; v = v_guess, w = w_guess)
+            params[i, j] = Trange[j] == 0.0 ? feynmanvw(v_guess, w_guess, αrange[i], ω) : feynmanvw(v_guess, w_guess, αrange[i], ω, betas[j])
 
             for k in 1:N_params
                 v_params[i, j, k] = params[i, j][1][k]
@@ -690,3 +690,4 @@ function Hellwarth1999mobilityRHS((α, (v, w), f), effectivemass, T)
 
     return 1 / μ
 end
+

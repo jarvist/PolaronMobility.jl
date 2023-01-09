@@ -16,8 +16,7 @@ rows(M::Matrix) = map(x->reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1]
 
 for r in rows(Schultz)
     α,vSchultz,wSchultz,ESchultz=r # Unpack row of results
-    v,w=feynmanvw(α) # performs the optimisation
-    E=F(v,w,α) # energy at the optimised parameters
+    v,w,E=feynmanvw(3.1, 3.0, α) # performs the optimisation
     
     println("α=$α v=$v w=$w E=$E  | Schultz: v=$vSchultz w=$wSchultz E=$ESchultz")
 

@@ -130,7 +130,7 @@ See Hellwarth et al. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 v, w, E = feynmanvw(2.39, 0.36, v = 3.0, w = 1.0)
 ```
 """
-function feynmanvw(αβ...; v = 3.0, w = 3.0) # v, w defaults
+function feynmanvw(v::Float64, w::Float64, αβ::Float64...) # v, w defaults
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
@@ -350,7 +350,7 @@ Minimises the multiple phonon mode free energy function for a single v and w var
 
 See also [`F`](@ref), [`feynmanvw`](@ref).
 """
-function feynmanvw(αβω::Vector{Float64}...; v = 3.0, w = 3.0) # N number of v and w params
+function feynmanvw(v::Float64, w::Float64, αωβ::Union{Vector, SubArray}...) # N number of v and w params
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
@@ -359,7 +359,7 @@ function feynmanvw(αβω::Vector{Float64}...; v = 3.0, w = 3.0) # N number of v
     initial = [Δv + eps(Float64), w]
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = F(x[1] + x[2], x[2], αβω...)
+	f(x) = F(x[1] + x[2], x[2], αωβ...)
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -475,3 +475,339 @@ function DielectricFromIRmode(IRmode; volume)
     ϵ_mode /= ϵ_0 # reduced dielectric
     return ϵ_mode
 end
+
+#  Extending the Feynman theory to multiple variational parameters
+
+# Multiple Parameter Polaron Free Energy
+
+# Calculate the polaron free energy, generalised from Osaka's expression to the case where multiple phonon modes are present in the material.
+
+"""
+    κ_i(i, v, w)
+
+Calculates the spring-constant coupling the electron to the 'ith' fictitious mass that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
+
+Required for calculating the polaron free energy.
+
+Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+
+# Arguments
+- `i::Integer`: enumerates the current fictitious mass.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+"""
+function κ_i(i, v::Vector, w::Vector)
+    κ = v[i]^2 - w[i]^2
+    κ *= prod(j != i ? (v[j]^2 - w[i]^2) / (w[j]^2 - w[i]^2) : 1.0 for j in eachindex(v))
+    return κ
+end
+
+"""
+    h_i(i, v, w)
+
+Calculates the normal-mode (the eigenmodes) frequency of the coupling between the electron and the `ith' fictitious mass that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
+
+Required for calculating the polaron free energy.
+
+Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+
+# Arguments
+- `i::Integer`: enumerates the current fictitious mass.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+"""
+function h_i(i, v::Vector, w::Vector)
+    h = v[i]^2 - w[i]^2
+    h *= prod(j != i ? (w[j]^2 - v[i]^2) / (v[j]^2 - v[i]^2) : 1.0 for j in eachindex(v))
+    return h
+end
+
+"""
+    C_ij(i, j, v, w)
+
+Calculates the element to the coupling matrix C_ij (a generalisation of Feynman's `C` coupling variational parameter in Feynman 1955) between the electron and the `ith' and `jth' fictitious masses that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
+
+Required for calculating the polaron free energy.
+
+Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+
+# Arguments
+- `i::Integer, j::Integer`: enumerate the current fictitious masses under focus (also the index of the element in the coupling matrix C)
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
+"""
+function C_ij(i, j, v::Vector, w::Vector)
+    C = w[i] * κ_i(i, v, w) * h_i(j, v, w) / (4 * (v[j]^2 - w[i]^2))
+    return C
+end
+
+"""
+    D(τ, v, w, β)
+
+Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1962) that approximates the exact influence (recoil effects) of the phonon bath on the electron with the influence of the fictitious masses attached by springs to the electron. It appears in the exponent of the intermediate scattering function.
+
+# Arguments
+- `τ::Float64`: is the imaginary time variable.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+
+See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
+"""
+function D(τ, v::Vector, w::Vector, β)
+    return τ * (1 - τ / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β)) for i in eachindex(v))
+end
+
+"""
+    D(τ, v, w)
+
+Calculates the recoil function at zero-temperature.
+
+# Arguments
+- `τ::Float64`: is the imaginary time variable.
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See also ['D'](@ref).
+"""
+function D(τ, v::Vector, w::Vector)
+    return τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))
+end
+
+"""
+    B(v, w, α, β)
+
+Generalisation of the B function from Eqn. (62c) in Hellwarth et al. 1999. This is the expected value of the exact action <S_j> taken w.r.t trial action, given for the 'jth' phonon mode.
+
+Required for calculating the polaron free energy.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+
+See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also ['B'](@ref).
+"""
+function B(v::Vector, w::Vector, α, β)
+    B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D(τ, v, w, β)))
+    return α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ * β / 2), 0.0, 1.0)[1] * β / 2
+end
+
+"""
+    B(v, w, α; rtol = 1e-3)
+
+Calculates `B(v, w, α, β)` but at zero-temperature, `β = Inf`.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+
+See also [`B`](@ref).
+"""
+function B(v::Vector, w::Vector, α)
+    B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D(abs(τ), v, w)))
+    return α / √π * quadgk(τ -> B_integrand(τ), 0.0, Inf64)[1]
+end
+
+"""
+    C(v, w, β)
+
+Generalisation of the C function from Eqn. (62e) in Hellwarth et al. 1999. This is the expected value of the trial action <S_0> taken w.r.t trial action.
+
+Required for calculating the polaron free energy.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+
+
+See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also ['C'](@ref).
+"""
+function C(v::Vector, w::Vector, β)
+    # Sum over the contributions from each fictitious mass.
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2) - 2 / (β * v[j])) for i in eachindex(v), j in eachindex(w))
+
+    # Divide by the number of phonon modes to give an average contribution per phonon mode.
+    return 3 * s
+end
+
+"""
+    C(v, w)
+
+Calculates `C(v, w, β)` but at zero-temperature, `β = Inf`.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See also [`C`](@ref).
+"""
+function C(v::Vector, w::Vector)
+    # Sum over the contributions from each fictitious mass.
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) for i in eachindex(v), j in eachindex(w))
+    # Divide by the number of phonon modes to give an average contribution per phonon mode.
+    return 3 * s
+end
+
+"""
+    A(v, w, β)
+
+Generalisation of the A function from Eqn. (62b) in Hellwarth et al. 1999. This is the Helmholtz free energy of the trial model.
+
+Required for calculating the polaron free energy.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+
+See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also ['A'](@ref).
+"""
+function A(v::Vector, w::Vector, β)
+    # Sum over the contributions from each fictitious mass.
+    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0.0 : 
+    log(v[i]) -  log(w[i]) - β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * β)) + log(1 - exp(-w[i] * β))
+    for i in eachindex(v))
+    # Divide by the number of phonon modes to give an average contribution per phonon mode.
+    3 / β * s
+end
+
+"""
+    A(v, w, n)
+
+Calculates `A(v, w, β)` but at zero-temperature, `β = Inf`.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+
+See also [`A`](@ref).
+"""
+function A(v::Vector, w::Vector)
+    s = sum(v .- w)
+    return -3 * s / 2 
+end
+
+"""
+    F(v, w, α, ω, β)
+
+Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. 
+    
+This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn. (62a)) free energy expressions.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz).
+- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
+
+See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
+
+See also [`F`](@ref).
+"""
+function F_multi(v, w, α, ω, β)
+
+    N_modes = length(ω)
+
+    # Add contribution to the total free energy from the phonon mode.
+    F = sum(-(B(v, w, α[j], β[j]) + C(v, w, β[j]) / N_modes + A(v, w, β[j]) / N_modes) * ω[j] for j in eachindex(ω))
+
+    # Free energy in units of meV
+    return F
+end
+
+"""
+    F(v, w, α, ω)
+
+Calculates the zero-temperature ground-state energy of the polaron for a material with multiple phonon branches. Similar to `F(v, w, α, ω, β)` but with `β = Inf`. Generalises Eqn. (33) in Feynman 1955.
+
+# Arguments
+- `v::Vector{Float64}`: is a vector of the v variational parameters.
+- `w::Vector{Float64}`: is a vector of the w variational parameters.
+- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). 
+
+See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
+
+See also [`multi_F`](@ref).
+"""
+function F_multi(v, w, α, ω)
+
+    N_modes = length(ω)
+
+    # Add contribution to the total free energy from the phonon mode.
+	F = sum(-(B(v, w, α[j]) + C(v, w) / N_modes + A(v, w) / N_modes) * ω[j] for j in eachindex(ω))
+
+    # Free energy in units of meV
+    return F
+end
+
+"""
+    feynmanvw(v, w, αωβ...; upper_limit = Inf64)
+
+Minimises the multiple phonon mode free energy function for a set of vₚ and wₚ variational parameters. The variational parameters follow the inequality: v₁ > w₁ > v₂ > w₂ > ... > vₙ > wₙ. Generalises `feynmanvw` to multiple variational parameters.
+
+# Arguments
+- `v::Vector{Float64}`: vector of initial v parameters.
+- `w::Vector{Float64}`: vector of initial w parameters.
+- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for one or many phonon modes.  
+- `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz) for one or many phonon modes.
+- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) for one or many phonon modes.
+
+See also [`multi_F`](@ref), [`feynmanvw`](@ref).
+"""
+function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf64) 
+
+    if length(v) != length(w)
+        return error("The number of variational parameters v & w must be equal.")
+    end
+
+    N_params = length(v)
+
+    Δv = v .- w
+    initial = vcat(Δv .+ repeat([eps(Float64)], N_params), w)
+
+    # Limits of the optimisation.
+    lower = fill(0.0, 2 * N_params)
+    upper = fill(upper_limit, 2 * N_params)
+
+	# The multiple phonon mode free energy function to minimise.
+	f(x) = F_multi([x[2 * n - 1] for n in 1:N_params] .+ [x[2 * n] for n in 1:N_params], [x[2 * n] for n in 1:N_params], αωβ...)
+
+    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS())
+    )
+
+    # Extract the v and w parameters that minimised the free energy.
+    var_params = Optim.minimizer(solution)
+    E= Optim.minimum(solution)
+
+    # Separate the v and w parameters into one-dimensional arrays (vectors).
+    Δv = [var_params[2 * n - 1] for n in 1:N_params]
+    w = [var_params[2 * n] for n in 1:N_params]
+
+    if Optim.converged(solution) == false
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    end
+
+    # Return the variational parameters that minimised the free energy.
+    return (Δv .+ w, w, E)
+end
+

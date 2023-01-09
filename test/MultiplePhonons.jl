@@ -81,10 +81,10 @@
 
     # Variations
 
-    v_0, w_0, E_0 = feynmanvw(α, ω) # Athermal
+    v_0, w_0, E_0 = feynmanvw(3.1, 3.0, α, ω) # Athermal
 
     β = [i .* ħ / (kB * 300) * 1e12 for i in ω]
-    v, w, E = feynmanvw(α, ω, β) # Thermal
+    v, w, E = feynmanvw(v_0, w_0, α, ω, β) # Thermal
 
     @testset "Multiple mode variations" begin
 
@@ -206,3 +206,4 @@
     print('\n')
 
 end
+
