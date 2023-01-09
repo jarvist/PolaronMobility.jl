@@ -71,9 +71,9 @@
     println("alphas: ", alphas)
     println("sum alphas: ", sum(alphas))
 
-    println("Feynman v,w for alphas: ", feynmanvw.(3.1, 3.0, alphas))
+    println("Feynman v,w for alphas: ", feynmanvw.(3.1, 3.0, alphas, 1.0))
 
-    mobilityproblem = hcat(alphas, feynmanvw.(3.1, 3.0, alphas), MAPI[:, 1])
+    mobilityproblem = hcat(alphas, feynmanvw.(3.1, 3.0, alphas, 1.0), MAPI[:, 1])
     println("Specify mobility problem: ", mobilityproblem)
 
     inverse_μ = Hellwarth1999mobilityRHS.(eachrow(mobilityproblem), meff, 300)
@@ -100,7 +100,7 @@
         alphas = frohlichPartial.(eachrow(f_dielectric), ϵ_o=ϵ_o, ϵ_s=ϵ_o + sum(splat), meff=meff)
         βred = ħ * MAPI[:, 1] * 1E12 * 2π / (kB * T)
 
-        mobilityproblem = hcat(alphas, feynmanvw.(3.1, 3.0, alphas, βred), MAPI[:, 1])
+        mobilityproblem = hcat(alphas, feynmanvw.(3.1, 3.0, alphas, 1.0, βred), MAPI[:, 1])
         inverse_μ = Hellwarth1999mobilityRHS.(eachrow(mobilityproblem), meff, T)
         μ = sum(inverse_μ)^-1
 

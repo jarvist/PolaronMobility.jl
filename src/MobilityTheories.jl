@@ -56,9 +56,9 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
         @printf("T: %f β: %.3g βred: %.3g ħω  = %.3g meV\t", T, β, βred, 1E3 * ħ * ω / q)
 
         if T == 0
-            v, w = feynmanvw(v, w, α)
+            v, w = feynmanvw(v, w, α, 1.0)
         else
-            v, w = feynmanvw(v, w, α, βred)
+            v, w = feynmanvw(v, w, α, 1.0, βred)
         end
 
         @printf("\n Polaron Parameters:  v= %.4f  w= %.4f", v, w)

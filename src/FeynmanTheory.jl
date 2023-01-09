@@ -24,32 +24,26 @@ end
 # Set up equations for the polaron free energy, which we will variationally improve upon.
 
 """
-    fF(τ, v, w)
+    B(τ, v, w)
 
 Integrand of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-fF(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))))^(-0.5) * exp(-τ)
-
+B_integrand(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))))^(-0.5) * exp(-τ)
 
 """
-    AF(v, w, α)
+    B(v, w, α)
 
 Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-AF(v, w, α) = π^(-0.5) * α * v * quadgk(τ -> fF(τ, v, w), 0.0, Inf64)[1]
+B(v, w, α) = π^(-0.5) * α * v * quadgk(τ -> B_integrand(τ, v, w), 0.0, Inf64)[1]
 
-"""
-    F(τ, v, w)
+A(v, w) = -3 * (v - w) / 2
 
-Ground state energy expression. Eqn. (33) in Feynman 1955.
-
-See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-"""
-F(v, w, α) = (3 / (4 * v)) * (v - w)^2 - AF(v, w, α)
+C(v, w) = (3 / (4 * v)) * (v^2 - w^2)
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
 
@@ -102,61 +96,6 @@ Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of t
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
 C(v, w, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β))
-
-# 62a
-"""
-    F(v, w, β, α)
-
-Hellwarth's total *free energy* expression from Eqn. (62a) in Hellwarth et al. 1999 PRB.
-
-See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-"""
-F(v, w, α, β) = -(A(v, w, β) + B(v, w, α, β) + C(v, w, β))
-
-# Let's wrap the Feynman athermal variation approximation in a simple function
-# Variational optimsation methods for finding the polaron ground state at finite or zero temperatures.
-
-"""
-    feynmanvw(αβ...; v = 3.0, w = 3.0)
-
-Calculate v and w variational polaron parameters, for the supplied α Frohlich coupling, and inverse reduced temperature β. Returns (v, w, E).
-
-This version uses the Osaka thermal action symmetrised for computation.
-
-See Hellwarth et al. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-
-# Examples
-```jldoctest
-v, w, E = feynmanvw(2.39, 0.36, v = 3.0, w = 1.0)
-```
-"""
-function feynmanvw(v::Float64, w::Float64, αβ::Float64...) # v, w defaults
-
-    # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [Inf64, Inf64]
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), w]
-
-    # Thermal action 
-    f(x) = F(x[1] + x[2], x[2], αβ...)
-
-    # Use Optim to optimise v and w to minimise enthalpy.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-    )
-
-    # Get v and w values that minimise the free energy.
-    Δv, w = Optim.minimizer(solution) # v=Δv+w
-    E = Optim.minimum(solution)
-
-    # Return variational parameters that minimise the free energy.
-    return Δv + w, w, E
-end
 
 # Extending the Feynman theory to multiple phonon branches
 
@@ -280,111 +219,6 @@ function frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff)
 
     return α_j
 end
-
-# Multiple Branch Polaron Free Energy
-
-"""
-    multi_F(v, w, α, β, ω)
-
-Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. 
-This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn. (62a)) free energy expressions.
-
-# Arguments
-- `v::Float64`: the v variational parameter.
-- `w::Float64`: the w variational parameter.
-- `α::Vector{Float64}`: is a vector of the partial dielectric electron-phonon coupling parameter for each phonon mode.  
-- `β::Vector{Float64}`: is a vector of the reduced thermodynamic temperature ħωⱼ/(kT) for each phonon mode.
-- `ω::Vector{Float64}`: is a vector of phonon mode frequencies (units 2π THz). 
-
-See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
-
-See also [`F`](@ref).
-"""
-function F(v, w, α::Vector, ω::Vector, β)
-
-    N_modes = length(ω)
-
-    # Add contribution to the total free energy from the phonon mode.
-    F = -sum((B.(v, w, α, β) .+ C.(v, w, β) ./ N_modes .+ A.(v, w, β) ./ N_modes) .* ω)
-
-    # Free energy in units of meV
-    return F
-end
-
-"""
-    F(v, w, α, ω)
-
-Calculates the zero-temperature ground-state energy of the polaron for a material with multiple phonon branches. Similar to `F(v, w, α, ω, β)` but with `β = Inf`. Generalises Eqn. (33) in Feynman 1955.
-
-# Arguments
-- `v::Float64`: the v variational parameter.
-- `w::Float64`: the w variational parameter.
-- `α::Vector{Float64}`: is a vector of the partial dielectric electron-phonon coupling parameter for each phonon mode. 
-- `ω::Vector{Float64}`: is a vector of phonon mode frequencies (units 2π THz).  
-
-See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-
-See also [`multi_F`](@ref).
-"""
-function F(v, w, α::Vector, ω::Vector)
-
-    N_modes = length(ω)
-
-    # Add contribution to the total free energy from the phonon mode.
-	F = sum(((3 ./ (4 .* v)) .* (v .- w) .^2 / N_modes .- AF.(v, w, α)) .* ω) 
-
-    # Free energy in units of meV
-    return F
-end
-
-"""
-    feynmanvw(α, β, ω; v = 3.0, w = 3.0)
-
-Minimises the multiple phonon mode free energy function for a single v and w variational parameter. Generalises `feynmanvw` to multiple phonon modes.
-
-# Arguments
-- `α::Vector{Float64}`: is a vector of the partial dielectric electron-phonon coupling parameter for each phonon mode.  
-- `β::Vector{Float64}`: is a vector of the reduced thermodynamic temperature ħωⱼ/(kT) for each phonon mode.
-- `ω::Vector{Float64}`: is a vector of phonon mode frequencies (units 2π THz). 
-- `v::Float64, w::Float64`: specifies initial guess for the variational parameters (v, w = 3.0, the zero-coupling solution, by default).
-
-See also [`F`](@ref), [`feynmanvw`](@ref).
-"""
-function feynmanvw(v::Float64, w::Float64, αωβ::Union{Vector, SubArray}...) # N number of v and w params
-
-    # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [Inf64, Inf64]
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), w]
-
-	# The multiple phonon mode free energy function to minimise.
-	f(x) = F(x[1] + x[2], x[2], αωβ...)
-
-    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS())
-    )
-
-    # Extract the v and w parameters that minimised the free energy.
-    Δv, w = Optim.minimizer(solution)
-
-    # Extract the free energy E.
-    E = Optim.minimum(solution)
-
-    # Check if the minimisation converged.
-    if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E."
-    end
-
-    # Return the variational parameters `v` and `w` and the minimised the free energy `E`.
-    return (Δv + w, w, E)
-end
-
 
 """
     frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
@@ -569,8 +403,6 @@ Calculates the recoil function at zero-temperature.
 - `τ::Float64`: is the imaginary time variable.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
-
-See also ['D'](@ref).
 """
 function D(τ, v::Vector, w::Vector)
     return τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))
@@ -590,8 +422,6 @@ Required for calculating the polaron free energy.
 - `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
-
-See also ['B'](@ref).
 """
 function B(v::Vector, w::Vector, α, β)
     B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D(τ, v, w, β)))
@@ -607,8 +437,6 @@ Calculates `B(v, w, α, β)` but at zero-temperature, `β = Inf`.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 - `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
-
-See also [`B`](@ref).
 """
 function B(v::Vector, w::Vector, α)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D(abs(τ), v, w)))
@@ -629,8 +457,6 @@ Required for calculating the polaron free energy.
 
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
-
-See also ['C'](@ref).
 """
 function C(v::Vector, w::Vector, β)
     # Sum over the contributions from each fictitious mass.
@@ -648,8 +474,6 @@ Calculates `C(v, w, β)` but at zero-temperature, `β = Inf`.
 # Arguments
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
-
-See also [`C`](@ref).
 """
 function C(v::Vector, w::Vector)
     # Sum over the contributions from each fictitious mass.
@@ -671,8 +495,6 @@ Required for calculating the polaron free energy.
 - `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
-
-See also ['A'](@ref).
 """
 function A(v::Vector, w::Vector, β)
     # Sum over the contributions from each fictitious mass.
@@ -691,8 +513,6 @@ Calculates `A(v, w, β)` but at zero-temperature, `β = Inf`.
 # Arguments
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
-
-See also [`A`](@ref).
 """
 function A(v::Vector, w::Vector)
     s = sum(v .- w)
@@ -714,10 +534,8 @@ This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn
 - `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
 
 See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
-
-See also [`F`](@ref).
 """
-function F_multi(v, w, α, ω, β)
+function F(v, w, α, ω, β)
 
     N_modes = length(ω)
 
@@ -740,10 +558,8 @@ Calculates the zero-temperature ground-state energy of the polaron for a materia
 - `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). 
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-
-See also [`multi_F`](@ref).
 """
-function F_multi(v, w, α, ω)
+function F(v, w, α, ω)
 
     N_modes = length(ω)
 
@@ -766,9 +582,9 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 - `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz) for one or many phonon modes.
 - `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) for one or many phonon modes.
 
-See also [`multi_F`](@ref), [`feynmanvw`](@ref).
+See also [`F`](@ref).
 """
-function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf64) 
+function feynmanvw(v, w, αωβ...; upper_limit = Inf64) 
 
     if length(v) != length(w)
         return error("The number of variational parameters v & w must be equal.")
@@ -778,13 +594,13 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf64)
 
     Δv = v .- w
     initial = vcat(Δv .+ repeat([eps(Float64)], N_params), w)
-
+ 
     # Limits of the optimisation.
     lower = fill(0.0, 2 * N_params)
     upper = fill(upper_limit, 2 * N_params)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = F_multi([x[2 * n - 1] for n in 1:N_params] .+ [x[2 * n] for n in 1:N_params], [x[2 * n] for n in 1:N_params], αωβ...)
+	f(x) = N_params > 1 ? F([x[2 * n - 1] for n in 1:N_params] .+ [x[2 * n] for n in 1:N_params], [x[2 * n] for n in 1:N_params], αωβ...) : F(x[1] .+ x[2], x[2], αωβ...)
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -797,11 +613,11 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf64)
 
     # Extract the v and w parameters that minimised the free energy.
     var_params = Optim.minimizer(solution)
-    E= Optim.minimum(solution)
+    E = Optim.minimum(solution)
 
     # Separate the v and w parameters into one-dimensional arrays (vectors).
-    Δv = [var_params[2 * n - 1] for n in 1:N_params]
-    w = [var_params[2 * n] for n in 1:N_params]
+    Δv = N_params > 1 ? [var_params[2 * n - 1] for n in 1:N_params] : var_params[1]
+    w = N_params > 1 ? [var_params[2 * n] for n in 1:N_params] : var_params[2]
 
     if Optim.converged(solution) == false
         @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
