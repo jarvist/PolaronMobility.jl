@@ -143,7 +143,7 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
             append!(p.C, C(v, w, βred))
             append!(p.F, F(v, w, βred, α))
         else # Athermal case; Enthalpy
-            @printf("\n Polaron Enthalpy: F= %f = %f meV \n", F(v, w, α), 1_000 * F(v, w, α) * ħ * ω / q)
+            @printf("\n Polaron Enthalpy: F= %f = %f meV \n", F(v, w, α, 1.0), 1_000 * F(v, w, α, 1.0) * ħ * ω / q)
 
             return # return early, as if T=0, all mobility theories = infinite / fall over
         end
