@@ -24,22 +24,22 @@ See R. P. Feynman, R. W. Hellwarth, C. K. Iddings, and P. M. Platzman, Mobility 
 
 See also [`polaron_memory_function_thermal`](@ref), [`polaron_memory_function_athermal`](@ref), [`polaron_memory_function_dc`](@ref).
 """
-function polaron_memory_function(Ω, β, α, v, w; ω=1.0)
+function polaron_memory_function(Ω, β, α, v, w; ω=1)
 
     # Zero temperature and frequency is just zero.
-    if Ω == 0.0 && any(x -> x == Inf64, β)
-        return 0.0 + im * Inf64
+    if Ω == zero(Ω) && any(x -> x == Inf, β)
+        return 0 + im * Inf
 
         # DC zero frequency limit at finite temperatures.
-    elseif Ω == 0 && any(x -> x != Inf64, β)
+    elseif Ω == zero(Ω) && any(x -> x != Inf, β)
         return polaron_memory_function_dc(β, α, v, w; ω=ω)
 
         # Zero temperature limit at AC finite frequencies.
-    elseif Ω != 0 && any(x -> x == Inf64, β)
+    elseif Ω != zero(Ω) && any(x -> x == Inf, β)
         return polaron_memory_function_athermal(Ω, α, v, w; ω=ω)
 
         # Finite temperatures and frequencies away from zero limits.
-    elseif Ω != 0 && any(x -> x != Inf64, β)
+    elseif Ω != zero(Ω) && any(x -> x != Inf, β)
         return polaron_memory_function_thermal(Ω, β, α, v, w; ω=ω)
 
         # Any other frequencies or temperatures (e.g. negative or complex) prints error message.
@@ -73,9 +73,8 @@ Calculate polaron complex memory function at finite temperature inclusive of mul
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_thermal(Ω, β, α, v, w; ω=1.0)
+function polaron_memory_function_thermal(Ω, β, α, v, w; ω=1)
 
-    v, w = v[1], w[1]
     D(τ, β) = τ * (1 - τ / β) + (v^2 - w^2) * ((1 + exp(-v * β) - exp(-v * τ) - exp(v * (τ - β))) / (v * (1 - exp(-v * β))) - τ * (1 - τ / β)) / v^2
 
     # FHIP1962, page 1009, eqn (36).
@@ -84,7 +83,7 @@ function polaron_memory_function_thermal(Ω, β, α, v, w; ω=1.0)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β, Ω) = (1 - exp(1im * Ω * 2π * t)) * imag(S(t, β))
 
-    integral = quadgk.(t -> integrand.(t, β, Ω ./ ω), 0.0, Inf64, rtol=1e-4)[1]
+    integral = quadgk.(t -> integrand.(t, β, Ω ./ ω), 0, Inf, rtol=1e-4)[1]
 
     memory = sum(2 .* α .* ω .^ 2 .* integral ./ (3 * √π * Ω * 2π))
 
@@ -107,9 +106,8 @@ Calculate polaron complex memory function at zero-temperature inclusive of multi
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_athermal(Ω, α, v, w; ω=1.0)
+function polaron_memory_function_athermal(Ω, α, v, w; ω=1)
 
-    v, w = v[1], w[1]
     D(τ) = τ + ((v^2 - w^2) / v^2) * ((1 - exp(-v * τ)) / v - τ)
 
     # FHIP1962, page 1009, eqn (36).
@@ -123,7 +121,7 @@ function polaron_memory_function_athermal(Ω, α, v, w; ω=1.0)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, Ω) = (1 - exp(1im * 2π * Ω * t)) * imag(S(t))
 
-    memory = sum(2 .* α .* ω .^2 .* quadgk.(t -> integrand.(t, Ω ./ ω), 0.0, 1e3, rtol=1e-4)[1] ./ (3 * √π * Ω * 2π))
+    memory = sum(2 .* α .* ω .^2 .* quadgk.(t -> integrand.(t, Ω ./ ω), 0, 1e3, rtol=1e-4)[1] ./ (3 * √π * Ω * 2π))
 
     return memory
 end
@@ -144,9 +142,8 @@ Calculate zero-frequency polaron complex memory function at finite temperature i
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_dc(β, α, v, w; ω=1.0)
+function polaron_memory_function_dc(β, α, v, w; ω=1)
 
-    v, w = v[1], w[1]
     D(τ, β) = τ * (1 - τ / β) + (v^2 - w^2) * ((1 + exp(-v * β) - exp(-v * τ) - exp(v * (τ - β))) / (v * (1 - exp(-v * β))) - τ * (1 - τ / β)) / v^2
 
     # FHIP1962, page 1009, eqn (36).
@@ -155,7 +152,7 @@ function polaron_memory_function_dc(β, α, v, w; ω=1.0)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β) = -im * t * imag(S(t, β))
 
-    integral = quadgk.(t -> integrand.(t, β), 0.0, Inf64, rtol=1e-4)[1]
+    integral = quadgk.(t -> integrand.(t, β), 0, Inf, rtol=1e-4)[1]
 
     memory = sum(2 .* α .* ω .* integral ./ (3 * √π))
 

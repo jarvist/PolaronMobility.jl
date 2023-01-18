@@ -98,9 +98,10 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 See also [`polaron_complex_conductivity`](@ref)
 """
 function polaron_mobility(β, α, v, w; ω=1.0)
-
-    mobility = abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω=ω)))
-
-    return mobility
+    if any(x -> x == Inf, β)
+        return Inf
+    else
+        return abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω=ω)))
+    end
 end
 

@@ -7,7 +7,7 @@ PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
 """
 module PolaronMobility
 
-export Polaron, NewPolaron # Type to hold the data
+export Polaron, NewPolaron, polaron, athermal_polaron, dc_polaron # Type to hold the data
 export frohlichalpha, feynmanvw, F, polaronmobility, savepolaron
 export HellwarthBScheme, HellwarthAScheme
 export polaron_memory_function  # Polaron memory functions

@@ -20,48 +20,65 @@ const amu = 1.660_539_066_60e-27
 # Structures
 
 "Polaron. Structure to store data of polaron solution and other parameters, for each temperature or frequency."
+# struct Polaron
+#     "T, temperature (K)."
+#     T
+#     "Kμ, Kadanoff mobility (cm²V⁻¹s⁻¹)."
+#     Kμ
+#     "Hμ, Hellwarth mobility (cm²V⁻¹s⁻¹)."
+#     Hμ
+#     "FHIPμ, FHIP mobility (cm²V⁻¹s⁻¹)."
+#     FHIPμ
+#     "k, spring constant."
+#     k
+#     "M, renormalised (phonon-drag) mass (mₑ)."
+#     M
+#     "Osaka free energy components (A,B,C) and total (F) (unitless). See Hellwarth et al. 1999 PRB Part IV."
+#     A
+#     B
+#     C
+#     F
+#     "Tau, relaxation time from Kadanoff Boltzmann transport equation (s)."
+#     Tau
+#     "v and w, raw variational parameters (unitless)."
+#     v
+#     w
+#     "βred, reduced thermodynamic beta (unitless)."
+#     βred
+#     "rfsi, Feynman polaron radius (Schultz) (m)."
+#     rfsi
+#     "rfsmallalpha, small-alpha asymptotic approximation (unitless)."
+#     rfsmallalpha
+
+#     # Setup of simulation. These parameters are sent to the function.
+
+#     "α, Fröhlich alpha coupling parameter (unitless)."
+#     α
+#     "mb, Band effective mass (mₑ)."
+#     mb
+#     "ω, effective dielectric frequency (2π THz)."
+#     ω
+# end
+
 struct Polaron
-    "T, temperature (K)."
+    α
+    αsum
     T
-    "Kμ, Kadanoff mobility (cm²V⁻¹s⁻¹)."
-    Kμ
-    "Hμ, Hellwarth mobility (cm²V⁻¹s⁻¹)."
-    Hμ
-    "FHIPμ, FHIP mobility (cm²V⁻¹s⁻¹)."
-    FHIPμ
-    "k, spring constant."
-    k
-    "M, renormalised (phonon-drag) mass (mₑ)."
-    M
-    "Osaka free energy components (A,B,C) and total (F) (unitless). See Hellwarth et al. 1999 PRB Part IV."
-    A
-    B
-    C
-    F
-    "Tau, relaxation time from Kadanoff Boltzmann transport equation (s)."
-    Tau
-    "v and w, raw variational parameters (unitless)."
+    ω
+    β
+    Ω
     v
     w
-    "βred, reduced thermodynamic beta (unitless)."
-    βred
-    "rfsi, Feynman polaron radius (Schultz) (m)."
-    rfsi
-    "rfsmallalpha, small-alpha asymptotic approximation (unitless)."
-    rfsmallalpha
-
-    # Setup of simulation. These parameters are sent to the function.
-
-    "α, Fröhlich alpha coupling parameter (unitless)."
-    α
-    "mb, Band effective mass (mₑ)."
-    mb
-    "ω, effective dielectric frequency (2π THz)."
-    ω
+    F
+    κ
+    M
+    z
+    σ
+    μ
 end
 
 # structure initialisation
-Polaron() = Polaron([], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
+# Polaron() = Polaron([], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 
 "NewPolaron. Structure to store data of polaron solution and other parameters, for each temperature or frequency."
 struct NewPolaron
@@ -93,70 +110,22 @@ struct NewPolaron
     μ
 end
 
-function combine_polarons(x::Vector{NewPolaron})
-
-    Tlen = length(x)
-    N_params = length(x[1].v)
-    N_modes = length(x[1].ω)
-    Ωlen = length(x[1].Ω)
-
-    α = [x[1].α[i] for i in 1:N_modes]
-    T = [x[i].T for i in 1:Tlen]
-    β = [x[i].β[j] for i in 1:Tlen, j in 1:N_modes]
-    ω = x[1].ω
-    v = [x[i].v[j] for i in 1:Tlen, j in 1:N_params]
-    w = [x[i].w[j] for i in 1:Tlen, j in 1:N_params]
-    κ = [x[i].κ[j] for i in 1:Tlen, j in 1:N_params]
-    M = [x[i].M[j] for i in 1:Tlen, j in 1:N_params]
-    F = [x[i].F for i in 1:Tlen]
-    Ω = x[1].Ω
-    Z = [x[i].Z[j] for i in 1:Tlen, j in 1:Ωlen]
-    σ = [x[i].σ[j] for i in 1:Tlen, j in 1:Ωlen]
-    μ = [x[i].μ for i in 1:Tlen]
-
-    return NewPolaron(α, T, β, ω, v, w, κ, M, F, Ω, Z, σ, μ)
-end
-
-function combine_polarons(x::Matrix{NewPolaron})
-
-    Tlen, αlen = size(x)
-    Ωlen = length(x[1,1].Ω)
-    N_params = length(x[1,1].v)
-    N_modes = length(x[1,1].ω)
-
-    α = [x[1,j].α[k] for j in 1:αlen, k in 1:N_modes]
-    T = [x[i,1].T for i in 1:Tlen]
-    β = [x[i,1].β[k] for i in 1:Tlen, k in 1:N_modes]
-    ω = x[1,1].ω
-    v = [x[i, j].v[k] for i in 1:Tlen, j in 1:αlen, k in 1:N_params]
-    w = [x[i, j].w[k] for i in 1:Tlen, j in 1:αlen, k in 1:N_params]
-    κ = [x[i, j].κ[k] for i in 1:Tlen, j in 1:αlen, k in 1:N_params]
-    M = [x[i, j].M[k] for i in 1:Tlen, j in 1:αlen, k in 1:N_params]
-    F = [x[i, j].F for i in 1:Tlen, j in 1:αlen]
-    Ω = x[1, 1].Ω
-    Z = [x[i, j].Z[k] for i in 1:Tlen, j in 1:αlen, k in 1:Ωlen]
-    σ = [x[i, j].σ[k] for i in 1:Tlen, j in 1:αlen, k in 1:Ωlen]
-    μ = [x[i, j].μ for i in 1:Tlen, j in 1:αlen]
-
-    return NewPolaron(α, T, β, ω, v, w, κ, M, F, Ω, Z, σ, μ)
-end
-
 # Broadcast Polaron data.
-function Base.show(io::IO, x::NewPolaron)
+function Base.show(io::IO, x::Polaron)
     flush(stdout)
     println("-------------------------------------------------")
     println(" Polaron Information: ")
     println("-------------------------------------------------") 
-    println(IOContext(stdout, :limit => true), "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round.(sum(x.α), digits=3)) 
+    println(IOContext(stdout, :limit => true), "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round.(x.αsum, digits=3)) 
     println(IOContext(stdout, :limit => true), "Temperatures | T = ", round.(x.T, digits=3), " K")
-    println(IOContext(stdout, :limit => true), "Reduced thermodynamic | β = ", round.(x.β, digits=3))
     println(IOContext(stdout, :limit => true), "Phonon frequencies | ω = ", round.(x.ω, digits=3), " 2π THz")
+    println(IOContext(stdout, :limit => true), "Reduced thermodynamic | β = ", round.(x.β, digits=3))
     println(IOContext(stdout, :limit => true), "Variational parameters | v = ", round.(x.v, digits=3), " ω | w = ", round.(x.w, digits=3), " ω")
     println(IOContext(stdout, :limit => true), "Fictitious spring constant | κ = ", round.(x.κ, digits=3), " kg/s²")
     println(IOContext(stdout, :limit => true), "Fictitious mass | M = ", round.(x.M, digits=3), " kg")
     println(IOContext(stdout, :limit => true), "Free energy | F = ", round.(x.F, digits=3), " meV")
     println(IOContext(stdout, :limit => true), "Electric field frequency | Ω = ", round.(Float64.(x.Ω), digits=3), " 2π THz")
-    println(IOContext(stdout, :limit => true), "Complex impedance | Z = ", x.Z .|> y -> round.(ComplexF64.(y), digits=3), " V/A")
+    println(IOContext(stdout, :limit => true), "Complex impedance | z = ", x.z .|> y -> round.(ComplexF64.(y), digits=3), " V/A")
     println(IOContext(stdout, :limit => true), "Complex conductivity | σ = ", x.σ .|> y -> round.(ComplexF64.(y), digits=3), " A/V")
     println(IOContext(stdout, :limit => true), "Mobility | μ = ", round.(Float64.(x.μ), digits=3), " cm²/Vs")
     println("-------------------------------------------------")

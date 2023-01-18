@@ -262,6 +262,159 @@ function polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Boo
     return (p)
 end
 
+function polaron(α::Real, T::Real, Ω::Real; ω = 1, v_guess = 3.1, w_guess = 3.0)
+
+    # Calculate reduced thermodynamic betas for each phonon mode.
+    # If temperature is zero, return Inf.
+    β = ω / T
+
+    # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
+    v, w, F = feynmanvw(v_guess, w_guess, α, ω, β)
+
+    # Calculate fictitious spring constants for each alpha parameter and temperature. Returns a Matrix.
+    κ = v^2 - w^2
+
+    # Calculate fictitious masses for each alpha parameter and temperature. Returns a Matrix.
+    M = κ / w^2
+
+    # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
+    z = polaron_complex_impedence(Ω, β, α, v, w; ω = ω) 
+
+    # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
+    σ = 1 ./ z
+
+    # Calculates the dc mobility for each alpha parameter and each temperature.
+    μ = real.(σ)
+
+    Polaron(α, α, T, ω, β, Ω, v, w, F, κ, M, z, σ, μ)
+end
+
+function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose = false)
+
+    num_α = size(αrange, 1)
+    num_T = length(Trange)
+    num_Ω = length(Ωrange)
+    num_ω = length(ω)
+
+    function reduce_array(a) 
+        if length(a) == 1
+            only(a)
+        else 
+            dropdims(a, dims = tuple(findall(size(a) .== 1)...))
+        end
+    end
+
+    @assert length(v_guesses) == length(w_guesses) "v and w guesses must be the same length."
+    num_vw = length(v_guesses)
+
+    p = [
+        αrange,                                             # alphas
+        sum(αrange, dims=2),                                # alphas sums
+        Trange,                                             # temperatures
+        ω,                                                  # phonon frequencies
+        Matrix{Float64}(undef, num_T, num_ω),               # betas
+        Ωrange,                                             # photon frequencies
+        Array{Float64, 3}(undef, (num_T, num_α, num_vw)),   # v params
+        Array{Float64, 3}(undef, (num_T, num_α, num_vw)),   # w params
+        Matrix{Float64}(undef, (num_T, num_α)),             # energies
+        Array{Float64, 3}(undef, (num_T, num_α, num_vw)),   # spring constants
+        Array{Float64, 3}(undef, (num_T, num_α, num_vw)),   # fictitious masses
+        Array{ComplexF64, 3}(undef, (num_Ω, num_T, num_α)), # complex impedences
+        Array{ComplexF64, 3}(undef, (num_Ω, num_T, num_α)), # complex conductivities
+        Matrix{Float64}(undef, (num_T, num_α))              # mobilities
+    ]
+
+    if verbose
+        print("\n")
+        process = 1
+    end
+
+    for i in eachindex(Trange)
+
+        T = Trange[i]
+
+        if verbose
+            println("\e[2K\u1b[1F[Progress: $(process[]) / $(num_α * num_T * num_Ω) ($(round(process[] / (num_α * num_T * num_Ω) * 100, digits=1)) %)] | Initialising... | Temperature T = $T K                            ")
+        end
+
+        # Calculate reduced thermodynamic betas for each phonon mode.
+        # If temperature is zero, return Inf.
+        β = ω ./ T
+        p[5][i, :] .= β  
+        
+        for j in axes(αrange, 1)
+
+            α = αrange[j, :]
+
+            # Calculate variational parameters for each alpha parameter and temperature. Returns a Matrix of tuples.
+            v, w, F = feynmanvw(v_guesses, w_guesses, α, ω, β)
+            v_guesses, w_guesses = v, w
+            p[7][i, j, :] .= v
+            p[8][i, j, :] .= w
+            p[9][i, j] = F
+
+            # Calculate fictitious spring constants for each alpha parameter and temperature. Returns a Matrix.
+            p[10][i, j, :] .= v .^2 .- w .^2
+
+            # Calculate fictitious masses for each alpha parameter and temperature. Returns a Matrix.
+            p[11][i, j, :] .= (v .^2 .- w .^2) ./ w .^2
+
+            for k in eachindex(Ωrange)
+
+                Ω = Ωrange[k]
+
+                # Calculate complex impedances for each alpha parameter, frequency and temperature. Returns a 3D Array.
+                z = polaron_complex_impedence(Ω, β, α, v, w; ω = ω) 
+                p[12][k, i, j] = z
+
+                # Calculate complex conductivities for each alpha parameter, frequency and temperature. Returns a 3D array.
+                p[13][k, i, j] = 1 / z
+
+                if verbose
+                    println("\e[2K\u1b[1F[Progress: $(process[]) / $(num_α * num_T * num_Ω) ($(round(process[] / (num_α * num_T * num_Ω) * 100, digits=1)) %)] | Coupling α = $(round(sum(α), digits = 2)) | Temperature T = $T K | Frequency Ω = $Ω THz                         ")
+                    process += 1
+                end
+            end
+
+            # Calculates the dc mobility for each alpha parameter and each temperature.
+            p[14][i, j] = polaron_mobility(β, α, v, w; ω = ω)
+        end
+    end
+
+    return Polaron(reduce_array.(p)...)
+end
+
+polaron(αrange, Trange, Ωrange, ω; verbose = false) = polaron(αrange, Trange, Ωrange, ω, 3.11, 2.87; verbose = verbose)
+polaron(α::Real, Trange, Ωrange, ω; verbose = false) = polaron([α], Trange, Ωrange, ω; verbose = verbose)
+
+function polaron(ϵ_optic, m_eff, volume, ir_activity::Vector, phonon_freqs::Vector, Trange, Ωrange; verbose = false)
+
+    ϵ_ionic = ϵ_ionic_mode.(phonon_freqs, ir_activity, volume)
+    α = frohlichalpha.(ϵ_optic, ϵ_ionic, sum(ϵ_ionic), phonon_freqs, m_eff)
+    p = polaron(α', Trange, Ωrange, phonon_freqs .* 2π * 1e12 * ħ / kB; verbose = verbose)
+
+    # Units
+    F_unit = p.F .* (kB / eV * 1000)                              # meV
+    z_unit = p.z .* (1e12 * me * m_eff * volume * 100^3 / eV^2)   # Ohms
+    σ_unit = p.σ ./ (1e12 * me * m_eff * volume * 100^3 / eV^2)   # Siemens
+    μ_unit = p.μ .* (eV / (1e12 * me * m_eff) * 100^2)            # cm^2/Vs
+
+    return Polaron(p.α, p.αsum, p.T, phonon_freqs, p.β, p.Ω, p.v, p.w, F_unit, p.κ, p.M, z_unit, σ_unit, μ_unit)
+end
+
+function polaron(ϵ_optic, ϵ_static, m_eff, volume, phonon_freq, Trange, Ωrange; verbose = false) 
+    α = frohlichalpha(ϵ_optic, ϵ_static, phonon_freq, m_eff)
+    p = polaron(α, Trange, Ωrange, phonon_freq * 2π * 1e12 * ħ / kB; verbose = verbose)
+
+    # Units
+    F_unit = p.F .* (kB / eV * 1000)                              # meV
+    z_unit = p.z .* (1e12 * me * m_eff * volume * 100^3 / eV^2)   # Ohms
+    σ_unit = p.σ ./ (1e12 * me * m_eff * volume * 100^3 / eV^2)   # Siemens
+    μ_unit = p.μ .* (eV / (1e12 * me * m_eff) * 100^2)            # cm^2/Vs
+
+    return Polaron(p.α, p.αsum, p.T, phonon_freq, p.β, p.Ω, p.v, p.w, F_unit, p.κ, p.M, z_unit, σ_unit, μ_unit)
+end
+
 """
     make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff; temp = 300.0, efield_freq = 0.0, volume = nothing, ir_activity = nothing, N_params = 1, rtol = 1e-3, verbose = false, threads = false)
 
@@ -309,7 +462,7 @@ make_polaron(
 ```
     
 """
-function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Float64, Ω::Float64; v_guess = 5.4, w_guess = 3.4, volume = nothing, ir_activity = nothing, N_params = 1, verbose = false)
+function make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, T::Real, Ω::Real; v_guess = 5.4, w_guess = 3.4, volume = nothing, ir_activity = nothing, N_params = 1, verbose = false)
 
     # Number of phonon modes.
     N_modes = length(phonon_freq)
