@@ -544,11 +544,21 @@ function F(v, w, α, ω, β)
 
     N_modes = length(ω)
 
+    Ar = Vector{Any}(undef, N_modes)
+    Br = Vector{Any}(undef, N_modes)
+    Cr = Vector{Any}(undef, N_modes)
+    energy = 0.0
+
     # Add contribution to the total free energy from the phonon mode.
-    energy = sum(-(B(v, w, α[j], β[j]) + C(v, w, β[j]) / N_modes + A(v, w, β[j]) / N_modes) * ω[j] for j in eachindex(ω))
+    for j in eachindex(ω)
+        Ar[j] = A(v, w, β[j]) / N_modes * ω[j]
+        Br[j] = B(v, w, α[j], β[j]) * ω[j]
+        Cr[j] = C(v, w, β[j]) / N_modes * ω[j]
+        energy -= (Ar[j] + Br[j] + Cr[j])
+    end
 
     # Free energy in units of meV
-    return energy
+    return energy, sum(Ar), sum(Br), sum(Cr)
 end
 
 """
@@ -568,11 +578,19 @@ function F(v, w, α, ω)
 
     N_modes = length(ω)
 
+    Ar = A(v, w)
+    Br = Vector{Any}(undef, N_modes)
+    Cr = C(v, w)
+    energy = -(Ar + Cr) * sum(ω) / N_modes
+
     # Add contribution to the total free energy from the phonon mode.
-	energy = sum(-(B(v, w, α[j]) + C(v, w) / N_modes + A(v, w) / N_modes) * ω[j] for j in eachindex(ω))
+    for j in eachindex(ω)
+        Br[j] = B(v, w, α[j]) * ω[j]
+        energy -= Br[j]
+    end
 
     # Free energy in units of meV
-    return energy
+    return energy, Ar, sum(Br), Cr
 end
 
 """
@@ -605,7 +623,7 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf)
     upper = fill(upper_limit, 2 * N_params)
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = F([x[2 * n - 1] for n in 1:N_params] .+ [x[2 * n] for n in 1:N_params], [x[2 * n] for n in 1:N_params], αωβ...)
+	f(x) = F([x[2 * n - 1] for n in 1:N_params] .+ [x[2 * n] for n in 1:N_params], [x[2 * n] for n in 1:N_params], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -618,18 +636,18 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf)
 
     # Extract the v and w parameters that minimised the free energy.
     var_params = Optim.minimizer(solution)
-    E = Optim.minimum(solution)
 
     # Separate the v and w parameters into one-dimensional arrays (vectors).
     Δv = [var_params[2 * n - 1] for n in 1:N_params]
     w = [var_params[2 * n] for n in 1:N_params]
+    E, A, B, C = F(Δv .+ w, w, αωβ...)
 
-    if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
+    # if Optim.converged(solution) == false
+    #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    # end
 
     # Return the variational parameters that minimised the free energy.
-    return (Δv .+ w, w, E)
+    return Δv .+ w, w, E, A, B, C
 end
 
 function feynmanvw(v::Real, w::Real, αωβ...; upper_limit = Inf) 
@@ -642,7 +660,7 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit = Inf)
     upper = [upper_limit, upper_limit]
 
 	# The multiple phonon mode free energy function to minimise.
-	f(x) = F(x[1] .+ x[2], x[2], αωβ...)
+	f(x) = F(x[1] .+ x[2], x[2], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -655,12 +673,12 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit = Inf)
 
     # Extract the v and w parameters that minimised the free energy.
     Δv, w = Optim.minimizer(solution)
-    E = Optim.minimum(solution)
+    E, A, B, C = F(Δv .+ w, w, αωβ...)
 
-    if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
+    # if Optim.converged(solution) == false
+    #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    # end
 
     # Return the variational parameters that minimised the free energy.
-    return (Δv .+ w, w, E)
+    return Δv .+ w, w, E, A, B, C
 end

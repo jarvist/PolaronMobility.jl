@@ -20,114 +20,139 @@ const amu = 1.660_539_066_60e-27
 # Structures
 
 "Polaron. Structure to store data of polaron solution and other parameters, for each temperature or frequency."
-# struct Polaron
-#     "T, temperature (K)."
-#     T
-#     "Kμ, Kadanoff mobility (cm²V⁻¹s⁻¹)."
-#     Kμ
-#     "Hμ, Hellwarth mobility (cm²V⁻¹s⁻¹)."
-#     Hμ
-#     "FHIPμ, FHIP mobility (cm²V⁻¹s⁻¹)."
-#     FHIPμ
-#     "k, spring constant."
-#     k
-#     "M, renormalised (phonon-drag) mass (mₑ)."
-#     M
-#     "Osaka free energy components (A,B,C) and total (F) (unitless). See Hellwarth et al. 1999 PRB Part IV."
-#     A
-#     B
-#     C
-#     F
-#     "Tau, relaxation time from Kadanoff Boltzmann transport equation (s)."
-#     Tau
-#     "v and w, raw variational parameters (unitless)."
-#     v
-#     w
-#     "βred, reduced thermodynamic beta (unitless)."
-#     βred
-#     "rfsi, Feynman polaron radius (Schultz) (m)."
-#     rfsi
-#     "rfsmallalpha, small-alpha asymptotic approximation (unitless)."
-#     rfsmallalpha
-
-#     # Setup of simulation. These parameters are sent to the function.
-
-#     "α, Fröhlich alpha coupling parameter (unitless)."
-#     α
-#     "mb, Band effective mass (mₑ)."
-#     mb
-#     "ω, effective dielectric frequency (2π THz)."
-#     ω
-# end
-
-struct Polaron
-    α
-    αsum
-    T
-    ω
-    β
-    Ω
-    v
-    w
-    F
-    κ
-    M
-    z
-    σ
-    μ
-end
-
-# structure initialisation
-# Polaron() = Polaron([], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
-
-"NewPolaron. Structure to store data of polaron solution and other parameters, for each temperature or frequency."
-struct NewPolaron
-    "α, Fröhlich alpha coupling parameter (unitless)"
-    α
+struct OldPolaron
     "T, temperature (K)."
     T
-    "β, reduced Thermodynamic beta (unitless)."
-    β
-    "ω, phonon frequency (2π THz)."
-    ω
-    "v, variational parameters (unitless)."
-    v
-    "w, variational parameters (unitless)."
-    w
-    "κ, fictitious spring constant (multiples of mₑ) (kgs⁻²)."
-    κ
-    "M, fictitious particle (multiples of mₑ) (kg)."
+    "Kμ, Kadanoff mobility (cm²V⁻¹s⁻¹)."
+    Kμ
+    "Hμ, Hellwarth mobility (cm²V⁻¹s⁻¹)."
+    Hμ
+    "FHIPμ, FHIP mobility (cm²V⁻¹s⁻¹)."
+    FHIPμ
+    "k, spring constant."
+    k
+    "M, renormalised (phonon-drag) mass (mₑ)."
     M
-    "F, free energy (meV)."
+    "Osaka free energy components (A,B,C) and total (F) (unitless). See Hellwarth et al. 1999 PRB Part IV."
+    A
+    B
+    C
     F
-    "Ω, electric field frequencies (multiples of phonon frequency ω) (2π THz)."
-    Ω
-    "Z, complex impedence (V/A)."
-    Z
-    "σ, complex conductivity (A/V)."
-    σ
-    "μ, FHIP mobility (cm²V⁻¹s⁻¹)."
-    μ
+    "Tau, relaxation time from Kadanoff Boltzmann transport equation (s)."
+    Tau
+    "v and w, raw variational parameters (unitless)."
+    v
+    w
+    "βred, reduced thermodynamic beta (unitless)."
+    βred
+    "rfsi, Feynman polaron radius (Schultz) (m)."
+    rfsi
+    "rfsmallalpha, small-alpha asymptotic approximation (unitless)."
+    rfsmallalpha
+
+    # Setup of simulation. These parameters are sent to the function.
+
+    "α, Fröhlich alpha coupling parameter (unitless)."
+    α
+    "mb, Band effective mass (mₑ)."
+    mb
+    "ω, effective dielectric frequency (2π THz)."
+    ω
 end
+
+struct Polaron
+    α       # Fröhlich coupling, unitless
+    αeff    # Effective Fröhlich coupling summed for multiple modes, unitless
+    T       # Temperature, K
+    ω       # Phonon mode frequencies, 2π⋅THz
+    # mb      # Particle mass
+    β       # Reduced thermodynamic beta ħω₀/kBT, unitless
+    Ω       # Electric field frequency, 2π⋅THz
+    v0       # Variational parameter v, unitless
+    w0       # Variational parameter w, unitless
+    F0       # Polaron free energy, meV
+    A0       # Bare electron free energy, meV
+    B0       # ⟨S⟩ₜ interaction energy, meV
+    C0       # ⟨Sₜ⟩ₜ free energy of trial system, meV
+    v       # Variational parameter v, unitless
+    w       # Variational parameter w, unitless
+    F       # Polaron free energy, meV
+    A       # Bare electron free energy, meV
+    B       # ⟨S⟩ₜ interaction energy, meV
+    C       # ⟨Sₜ⟩ₜ free energy of trial system, meV
+    # Fw      # Weak coupling energy approximation, meV
+    # Fs      # Strong coupling energy approximation, meV
+    κ       # Fictitious spring constant, unitless (multiples of mₑω₀², electron band-mass and (2π⋅THz)²)
+    M       # Fictitious mass, unitless (multiples of mₑ electron band-mass)
+    R       # Schultz polaron radius, unitless
+    z       # Complex impedence, V/A
+    σ       # Complex conductivity, A/V
+    μ       # DC mobility, cm²/Vs
+    # μK      # Kadanoff DC mobility (cm²/Vs)
+    # μH      # Hellwarth DC mobility (cm²/Vs)
+    # τ       # relaxation time from Kadanoff Boltzmann transport equation
+
+    function Polaron(x...)
+        reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims = tuple(findall(size(a) .== 1)...))
+        new(reduce_array.(x)...)
+    end
+end 
+
+# structure initialisation
+OldPolaron() = OldPolaron([], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 
 # Broadcast Polaron data.
 function Base.show(io::IO, x::Polaron)
     flush(stdout)
-    println("-------------------------------------------------")
-    println(" Polaron Information: ")
-    println("-------------------------------------------------") 
-    println(IOContext(stdout, :limit => true), "Fröhlich coupling | α = ", round.(x.α, digits=3), " | sum(α) = ", round.(x.αsum, digits=3)) 
-    println(IOContext(stdout, :limit => true), "Temperatures | T = ", round.(x.T, digits=3), " K")
-    println(IOContext(stdout, :limit => true), "Phonon frequencies | ω = ", round.(x.ω, digits=3), " 2π THz")
-    println(IOContext(stdout, :limit => true), "Reduced thermodynamic | β = ", round.(x.β, digits=3))
-    println(IOContext(stdout, :limit => true), "Variational parameters | v = ", round.(x.v, digits=3), " ω | w = ", round.(x.w, digits=3), " ω")
-    println(IOContext(stdout, :limit => true), "Fictitious spring constant | κ = ", round.(x.κ, digits=3), " kg/s²")
-    println(IOContext(stdout, :limit => true), "Fictitious mass | M = ", round.(x.M, digits=3), " kg")
-    println(IOContext(stdout, :limit => true), "Free energy | F = ", round.(x.F, digits=3), " meV")
-    println(IOContext(stdout, :limit => true), "Electric field frequency | Ω = ", round.(Float64.(x.Ω), digits=3), " 2π THz")
-    println(IOContext(stdout, :limit => true), "Complex impedance | z = ", x.z .|> y -> round.(ComplexF64.(y), digits=3), " V/A")
-    println(IOContext(stdout, :limit => true), "Complex conductivity | σ = ", x.σ .|> y -> round.(ComplexF64.(y), digits=3), " A/V")
-    println(IOContext(stdout, :limit => true), "Mobility | μ = ", round.(Float64.(x.μ), digits=3), " cm²/Vs")
-    println("-------------------------------------------------")
+    IOContext(stdout, :limit=>true, :displaysize=>(100,80))
+    println("\033[K-----------------------------------------------------------------------")
+    println("\033[K                         Polaron Information:                          ")
+    println("\033[K-----------------------------------------------------------------------") 
+
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KPhonon frequencies         | ω = ", x.ω, " 2π THz")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KFröhlich coupling          | α = ", x.α, " | sum(α) = ", x.αeff) 
+
+    println("\033[K-----------------------------------------------------------------------") 
+    println("\033[K                       Ground State Information:                       ")
+    println("\033[K-----------------------------------------------------------------------") 
+
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KGS variational parameter   | v₀ = ", x.v0, " ω")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KGS variational parameter   | w₀ = ", x.w0, " ω")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KGS Energy                  | E₀ = ", x.F0, " meV")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KGS Electron energy         | A₀ = ", x.A0, " meV")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KGS Interaction energy      | B₀ = ", x.B0, " meV")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KGS Trial energy            | C₀ = ", x.C0, " meV")
+
+    println("\033[K-----------------------------------------------------------------------") 
+    println("\033[K                    Finite Temperature Information:                    ")
+    println("\033[K-----------------------------------------------------------------------") 
+
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KTemperatures               | T = ", x.T, " K")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KReduced thermodynamic      | β = ", x.β)
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KVariational parameter      | v = ", x.v, " ω")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KVariational parameter      | w = ", x.w, " ω")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KFree energy                | F = ", x.F, " meV")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KElectron energy            | A = ", x.A, " meV")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KInteraction energy         | B = ", x.B, " meV")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KTrial energy               | C = ", x.C, " meV")
+
+    println("\033[K-----------------------------------------------------------------------") 
+    println("\033[K                       Trial System Information:                       ")
+    println("\033[K-----------------------------------------------------------------------") 
+
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KFictitious spring constant | κ = ", x.κ, " kg/s²")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KFictitious mass            | M = ", x.M, " mₑ")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KPolaron radius             | R = ", x.R, " rₚ")
+
+    println("\033[K-----------------------------------------------------------------------") 
+    println("\033[K                     Linear Reponse Information:                       ")
+    println("\033[K-----------------------------------------------------------------------") 
+
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KElectric field frequency   | Ω = ", x.Ω, " 2π THz")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KComplex impedance          | z = ", x.z, " V/A")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KComplex conductivity       | σ = ", x.σ, " A/V")
+    println(IOContext(stdout, :limit => true, :compact => true), "\033[KMobility                   | μ = ", x.μ, " cm²/Vs")
+
+    println("\033[K-----------------------------------------------------------------------") 
 end
 
