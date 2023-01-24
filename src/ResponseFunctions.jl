@@ -1,4 +1,4 @@
-# OedipusRex.jl
+# ReponseFunctions.jl
 # - Polaron optical absorption, complex impedence and complex conductivity
 # References:
 # [1] R. P. Feynman, R. W. Hellwarth, C. K. Iddings, and P. M. Platzman, Mobility of slow electrons in a polar crystal, PhysicalReview127, 1004 (1962)
@@ -105,3 +105,101 @@ function polaron_mobility(v, w, α, ω, β)
     end
 end
 
+"""
+    Inverse_FHIP_mobility_lowT(v, w, α, ω, β)
+
+FHIP low-temperature mobility, final result of Feynman1962.
+[1.60] in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv).
+"""
+function Inverse_FHIP_mobility_lowT(v, w, α, ω, β)
+    μ = (w / v)^3 * 3 / (4 * ω^2 * α * β) * exp(ω * β) * exp((v^2 - w^2) / (w^2 * v))
+    return 1 / μ
+end
+
+Inverse_FHIP_mobility_lowT(v, w, α::Vector, ω::Vector, β::Vector) = sum(FHIP_mobility_lowT.(v, w, α, ω, β))
+
+FHIP_mobility_lowT(v, w, α, ω, β) = 1 / Inverse_FHIP_mobility_lowT(v, w, α, ω, β)
+
+"""
+    Inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
+
+Kadanoff low-temperaure mobility, constructed around Boltzmann equation.
+Adds factor of 3 / (2 * β) c.f. FHIP, correcting phonon emission behaviour.
+"""
+function Inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
+    
+    # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mobility.
+    μ_Devreese2016 = (w / v)^3 / (2 * ω * α) * exp(ω * β) * exp((v^2 - w^2) / (w^2 * v))
+
+    # From 1963 Kadanoff (particularly on right-hand-side of page 1367), Eqn. (9), 
+    # we define equilibrium number of phonons (just from temperature T and phonon ω):
+    # N̄ = (exp(β) - 1)^-1.
+    # But! We find that:
+    N̄ = exp(-β) 
+
+    # is only way to get Kadanoff1963 to be self-consistent with
+    # FHIP, and later statements (Devreese) of the Kadanoff mobility.
+    # It suggests that Kadanoff used the wrong identy for Nbar in Eqn. (23b) for
+    # the Γ₀ function, and should have used a version with the -1 to
+    # account for Bose / phonon statistics!
+
+    # Between Eqns. (23) and (24) in Kadanoff1963, for small momenta skip intergration
+    # and sing the fictitious mass M:
+    M = v^2 - w^2 / w^2
+
+    # we get for Γ₀:
+    Γ₀ = 2 * α * N̄ * (M + 1)^(1 / 2) * exp(-M / v) * ω 
+
+    # NB: Kadanoff1963 uses ħ = ω = mb = 1 units. 
+    # Factor of omega to get it as a rate relative to phonon frequency
+    # Factor of omega*hbar to get it as a rate per energy window.
+    # Hence, for the mobility from Eqn. (25) in Kadanoff1963 (SI effective mass q / mb):
+    μ_Kadanoff1963 = 1 / ((M + 1) * Γ₀) 
+
+    # # Energy loss is simply energy * rate:
+    # energy_loss = ω * Γ₀ / 2π 
+
+    # # Lifetime is:
+    # τ = 1 / Γ₀
+
+    return 1 / μ_Devreese2016, 1 / μ_Kadanoff1963, Γ₀
+end
+
+Inverse_Kadanoff_mobility_lowT(v, w, α::Vector, ω::Vector, β::Vector) = map(+, map(x -> 1 ./ x, Inverse_Kadanoff_mobility_lowT.(v, w, α, ω, β))...)
+
+Kadanoff_mobility_lowT(v, w, α, ω, β) = 1 ./ Inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
+
+"""
+    Inverse_Hellwarth_mobility(v, w, α, ω, β)
+
+Calculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
+Directly performs contour integration in Feynman1962, for finite temperature DC mobility.
+Eqns. (2) and (1) are going back to the general (pre low-T limit) formulas in Feynman1962.  
+To evaluate these, you need to do the explicit contour integration to get the polaron self-energy.
+
+See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+"""
+function Inverse_Hellwarth_mobility(v, w, α, ω, β)
+
+    R = (v^2 - w^2) / (w^2 * v) # inline, page 300 just after Eqn (2)
+    b = R * ω * β / sinh(ω * β * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
+    a = sqrt((ω * β / 2)^2 + R * ω * β * coth(ω * β * v / 2))
+    k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3 / 2) * cos(u) # integrand in (2)
+    K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
+
+    # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
+    RHS = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
+    μ = RHS^(-1) / ω
+
+    # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
+    # So let's test this:
+    K_0 = quadgk(u -> k(u, a, 0, v), 0, Inf)[1] # Inserted b=0 into k(u, a, b, v).
+    RHS_0 = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
+    μ_0 = RHS_0^(-1) / ω       
+
+    return μ, μ_0
+end
+
+Inverse_Hellwarth_mobility(v, w, α::Vector, ω::Vector, β::Vector) = map(+, map(x -> 1 ./ x, Inverse_Hellwarth_mobility.(v, w, α, ω, β))...)
+
+Hellwarth_mobility(v, w, α, ω, β) = 1 ./ Inverse_Hellwarth_mobility(v, w, α, ω, β)
