@@ -118,7 +118,7 @@
 
     # Mobility
 
-    μ = polaron_mobility(β, α, v, w; ω=ω) * eV / (1e12 * me * m_eff) * 100^2
+    μ = polaron_mobility(v, w, α, ω, β) * eV / (1e12 * me * m_eff) * 100^2
 
     @testset "Multiple mode mobility" begin
 
@@ -129,9 +129,9 @@
 
     # Impedence 
 
-    Z_dc = polaron_complex_impedence(0, β, α, v, w; ω=ω) / sqrt(ε_0 * ϵ_optic) / c # DC limit
+    Z_dc = polaron_complex_impedence(v, w, α, ω, β, 0) / sqrt(ε_0 * ϵ_optic) / c # DC limit 
 
-    Z = polaron_complex_impedence(50, β, α, v, w; ω=ω) / sqrt(ε_0 * ϵ_optic) / c # AC limit
+    Z = polaron_complex_impedence(v, w, α, ω, β, 50) / sqrt(ε_0 * ϵ_optic) / c # AC limit
 
     @testset "Multiple mode impedence" begin
 
@@ -146,9 +146,9 @@
 
     # Conductivity
 
-    σ_dc = polaron_complex_conductivity(0, β, α, v, w; ω=ω) / sqrt(ε_0 * ϵ_optic) / c # DC limit
+    σ_dc = polaron_complex_conductivity(v, w, α, ω, β, 0) / sqrt(ε_0 * ϵ_optic) / c # DC limit
 
-    σ = polaron_complex_conductivity(50, β, α, v, w; ω=ω) / sqrt(ε_0 * ϵ_optic) / c # AC limit
+    σ = polaron_complex_conductivity(v, w, α, ω, β, 50) / sqrt(ε_0 * ϵ_optic) / c # AC limit
 
     @testset "Multiple mode conductivity" begin
 
@@ -172,7 +172,9 @@
 
     @testset "Single effective mode MAPI" begin
 
-        singlemode_polaron = make_polaron(ϵ_optic, ϵ_static, Hellwarth_B_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume=volume, verbose=true)
+        MAPIs = material(ϵ_optic, ϵ_static, m_eff, Hellwarth_B_freq)
+
+        singlemode_polaron = polaron(MAPIs, [0, 300], [0.0, 3.0], verbose = true)
 
         println('\n', singlemode_polaron)
 
@@ -180,7 +182,7 @@
         @test singlemode_polaron.v ≈ [3.3086408041087445; 19.8475538058543;;] rtol = 1e-3
         @test singlemode_polaron.w ≈ [2.663393636284299; 16.948170313776515;;] rtol = 1e-3
         @test singlemode_polaron.F ≈ [-23.041731976144206, -35.50791458303716] rtol = 1e-3
-        @test singlemode_polaron.Z ≈ [0.0 + 0.0im 0.018788090292066205 - 0.03208393175185344im; 0.11385158447241861 + 0.0im 0.11055493089398928 - 0.0023752734668726658im] rtol = 1e-3
+        @test singlemode_polaron.z ≈ [0.0 + 0.0im 0.018788090292066205 - 0.03208393175185344im; 0.11385158447241861 + 0.0im 0.11055493089398928 - 0.0023752734668726658im] rtol = 1e-3
         @test singlemode_polaron.σ ≈ [Inf + 0.0im 13.591206780850445 + 23.20934932733805im; 8.783364804573777 - 0.0im 9.041103814835283 + 0.19424817897278485im] rtol = 1e-3
         @test singlemode_polaron.μ ≈ [Inf, 136.42801511578227] rtol = 1e-3
     end
@@ -189,7 +191,9 @@
 
     @testset "Multiple mode (15) MAPI" begin
 
-        multimode_polaron = make_polaron(ϵ_optic, ϵ_static, phonon_freq, m_eff, [0.0, 300.0], [0.0, 3.0]; volume=volume, ir_activity=ir_activity, verbose=true)
+        MAPIm = material(ϵ_optic, ϵ_static, m_eff, phonon_freq, ir_activity, volume)
+
+        multimode_polaron = polaron(MAPIm, [0.0, 300.0], [0.0, 3.0], verbose = true)
 
         println('\n', multimode_polaron)
 
@@ -198,7 +202,7 @@
         @test multimode_polaron.v ≈ [3.292278408796388; 35.19210536768459;;] rtol = 1e-3
         @test multimode_polaron.w ≈ [2.6791835531148824; 32.45415323789612;;] rtol = 1e-3
         @test multimode_polaron.F ≈ [-19.51689103566374, -42.83789660693146] rtol = 1e-3
-        @test multimode_polaron.Z ≈ [0.0 + 0.0im 0.013916138958622561 - 0.026981741004248643im; 0.09684727181281617 + 0.0im 0.09373887929361482 - 0.005863539083853755im] rtol = 1e-3
+        @test multimode_polaron.z ≈ [0.0 + 0.0im 0.013916138958622561 - 0.026981741004248643im; 0.09684727181281617 + 0.0im 0.09373887929361482 - 0.005863539083853755im] rtol = 1e-3
         @test multimode_polaron.σ ≈ [Inf + 0.0im 15.098776751407437 + 29.274735255142225im; 10.325536086682682 - 0.0im 10.62635402747373 + 0.6646979634116789im] rtol = 1e-3
         @test multimode_polaron.μ ≈ [Inf, 160.38242829458747] rtol = 1e-3
     end
