@@ -7,11 +7,11 @@ PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
 """
 module PolaronMobility
 
-export Polaron, polaron                           # Type to hold the polaron data.
-export Material, material                         # Type to hold material specific data.
-export frohlichalpha, ϵ_ionic_mode, F, feynmanvw  # Frohlich alpha, energy and minimisation functions.              
-export HellwarthBScheme, HellwarthAScheme         # Hellwarth effective mode schemes.
-export polaron_memory_function                    # Polaron memory functions
+export Polaron, polaron                                   # Type to hold the polaron data.
+export Material, material                                 # Type to hold material specific data.
+export frohlichalpha, ϵ_ionic_mode, F, A, B, C, feynmanvw # Frohlich alpha, energy and minimisation functions.              
+export HellwarthBScheme, HellwarthAScheme                 # Hellwarth effective mode schemes.
+export polaron_memory_function                            # Polaron memory functions
 export polaron_complex_impedence, polaron_complex_conductivity, optical_absorption        # Response functions.
 export polaron_mobility, Hellwarth_mobility, Kadanoff_mobility_lowT, FHIP_mobility_lowT   # Mobility functions.
 export save_polaron, load_polaron # Functions to save and load Polaron types to/from .jld format.

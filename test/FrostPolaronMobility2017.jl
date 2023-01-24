@@ -2,6 +2,7 @@
 
 @testset "FrostPolaronMobility2017" begin
 
+    using QuadGK
 # Physicalants
 
 "Planck'sant, (kgm²s⁻¹)."
@@ -59,6 +60,9 @@ struct OldPolaron
     "ω, effective dielectric frequency (2π THz)."
     ω
 end
+
+# structure initialisation
+OldPolaron() = OldPolaron([], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 
 """
     polaronmobility(Trange, ε_Inf, ε_S, freq, effectivemass; verbose::Bool=false)

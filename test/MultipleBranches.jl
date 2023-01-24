@@ -1,12 +1,19 @@
 @testset "MultipleBranches" begin
 
-    # Physical constants
-    ħ = 1.05457162825e-34          # kg m2 / s
-    eV = q = 1.602176487e-19           # kg m2 / s2
-    me = 9.10938188e-31            # kg
-    kB = 1.3806504e-23            # kg m2 / K s2
-    ε_0 = 8.854E-12                 # Units: C2N−1m−2, permittivity of free space
-    c = 3e8
+    "Planck'sant, (kgm²s⁻¹)."
+    hbar = ħ = 1.054571817e-34
+    "Electron charge, (kgm²s⁻²)."
+    eV = q = ElectronVolt = 1.602176634e-19
+    "Electron mass, (kg)."
+    me = MassElectron = 9.1093837015e-31
+    "Boltzmann'sant, (kgm²K⁻¹)."
+    Boltzmann = kB = 1.380649e-23
+    "Permittivity of free space, (C²N⁻¹m⁻²)."
+    ε_0 = ϵ_0 = 8.85418682e-12
+    "Speed of light, (ms⁻¹)."
+    c = 299792458
+    "Atomic mass unit, (kg)"
+    amu = 1.660_539_066_60e-2
 
     """
         frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
