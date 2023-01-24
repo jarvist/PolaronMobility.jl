@@ -17,6 +17,7 @@ export ϵ_ionic_mode, multi_frohlichalpha, extended_feynmanvw, multi_F, polaron_
 export frohlichPartial, IRtoDielectric, IRtoalpha, DielectricFromIRmode
 export Hellwarth1999mobilityRHS, Hellwarth_mobility
 export make_polaron, save_polaron, load_polaron, combine_polarons
+export reduce_array
 
 
 ##### load in library routines... #####
