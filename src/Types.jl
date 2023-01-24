@@ -60,6 +60,8 @@ struct OldPolaron
     ω
 end
 
+reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims = tuple(findall(size(a) .== 1)...))
+
 struct Material
     optical # Optical dielectric constant
     static  # Static dielectric constant
@@ -70,7 +72,6 @@ struct Material
     ir      # Infrared activities
     volume  # Unit cell volumes
     function Material(x...)
-        reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims = tuple(findall(size(a) .== 1)...))
         new(reduce_array.(x)...)
     end
 end
@@ -87,19 +88,19 @@ function material(ϵ_optic, ϵ_static, m_eff, phonon_freqs, ir_activity, volume)
     return Material(ϵ_optic, ϵ_static, ϵ_ionic, m_eff, α, phonon_freqs, ir_activity, volume)
 end
 
-function Base.show(io::IO, x::Material)
-    flush(stdout)
+function Base.show(io::IO, ::MIME"text/plain", x::Material)
+    flush(io)
     println("\e[K------------------------------------------")
     println("\e[K           Material Information           ")
     println("\e[K------------------------------------------")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KOptic dielectric   | ϵ∞ = ", x.optical, " ")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KStatic dielectric  | ϵ0 = ", x.static, " ")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KIonic dielectric   | ϵᵢ = ", x.ionic, " ")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KBand mass          | mb = ", x.mb, " mₑ")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KFröhlich coupling  | α = ", x.α)
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KPhonon frequencies | f = ", x.freqs, " THz")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KIR activities      | IR = ", x.ir, " ")
-    println(IOContext(stdout, :compact => true, :limit => true), "\e[KUnit cell volume   | V₀ = ", x.volume, " m³")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KOptic dielectric   | ϵ∞ = ", x.optical, " ")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KStatic dielectric  | ϵ0 = ", x.static, " ")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KIonic dielectric   | ϵᵢ = ", x.ionic, " ")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KBand mass          | mb = ", x.mb, " mₑ")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KFröhlich coupling  | α = ", x.α)
+    println(IOContext(io, :compact => true, :limit => true), "\e[KPhonon frequencies | f = ", x.freqs, " THz")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KIR activities      | IR = ", x.ir, " ")
+    println(IOContext(io, :compact => true, :limit => true), "\e[KUnit cell volume   | V₀ = ", x.volume, " m³")
     println("\e[K-------------------------------------------") 
 end
 
@@ -135,7 +136,6 @@ struct Polaron
     # τ       # relaxation time from Kadanoff Boltzmann transport equation
 
     function Polaron(x...)
-        reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims = tuple(findall(size(a) .== 1)...))
         new(reduce_array.(x)...)
     end
 end 
@@ -144,54 +144,54 @@ end
 OldPolaron() = OldPolaron([], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 
 # Broadcast Polaron data.
-function Base.show(io::IO, x::Polaron)
+function Base.show(io::IO, ::MIME"text/plain", x::Polaron)
     println("\e[K-----------------------------------------------------------------------")
     println("\e[K                         Polaron Information:                          ")
     println("\e[K-----------------------------------------------------------------------") 
 
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KPhonon frequencies         | ω = ", x.ω, " 2π THz")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KFröhlich coupling          | α = ", x.α, " | sum(α) = ", x.αeff) 
+    println(IOContext(io, :limit => true, :compact => true), "\e[KPhonon frequencies         | ω = ", x.ω, " 2π THz")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KFröhlich coupling          | α = ", x.α, " | sum(α) = ", x.αeff) 
 
     println("\e[K-----------------------------------------------------------------------") 
     println("\e[K                       Ground State Information:                       ")
     println("\e[K-----------------------------------------------------------------------") 
 
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KGS variational parameter   | v₀ = ", x.v0, " ω")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KGS variational parameter   | w₀ = ", x.w0, " ω")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KGS Energy                  | E₀ = ", x.F0, " meV")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KGS Electron energy         | A₀ = ", x.A0, " meV")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KGS Interaction energy      | B₀ = ", x.B0, " meV")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KGS Trial energy            | C₀ = ", x.C0, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KGS variational parameter   | v₀ = ", x.v0, " ω")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KGS variational parameter   | w₀ = ", x.w0, " ω")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KGS Energy                  | E₀ = ", x.F0, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KGS Electron energy         | A₀ = ", x.A0, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KGS Interaction energy      | B₀ = ", x.B0, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KGS Trial energy            | C₀ = ", x.C0, " meV")
 
     println("\e[K-----------------------------------------------------------------------") 
     println("\e[K                    Finite Temperature Information:                    ")
     println("\e[K-----------------------------------------------------------------------") 
 
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KTemperatures               | T = ", x.T, " K")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KReduced thermodynamic      | β = ", x.β)
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KVariational parameter      | v = ", x.v, " ω")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KVariational parameter      | w = ", x.w, " ω")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KFree energy                | F = ", x.F, " meV")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KElectron energy            | A = ", x.A, " meV")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KInteraction energy         | B = ", x.B, " meV")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KTrial energy               | C = ", x.C, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KTemperatures               | T = ", x.T, " K")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KReduced thermodynamic      | β = ", x.β)
+    println(IOContext(io, :limit => true, :compact => true), "\e[KVariational parameter      | v = ", x.v, " ω")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KVariational parameter      | w = ", x.w, " ω")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KFree energy                | F = ", x.F, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KElectron energy            | A = ", x.A, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KInteraction energy         | B = ", x.B, " meV")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KTrial energy               | C = ", x.C, " meV")
 
     println("\e[K-----------------------------------------------------------------------") 
     println("\e[K                       Trial System Information:                       ")
     println("\e[K-----------------------------------------------------------------------") 
 
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KFictitious spring constant | κ = ", x.κ, " kg/s²")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KFictitious mass            | M = ", x.M, " mₑ")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KPolaron radius             | R = ", x.R, " rₚ")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KFictitious spring constant | κ = ", x.κ, " kg/s²")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KFictitious mass            | M = ", x.M, " mₑ")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KPolaron radius             | R = ", x.R, " rₚ")
 
     println("\e[K-----------------------------------------------------------------------") 
     println("\e[K                     Linear Reponse Information:                       ")
     println("\e[K-----------------------------------------------------------------------") 
 
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KElectric field frequency   | Ω = ", x.Ω, " 2π THz")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KComplex impedance          | z = ", x.z, " V/A")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KComplex conductivity       | σ = ", x.σ, " A/V")
-    println(IOContext(stdout, :limit => true, :compact => true), "\e[KMobility                   | μ = ", x.μ, " cm²/Vs")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KElectric field frequency   | Ω = ", x.Ω, " 2π THz")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KComplex impedance          | z = ", x.z, " V/A")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KComplex conductivity       | σ = ", x.σ, " A/V")
+    println(IOContext(io, :limit => true, :compact => true), "\e[KMobility                   | μ = ", x.μ, " cm²/Vs")
 
     println("\033[K-----------------------------------------------------------------------") 
 end
