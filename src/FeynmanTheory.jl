@@ -68,7 +68,7 @@ Hellwarth's Y expression from Eqn. (62d) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-Y(x, v, β) = 1 / (1 - exp(-v * β)) * (1 + exp(-v * β) - exp(-v * x) - exp(v * (x - β)))
+Y(x, v, β) = 1 / (1 - exp(-v * β)) * (1 + exp(-v * β) - exp(-v * x) - exp(v * (x - β))) + eps(x)
 
 """
     f(x, v, w, β)
