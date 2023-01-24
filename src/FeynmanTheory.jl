@@ -13,7 +13,7 @@ function frohlichalpha(ϵ_optic, ϵ_static, freq, m_eff)
     # This gives numeric agreement with literature values.  This is required as
     # the contemporary 1950s and 1960s literature implicitly used atomic units,
     # where the electric constant ^-1 has this factor baked in, k_e=1/(4πϵ_0).
-    α = 1/2 / (4 * π * ϵ_0) *           # Units: m/F
+    α = 1 / 2 / (4 * π * ϵ_0) *           # Units: m/F
         (1 / ϵ_optic - 1 / ϵ_static) *   # Units: none
         (eV^2 / (ħ * ω)) *               # Units: F
         sqrt(2 * me * m_eff * ω / ħ)    # Units: 1/m
@@ -30,7 +30,7 @@ Integrand of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy 
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-B_integrand(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))))^(-1/2) * exp(-τ)
+B_integrand(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))))^(-1 / 2) * exp(-τ)
 
 """
     B(v, w, α)
@@ -39,7 +39,7 @@ Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy e
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-B(v, w, α) = π^(-1/2) * α * v * quadgk(τ -> B_integrand(τ, v, w), 0, Inf)[1]
+B(v, w, α) = π^(-1 / 2) * α * v * quadgk(τ -> B_integrand(τ, v, w), 0, Inf)[1]
 
 A(v, w) = -3 * (v - w) / 2
 
@@ -498,9 +498,9 @@ See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.29
 """
 function A(v::Vector, w::Vector, β)
     # Sum over the contributions from each fictitious mass.
-    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0 : 
-    log(v[i]) -  log(w[i]) - β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * β)) + log(1 - exp(-w[i] * β))
-    for i in eachindex(v))
+    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0 :
+                               log(v[i]) - log(w[i]) - β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * β)) + log(1 - exp(-w[i] * β))
+                               for i in eachindex(v))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
     3 / β * s
 end
@@ -516,7 +516,7 @@ Calculates `A(v, w, β)` but at zero-temperature, `β = Inf`.
 """
 function A(v::Vector, w::Vector)
     s = sum(v .- w)
-    return -3 * s / 2 
+    return -3 * s / 2
 end
 
 """
@@ -607,7 +607,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`F`](@ref).
 """
-function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf) 
+function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=Inf)
 
     if length(v) != length(w)
         return error("The number of variational parameters v & w must be equal.")
@@ -617,17 +617,17 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf)
 
     Δv = v .- w
     initial = vcat(Δv .+ repeat([eps(Float64)], N_params), w)
- 
+
     # Limits of the optimisation.
     lower = fill(0.0, 2 * N_params)
     upper = fill(upper_limit, 2 * N_params)
 
-	# The multiple phonon mode free energy function to minimise.
-	f(x) = F([x[2 * n - 1] for n in 1:N_params] .+ [x[2 * n] for n in 1:N_params], [x[2 * n] for n in 1:N_params], αωβ...)[1]
+    # The multiple phonon mode free energy function to minimise.
+    f(x) = F([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
@@ -638,8 +638,8 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf)
     var_params = Optim.minimizer(solution)
 
     # Separate the v and w parameters into one-dimensional arrays (vectors).
-    Δv = [var_params[2 * n - 1] for n in 1:N_params]
-    w = [var_params[2 * n] for n in 1:N_params]
+    Δv = [var_params[2*n-1] for n in 1:N_params]
+    w = [var_params[2*n] for n in 1:N_params]
     E, A, B, C = F(Δv .+ w, w, αωβ...)
 
     # if Optim.converged(solution) == false
@@ -650,21 +650,21 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit = Inf)
     return Δv .+ w, w, E, A, B, C
 end
 
-function feynmanvw(v::Real, w::Real, αωβ...; upper_limit = Inf) 
+function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=Inf)
 
     Δv = v .- w
     initial = [Δv + eps(Float64), w]
- 
+
     # Limits of the optimisation.
     lower = [0.0, 0.0]
     upper = [upper_limit, upper_limit]
 
-	# The multiple phonon mode free energy function to minimise.
-	f(x) = F(x[1] .+ x[2], x[2], αωβ...)[1]
+    # The multiple phonon mode free energy function to minimise.
+    f(x) = F(x[1] .+ x[2], x[2], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff = :forward),
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
