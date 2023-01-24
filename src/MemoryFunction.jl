@@ -24,7 +24,7 @@ See R. P. Feynman, R. W. Hellwarth, C. K. Iddings, and P. M. Platzman, Mobility 
 
 See also [`polaron_memory_function_thermal`](@ref), [`polaron_memory_function_athermal`](@ref), [`polaron_memory_function_dc`](@ref).
 """
-function polaron_memory_function(Ω, β, α, v, w; ω=1)
+function polaron_memory_function(v, w, α, ω, β, Ω)
 
     # Zero temperature and frequency is just zero.
     if Ω == zero(Ω) && any(x -> x == Inf, β)
@@ -32,15 +32,15 @@ function polaron_memory_function(Ω, β, α, v, w; ω=1)
 
         # DC zero frequency limit at finite temperatures.
     elseif Ω == zero(Ω) && any(x -> x != Inf, β)
-        return polaron_memory_function_dc(β, α, v, w; ω=ω)
+        return polaron_memory_function_dc(v, w, α, ω, β)
 
         # Zero temperature limit at AC finite frequencies.
     elseif Ω != zero(Ω) && any(x -> x == Inf, β)
-        return polaron_memory_function_athermal(Ω, α, v, w; ω=ω)
+        return polaron_memory_function_athermal(v, w, α, ω, Ω)
 
         # Finite temperatures and frequencies away from zero limits.
     elseif Ω != zero(Ω) && any(x -> x != Inf, β)
-        return polaron_memory_function_thermal(Ω, β, α, v, w; ω=ω)
+        return polaron_memory_function_thermal(v, w, α, ω, β, Ω)
 
         # Any other frequencies or temperatures (e.g. negative or complex) prints error message.
     else
@@ -73,22 +73,24 @@ Calculate polaron complex memory function at finite temperature inclusive of mul
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_thermal(Ω, β, α, v, w; ω=1)
+function polaron_memory_function_thermal(v, w, α, ω, β, Ω)
 
-    D(τ, β) = τ * (1 - τ / β) + (v^2 - w^2) * ((1 + exp(-v * β) - exp(-v * τ) - exp(v * (τ - β))) / (v * (1 - exp(-v * β))) - τ * (1 - τ / β)) / v^2
+    D(t, β) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * β) / 2) / sinh(v * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β) / v^2
 
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D(-1im * t, β)^(3 / 2)
+    S(t, β) = cos(ω * t - im * ω * β / 2) / sinh(ω * β / 2) / D(t, β)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t, β, Ω) = (1 - exp(1im * Ω * 2π * t)) * imag(S(t, β))
+    integrand(t, β, Ω) = (1 - exp(im * Ω * t)) * imag(S(t, β))
 
-    integral = quadgk.(t -> integrand.(t, β, Ω ./ ω), 0, Inf, rtol=1e-4)[1]
+    integral = quadgk(t -> integrand(t, β, Ω), 0, Inf)[1]
 
-    memory = sum(2 .* α .* ω .^ 2 .* integral ./ (3 * √π * Ω * 2π))
+    memory = 2 * α * ω^3 * integral / (3 * √π * Ω)
 
     return memory
 end
+
+polaron_memory_function_thermal(v, w, α::Vector, ω::Vector, β::Vector, Ω) = sum(polaron_memory_function_thermal.(v, w, α, ω, β, Ω))
 
 """
     function polaron_memory_function_athermal(Ω, α, v, w; ω = 1.0, rtol = 1e-3)
@@ -106,25 +108,23 @@ Calculate polaron complex memory function at zero-temperature inclusive of multi
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_athermal(Ω, α, v, w; ω=1)
+function polaron_memory_function_athermal(v, w, α, ω, Ω;)
 
-    D(τ) = τ + ((v^2 - w^2) / v^2) * ((1 - exp(-v * τ)) / v - τ)
+    D(t) = (v^2 - w^2) * (1 - exp(im * v * t)) / v^3 - im * w^2 * t / v^2
 
     # FHIP1962, page 1009, eqn (36).
-    S(t) = exp(1im * t) / D(-1im * t)^(3 / 2)
-
-    # R = (v^2 - w^2) / w^2 / v
-
-    # # FHIP1962, page 1009, eqn (36).
-    # S(t) = exp(1im * t) / (R * (1 - exp(1im * v * t)) - 1im * t)^(3/2)
+    S(t) = exp(im * ω * t) / D(t)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t, Ω) = (1 - exp(1im * 2π * Ω * t)) * imag(S(t))
+    integrand(t, Ω) = (1 - exp(im * Ω * t)) * imag(S(t))
 
-    memory = sum(2 .* α .* ω .^2 .* quadgk.(t -> integrand.(t, Ω ./ ω), 0, 1e3, rtol=1e-4)[1] ./ (3 * √π * Ω * 2π))
+    integral = quadgk(t -> integrand(1/t-1, Ω)/t^2, 0, 1)[1]
+    memory = 2 * α * ω^3 * integral / (3 * √π * Ω) 
 
     return memory
 end
+
+polaron_memory_function_athermal(v, w, α::Vector, ω::Vector, Ω) = sum(polaron_memory_function_athermal.(v, w, α, ω, Ω))
 
 """
     function polaron_memory_function_dc(β, α, v, w; ω = 1.0, rtol = 1e-3)
@@ -142,20 +142,20 @@ Calculate zero-frequency polaron complex memory function at finite temperature i
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_dc(β, α, v, w; ω=1)
+function polaron_memory_function_dc(v, w, α, ω, β)
 
-    D(τ, β) = τ * (1 - τ / β) + (v^2 - w^2) * ((1 + exp(-v * β) - exp(-v * τ) - exp(v * (τ - β))) / (v * (1 - exp(-v * β))) - τ * (1 - τ / β)) / v^2
-
+    D(t, β) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * β) / 2) / sinh(v * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β) / v^2
+    
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = (exp(1im * t) + exp(-1im * t - β)) / (1 - exp(-β)) / D(-1im * t, β)^(3 / 2)
+    S(t, β) = cos(ω * t - im * ω * β / 2) / sinh(ω * β / 2) / D(t, β)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
     integrand(t, β) = -im * t * imag(S(t, β))
 
-    integral = quadgk.(t -> integrand.(t, β), 0, Inf, rtol=1e-4)[1]
-
-    memory = sum(2 .* α .* ω .* integral ./ (3 * √π))
+    integral = quadgk(t -> integrand(t, β), 0, Inf)[1]
+    memory = 2 * α * ω^3 * integral / (3 * √π)
 
     return memory
 end
 
+polaron_memory_function_dc(v, w, α::Vector, ω::Vector, β::Vector) = sum(polaron_memory_function_dc.(v, w, α, ω, β))
