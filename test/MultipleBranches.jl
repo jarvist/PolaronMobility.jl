@@ -1,5 +1,96 @@
 @testset "MultipleBranches" begin
 
+    # Physical constants
+    ħ = 1.05457162825e-34          # kg m2 / s
+    eV = q = 1.602176487e-19           # kg m2 / s2
+    me = 9.10938188e-31            # kg
+    kB = 1.3806504e-23            # kg m2 / K s2
+    ε_0 = 8.854E-12                 # Units: C2N−1m−2, permittivity of free space
+    c = 3e8
+
+    """
+        frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
+    Calculate a (partial) dielectric electron-phonon coupling element.
+    # Arguments
+    - `f`: frequency of mode in THz.
+    - `ϵ_mode`: this mode's contribution to dielectric.
+    - `ϵ_o`: optical dielectric.
+    -  `ϵ_s`: total static dielectric contribution.
+    """
+    function frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)
+        ω = f * 1e12 * 2π
+        α = 1 / (4π * ϵ_0) * ϵ_mode / (ϵ_o * ϵ_s) * (q^2 / ħ) * sqrt(meff * me / (2 * ω * ħ))
+        return α
+    end
+
+    # deprecated signature wrapped via multiple dispatch
+    frohlichPartial(ϵ_o, ϵ_s, ϵ_mode, f, meff) = frohlichPartial((f, ϵ_mode), ϵ_o=ϵ_o, ϵ_s=ϵ_s, meff=meff)
+
+    rows(M::Matrix) = map(x -> reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1])
+
+    """
+        IRtoDielectric(IRmodes, volume)
+    From absolute value of IR activities of phonon modes, generate a per-mode
+    contribution to the low-frequency dielectric constant.
+    IRmodes are tuples f, S with Frequency in THz; InfraRed activity in e^2 amu^-1.
+    """
+    function IRtoDielectric(IRmodes, volume)
+        ϵ = 0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
+        for r in rows(IRmodes)
+            f, S = r # frequency in THz; activity in e^2 amu^-1
+            f = f * 1E12 #* THz
+            ω = 2π * f
+            S = S * q^2 / amu
+            ϵ_mode = S / ω^2 / volume
+            ϵ_mode /= 3 # take isotropic average = divide by 3
+            ϵ += ϵ_mode
+            println("Mode f= $f S= $S ϵ_mode = $(ϵ_mode / ϵ_0)")
+        end
+        println("Raw ionic dielectric contribution: $ϵ absolute $(ϵ / ϵ_0) relative")
+        return ϵ / ϵ_0
+    end
+
+    """
+        IRtoalpha(IR, volume)
+    Calculates contribution to dielectric constant for each polar phonon mode, and thereby the Frohlich alpha contribution for this mode.
+    """
+    function IRtoalpha(IR; volume, ϵ_o, ϵ_s, meff)
+        ϵ = 0.0 #* q^2 * THz^-2 * amu^-1 * m^-3
+        α_sum = 0.0
+        for r in rows(IR)
+            f, S = r # frequency in THz; activity in e^2 amu^-1
+            ω = 2π * f * 1e12
+            S = S * q^2 / amu
+            ϵ_mode = S / ω^2 / volume
+            ϵ_mode /= 3 # take isotropic average = divide by 3
+            ϵ_mode /= ϵ_0 # reduced dielectric constant
+            ϵ += ϵ_mode
+            #println("Mode f= $f S= $S ϵ_mode = $(upreferred(ϵ_mode/u"ϵ0"))")
+            α = frohlichPartial(ϵ_o, ϵ_s, ϵ_mode, f, meff)
+            α_sum += α
+            if (α > 0.1)
+                println("Notable Mode f = $f, α_partial = $α.")
+            end
+        end
+        println("Sum alpha: $(α_sum)")
+        return α_sum
+    end
+
+    """
+        DieletricFromIRmode(IRmode)
+    Calculate dielectric from an individual mode.
+    IRmode is a tuple f, S with Frequency in THz; InfraRed activity in e^2 amu^-1.
+    """
+    function DielectricFromIRmode(IRmode; volume)
+        f, S = IRmode # Assumes Frequency in THz; InfraRed activity in e^2 amu^-1
+        ω = 2π * f * 1e12
+        S = S * q^2 / amu
+        ϵ_mode = S / ω^2 / volume
+        ϵ_mode /= 3 # take isotropic average = divide by 3
+        ϵ_mode /= ϵ_0 # reduced dielectric
+        return ϵ_mode
+    end
+
     # ((freq THz)) ((IR Activity / e^2 amu^-1))
     # These data from MAPbI3-Cubic_PeakTable.csv
     # https://github.com/WMD-group/Phonons/tree/master/2015_MAPbI3/SimulatedSpectra
@@ -76,14 +167,35 @@
     mobilityproblem = hcat(alphas, feynmanvw.(3.1, 3.0, alphas, 1.0), MAPI[:, 1])
     println("Specify mobility problem: ", mobilityproblem)
 
+    """
+        Hellwarth1999mobilityRHS((α, (v, w) ,f), effectivemass, T)
+
+    Calculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
+
+    See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+    """
+    function Hellwarth1999mobilityRHS((α, (v, w), f), effectivemass, T)
+        mb = effectivemass * me
+        ω = f * 1e12 * 2π
+        βred = ħ * ω / (kB * T)
+        R = (v^2 - w^2) / (w^2 * v) # inline, page 300 just after Eqn (2)
+        b = R * βred / sinh(βred * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
+        a = sqrt((βred / 2)^2 + R * βred * coth(βred * v / 2))
+        k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3 / 2) * cos(u) # integrand in (2)
+        K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
+
+        # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
+        RHS = α / (3 * sqrt(π)) * βred^(5 / 2) / sinh(βred / 2) * (v^3 / w^3) * K
+        μ = RHS^(-1) * q / (ω * mb)
+
+        return 1 / μ
+    end
+
     inverse_μ = Hellwarth1999mobilityRHS.(eachrow(mobilityproblem), meff, 300)
 
     μ = sum(inverse_μ)^-1
     @printf("\n\tμ(Hellwarth1999)= %f m^2/Vs \t= %.2f cm^2/Vs", μ, μ * 100^2)
     println()
-
-    ħ = 1.05457162825e-34
-    kB = 1.3806504e-23
 
     MAPI = [
         5 20.0
