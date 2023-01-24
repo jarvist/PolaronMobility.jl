@@ -54,8 +54,8 @@ Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 
 """
-function polaron_complex_impedence(Ω, β, α, v, w; ω=1.0)
-    impedance = -im * Ω * 2π + im * polaron_memory_function(Ω, β, α, v, w; ω=ω)
+function polaron_complex_impedence(v, w, α, ω, β, Ω)
+    impedance = -im * Ω + im * polaron_memory_function(v, w, α, ω, β, Ω)
 
     return impedance
 end
@@ -75,8 +75,8 @@ Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures 
 
 See also [`polaron_complex_impedence`](@ref)
 """
-function polaron_complex_conductivity(Ω, β, α, v, w; ω=1.0)
-    return 1 / polaron_complex_impedence(Ω, β, α, v, w; ω=ω)
+function polaron_complex_conductivity(v, w, α, ω, β, Ω)
+    return 1 / polaron_complex_impedence(v, w, α, ω, β, Ω)
 end
 
 """
@@ -97,11 +97,11 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 
 See also [`polaron_complex_conductivity`](@ref)
 """
-function polaron_mobility(β, α, v, w; ω=1.0)
+function polaron_mobility(v, w, α, ω, β)
     if any(x -> x == Inf, β)
         return Inf
     else
-        return abs(1 / imag(polaron_memory_function_dc(β, α, v, w; ω=ω)))
+        return abs(1 / imag(polaron_memory_function_dc(v, w, α, ω, β)))
     end
 end
 
