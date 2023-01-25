@@ -515,7 +515,7 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`F`](@ref).
 """
-function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=Inf)
+function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
 
     if length(v) != length(w)
         return error("The number of variational parameters v & w must be equal.")
@@ -558,7 +558,7 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=Inf)
     return Δv .+ w, w, E, A, B, C
 end
 
-function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=Inf)
+function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
 
     Δv = v .- w
     initial = [Δv + eps(Float64), w]
