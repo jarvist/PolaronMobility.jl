@@ -1,6 +1,6 @@
 """
 PolaronMobility.jl - https://github.com/jarvist/PolaronMobility.jl
-  Codes by Jarvist Moore Frost, 2017-2022; Bradley A.A. Martin 2020-2022
+  Codes by Jarvist Moore Frost, 2017-2023; Bradley A.A. Martin 2020-2023
   PolaronMobility.jl is a Julia package which calculates the temperature-dependent polaron
   mobility for a material. It implements the Feynman variational approach with
   Osaka/Hellwarth free-energy for the polaron system.  
@@ -16,7 +16,6 @@ export polaron_complex_impedence, polaron_complex_conductivity, optical_absorpti
 export polaron_mobility, Hellwarth_mobility, Kadanoff_mobility_lowT, FHIP_mobility_lowT   # Mobility functions.
 export save_polaron, load_polaron # Functions to save and load Polaron types to/from .jld format.
 export reduce_array
-
 
 ##### load in library routines... #####
 # stdlib
@@ -53,6 +52,7 @@ const c = 299792458
 "Atomic mass unit, (kg)"
 const amu = 1.660_539_066_60e-27
 
+# QOL function for removing singleton dimensions.
 reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims=tuple(findall(size(a) .== 1)...))
 
 end # module
