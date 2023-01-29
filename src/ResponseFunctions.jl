@@ -98,7 +98,7 @@ See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
 function inverse_polaron_mobility(v, w, α, ω, β)
     if β == Inf
-        return Inf
+        return 0
     else
         return -imag(polaron_memory_function_dc(v, w, α, ω, β))
     end
@@ -109,7 +109,7 @@ end
 
 inverse of the polaron mobility, but for multiple phonon modes.
 """
-inverse_polaron_mobility(v, w, α::Vector, ω::Vector, β::Vector) = sum(inverse_polaron_mobility.(v, w, α, ω, β))
+inverse_polaron_mobility(v, w, α::Vector, ω::Vector, β) = sum(inverse_polaron_mobility.(v, w, α, ω, β))
 
 """
     polaron_mobility(v, w, α, ω, β)
@@ -144,7 +144,7 @@ Inverse FHIP mobility for multiple phonon modes.
 
 See also [`FHIP_mobility_lowT`](@ref)
 """
-inverse_FHIP_mobility_lowT(v, w, α::Vector, ω::Vector, β::Vector) = sum(inverse_FHIP_mobility_lowT.(v, w, α, ω, β))
+inverse_FHIP_mobility_lowT(v, w, α::Vector, ω::Vector, β) = sum(inverse_FHIP_mobility_lowT.(v, w, α, ω, β))
 
 """
     FHIP_mobility_lowT(v, w, α, ω, β)
@@ -214,7 +214,7 @@ Inverse Kadanoff mobility for multiple phonon modes.
 
 See also [`Kadanoff_mobility_lowT`](@ref)
 """
-inverse_Kadanoff_mobility_lowT(v, w, α::Vector, ω::Vector, β::Vector) = map(+, map(x -> 1 ./ x, inverse_Kadanoff_mobility_lowT.(v, w, α, ω, β))...)
+inverse_Kadanoff_mobility_lowT(v, w, α::Vector, ω::Vector, β) = map(+, map(x -> 1 ./ x, inverse_Kadanoff_mobility_lowT.(v, w, α, ω, β))...)
 
 """
     Kadanoff_mobility_lowT(v, w, α, ω, β)
@@ -270,7 +270,7 @@ Inverse Hellwarth mobility for multiple phonon modes.
 
 See also [`Hellwarth_mobility`](@ref)
 """
-inverse_Hellwarth_mobility(v, w, α::Vector, ω::Vector, β::Vector) = map(+, map(x -> 1 ./ x, inverse_Hellwarth_mobility.(v, w, α, ω, β))...)
+inverse_Hellwarth_mobility(v, w, α::Vector, ω::Vector, β) = map(+, map(x -> 1 ./ x, inverse_Hellwarth_mobility.(v, w, α, ω, β))...)
 
 """
     Hellwarth_mobility(v, w, α, ω, β)
