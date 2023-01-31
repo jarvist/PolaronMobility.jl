@@ -4,6 +4,16 @@
 # [2] Devreese, J. De Sitter, and M. Goovaerts, “Optical absorption of polarons in thefeynman-hellwarth-iddings-platzman approximation,”Phys. Rev. B, vol. 5, pp. 2367–2381, Mar 1972.
 # [3] F. Peeters and J. Devreese, “Theory of polaron mobility,” inSolid State Physics,pp. 81–133, Elsevier, 1984.
 
+D(t, v, w, ω, β) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * ω * β) / 2) / sinh(v * ω * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β / ω) / v^2
+
+D(t, v, w) = (v^2 - w^2) * (1 - exp(im * v * t)) / v^3 - im * w^2 * t / v^2
+
+# # FHIP1962, page 1009, eqn (36).
+S(t, v, w, ω, β) = cos(t - im * β * ω / 2) / sinh(ω * β / 2) / D(t, v, w, ω, β)^(3 / 2)
+
+# FHIP1962, page 1009, eqn (36).
+S(t, v, w) = exp(im * t) / D(t, v, w)^(3 / 2)
+
 """
     polaron_memory_function(Ω, β, α, v, w; ω = 1.0, rtol = 1e-3)
 
@@ -77,13 +87,8 @@ See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_thermal(v, w, α, ω, β, Ω)
 
-    D(t) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * ω * β) / 2) / sinh(v * ω * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β / ω) / v^2
-
-    # FHIP1962, page 1009, eqn (36).
-    S(t) = cos(t - im * ω * β / 2) / sinh(ω * β / 2) / D(t)^(3 / 2)
-
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t))
+    integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w, ω, β))
 
     integral = quadgk(t -> integrand(t), 0, Inf)[1]
 
@@ -112,15 +117,11 @@ See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_athermal(v, w, α, ω, Ω)
 
-    D(t) = (v^2 - w^2) * (1 - exp(im * v * t)) / v^3 - im * w^2 * t / v^2
-
-    # FHIP1962, page 1009, eqn (36).
-    S(t) = exp(im * t) / (D(t))^(3 / 2)
-
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t))
-    #quadgk(t -> integrand(t, Ω), 0, 1)[1] + 
-    integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-0.0001)[1]
+    integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w))
+
+    integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-1-eps(Float64))[1]
+
     memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
 
     return memory
@@ -146,13 +147,8 @@ See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_dc(v, w, α, ω, β)
 
-    D(t) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * ω * β) / 2) / sinh(v * ω * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β / ω) / v^2
-
-    # # FHIP1962, page 1009, eqn (36).
-    S(t) = cos(t - im * β * ω / 2) / sinh(ω * β / 2) / D(t)^(3 / 2)
-
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t) = -im * t * imag(S(t))
+    integrand(t) = -im * t * imag(S(t, v, w, ω, β))
 
     integral = quadgk(t -> integrand(t), 0, Inf)[1]
 
