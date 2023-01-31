@@ -27,19 +27,19 @@ See also [`polaron_memory_function_thermal`](@ref), [`polaron_memory_function_at
 function polaron_memory_function(v, w, α, ω, β, Ω)
 
     # Zero temperature and frequency is just zero.
-    if Ω == zero(Ω) && any(x -> x == Inf, β)
+    if Ω == zero(Ω) && β == Inf
         return 0 + im * Inf
 
         # DC zero frequency limit at finite temperatures.
-    elseif Ω == zero(Ω) && any(x -> x != Inf, β)
+    elseif Ω == zero(Ω) && β !== Inf
         return polaron_memory_function_dc(v, w, α, ω, β)
 
         # Zero temperature limit at AC finite frequencies.
-    elseif Ω != zero(Ω) && any(x -> x == Inf, β)
+    elseif Ω != zero(Ω) && β == Inf
         return polaron_memory_function_athermal(v, w, α, ω, Ω)
 
         # Finite temperatures and frequencies away from zero limits.
-    elseif Ω != zero(Ω) && any(x -> x != Inf, β)
+    elseif Ω != zero(Ω) && β !== Inf
         return polaron_memory_function_thermal(v, w, α, ω, β, Ω)
 
         # Any other frequencies or temperatures (e.g. negative or complex) prints error message.
@@ -47,6 +47,8 @@ function polaron_memory_function(v, w, α, ω, β, Ω)
         println("Photon frequency Ω and thermodynamic temperature β must be ≥ 0.0.")
     end
 end
+
+polaron_memory_function(v, w, α::Vector, ω::Vector, β, Ω) = sum(polaron_memory_function.(v, w, α, ω, β, Ω))
 
 """
 ----------------------------------------------------------------------
@@ -75,22 +77,22 @@ See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_thermal(v, w, α, ω, β, Ω)
 
-    D(t, β) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * β) / 2) / sinh(v * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β) / v^2
+    D(t) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * ω * β) / 2) / sinh(v * ω * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β / ω) / v^2
 
     # FHIP1962, page 1009, eqn (36).
-    S(t, β) = cos(ω * t - im * ω * β / 2) / sinh(ω * β / 2) / D(t, β)^(3 / 2)
+    S(t) = cos(t - im * ω * β / 2) / sinh(ω * β / 2) / D(t)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t, β, Ω) = (1 - exp(im * Ω * t)) * imag(S(t, β))
+    integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t))
 
-    integral = quadgk(t -> integrand(1 / t - 1, β, Ω) / t^2, 0, 1)[1]
+    integral = quadgk(t -> integrand(t), 0, Inf)[1]
 
-    memory = α * ω^3 * integral / (3 * √π * Ω)
+    memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
 
     return memory
 end
 
-polaron_memory_function_thermal(v, w, α::Vector, ω::Vector, β::Vector, Ω) = sum(polaron_memory_function_thermal.(v, w, α, ω, β, Ω))
+polaron_memory_function_thermal(v, w, α::Vector, ω::Vector, β, Ω) = Ω < minimum(ω) ? 0 + 0 * im : sum(polaron_memory_function_thermal.(v, w, α, ω, β, Ω))
 
 """
     function polaron_memory_function_athermal(Ω, α, v, w; ω = 1.0, rtol = 1e-3)
@@ -108,23 +110,23 @@ Calculate polaron complex memory function at zero-temperature inclusive of multi
 
 See also [`polaron_memory_function`](@ref).
 """
-function polaron_memory_function_athermal(v, w, α, ω, Ω;)
+function polaron_memory_function_athermal(v, w, α, ω, Ω)
 
     D(t) = (v^2 - w^2) * (1 - exp(im * v * t)) / v^3 - im * w^2 * t / v^2
 
     # FHIP1962, page 1009, eqn (36).
-    S(t) = exp(im * ω * t) / D(t)^(3 / 2)
+    S(t) = exp(im * t) / (D(t))^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t, Ω) = (1 - exp(im * Ω * t)) * imag(S(t))
-
-    integral = quadgk(t -> integrand(1 / t - 1, Ω) / t^2, 0, 1)[1]
-    memory = α * ω^3 * integral / (3 * √π * Ω)
+    integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t))
+    #quadgk(t -> integrand(t, Ω), 0, 1)[1] + 
+    integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-0.0001)[1]
+    memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
 
     return memory
 end
 
-polaron_memory_function_athermal(v, w, α::Vector, ω::Vector, Ω) = sum(polaron_memory_function_athermal.(v, w, α, ω, Ω))
+polaron_memory_function_athermal(v, w, α::Vector, ω::Vector, Ω) = Ω < minimum(ω) ? 0 + 0 * im : sum(polaron_memory_function_athermal.(v, w, α, ω, Ω))
 
 """
     function polaron_memory_function_dc(β, α, v, w; ω = 1.0, rtol = 1e-3)
@@ -144,18 +146,19 @@ See also [`polaron_memory_function`](@ref).
 """
 function polaron_memory_function_dc(v, w, α, ω, β)
 
-    D(t, β) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * β) / 2) / sinh(v * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β) / v^2
+    D(t) = 2 * (v^2 - w^2) * sin(v * t / 2) * sin(v * (t - im * ω * β) / 2) / sinh(v * ω * β / 2) / v^3 - im * w^2 * t * (1 + im * t / β / ω) / v^2
 
-    # FHIP1962, page 1009, eqn (36).
-    S(t, β) = cos(ω * t - im * ω * β / 2) / sinh(ω * β / 2) / D(t, β)^(3 / 2)
+    # # FHIP1962, page 1009, eqn (36).
+    S(t) = cos(t - im * β * ω / 2) / sinh(ω * β / 2) / D(t)^(3 / 2)
 
     # FHIP1962, page 1009, eqn (35a).
-    integrand(t, β) = -im * t * imag(S(t, β))
+    integrand(t) = -im * t * imag(S(t))
 
-    integral = quadgk(t -> integrand(1 / t - 1, β) / t^2, 0, 1 - sqrt(eps(β)))[1]
-    memory = α * ω^3 * integral / (3 * √π)
+    integral = quadgk(t -> integrand(t), 0, Inf)[1]
+
+    memory = 2 * α * ω * integral / (3 * √π)
 
     return memory
 end
 
-polaron_memory_function_dc(v, w, α::Vector, ω::Vector, β::Vector) = sum(polaron_memory_function_dc.(v, w, α, ω, β))
+polaron_memory_function_dc(v, w, α::Vector, ω::Vector, β) = sum(polaron_memory_function_dc.(v, w, α, ω, β))

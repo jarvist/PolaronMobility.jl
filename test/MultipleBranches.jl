@@ -13,7 +13,7 @@
     "Speed of light, (ms⁻¹)."
     c = 299792458
     "Atomic mass unit, (kg)"
-    amu = 1.660_539_066_60e-2
+    amu = 1.660_539_066_60e-27
 
     """
         frohlichPartial((f, ϵ_mode); ϵ_o, ϵ_s, meff)

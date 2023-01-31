@@ -39,11 +39,17 @@ Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy e
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-B(v, w, α) = π^(-1 / 2) * α * v * quadgk(τ -> B_integrand(τ, v, w), 0, Inf)[1]
+B(v, w, α, ω) = ω * π^(-1 / 2) * α * v * quadgk(τ -> B_integrand(τ / (1 - τ), v, w) / (1 - τ)^2, 0, 1)[1]
 
-A(v, w) = -3 * (v - w) / 2
+B(v, w, α::Vector, ω::Vector) = sum(B.(v, w, α, ω))
 
-C(v, w) = (3 / (4 * v)) * (v^2 - w^2)
+A(v, w, ω) = -3 * (v - w) / 2 * ω
+
+A(v, w, ω::Vector) = sum(A.(v, w, ω)) / length(ω)
+
+C(v, w, ω) = (3 / (4 * v)) * (v^2 - w^2) * ω
+
+C(v, w, ω::Vector) = sum(C.(v, w, ω)) / length(ω)
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
 
@@ -59,7 +65,9 @@ Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-A(v, w, β) = 3 / β * (log(v / w) - 1 / 2 * log(2π * β) - log(sinh(v * β / 2) / sinh(w * β / 2)))
+A(v, w, ω, β) = 3 / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) * ω
+
+A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) / length(ω)
 
 """
     Y(x, v, β)
@@ -68,7 +76,7 @@ Hellwarth's Y expression from Eqn. (62d) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-Y(x, v, β) = 1 / (1 - exp(-v * β)) * (1 + exp(-v * β) - exp(-v * x) - exp(v * (x - β))) + eps(x)
+Y(x, v, ω, β) = 1 / (1 - exp(-v * ω * β)) * (1 + exp(-v * ω * β) - exp(-v * x) - exp(v * (x - ω * β)))
 
 """
     f(x, v, w, β)
@@ -77,7 +85,7 @@ Integrand of Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 P
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-f(x, v, w, β) = (exp(β - x) + exp(x)) / sqrt(abs(w^2 * x * (1 - x / β) + Y(x, v, β) * (v^2 - w^2) / v))
+f(x, v, w, ω, β) = (exp(ω * β - x) + exp(x)) / sqrt(abs(w^2 * x * (1 - x / ω / β) + Y(x, v, ω, β) * (v^2 - w^2) / v))
 
 """
     B(v, w, β, α)
@@ -86,7 +94,9 @@ Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-B(v, w, α, β) = α * v / (sqrt(π) * (exp(β) - 1)) * quadgk(x -> f(x, v, w, β), 0, β / 2)[1]
+B(v, w, α, ω, β) = α * v / (sqrt(π) * (exp(ω * β) - 1)) * quadgk(x -> f(x * ω * β / 2, v, w, ω, β), 0, 1)[1] * ω^2 * β / 2
+
+B(v, w, α::Vector, ω::Vector, β) = sum(B.(v, w, α, ω, β))
 
 """
     C(v, w, β)
@@ -95,7 +105,9 @@ Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-C(v, w, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β))
+C(v, w, ω, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
+
+C(v, w, ω::Vector, β) = sum(C.(v, w, ω, β)) / length(ω)
 
 # Extending the Feynman theory to multiple phonon branches
 
@@ -209,7 +221,7 @@ function frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff)
     Ry = eV^4 * me / (2 * ħ^2)
 
     # Angular phonon frequency for the phonon mode (rad Hz).
-    ω = 2π * 1e12 * phonon_mode_freq
+    ω = 2π * phonon_mode_freq * 1e12
 
     # The static dielectric constant. Calculated here instead of inputted so that ionic modes are properly normalised.
     ϵ_static = ϵ_total + ϵ_optic
@@ -298,8 +310,8 @@ Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1
 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
-function D(τ, v::Vector, w::Vector, β)
-    return τ * (1 - τ / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β)) for i in eachindex(v))
+function D(τ, v::Vector, w::Vector, ω, β)
+    return τ * (1 - τ / ω / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * ω * β) - exp(-v[i] * τ) - exp(v[i] * (τ - ω * β))) / (v[i] * (1 - exp(-v[i] * ω * β))) - τ * (1 - τ / ω / β)) for i in eachindex(v))
 end
 
 """
@@ -331,10 +343,12 @@ Required for calculating the polaron free energy.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function B(v::Vector, w::Vector, α, β)
-    B_integrand(τ) = cosh(τ - β / 2) / sqrt(abs(D(τ, v, w, β)))
-    return α / (√π * sinh(β / 2)) * quadgk(τ -> B_integrand(τ * β / 2), 0.0, 1.0)[1] * β / 2
+function B(v::Vector, w::Vector, α, ω, β)
+    B_integrand(τ) = cosh(τ - ω * β / 2) / sqrt(abs(D(τ, v, w, ω, β)))
+    return α / (√π * sinh(ω * β / 2)) * quadgk(τ -> B_integrand(τ * ω * β / 2), 0.0, 1.0)[1] * ω^2 * β / 2
 end
+
+B(v::Vector, w::Vector, α::Vector, ω::Vector, β) = sum(B(v, w, α[i], ω[i], β) for i in eachindex(ω))
 
 """
     B(v, w, α; rtol = 1e-3)
@@ -346,10 +360,12 @@ Calculates `B(v, w, α, β)` but at zero-temperature, `β = Inf`.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 - `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
 """
-function B(v::Vector, w::Vector, α)
+function B(v::Vector, w::Vector, α, ω)
     B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D(abs(τ), v, w)))
-    return α / √π * quadgk(τ -> B_integrand(τ), 0, Inf)[1]
+    return α / √π * quadgk(τ -> B_integrand(τ), 0, Inf)[1] * ω
 end
+
+B(v::Vector, w::Vector, α::Vector, ω::Vector) = sum(B(v, w, α[i], ω[i]) for i in eachindex(ω))
 
 """
     C(v, w, β)
@@ -366,13 +382,15 @@ Required for calculating the polaron free energy.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function C(v::Vector, w::Vector, β)
+function C(v::Vector, w::Vector, ω, β)
     # Sum over the contributions from each fictitious mass.
-    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2) - 2 / (β * v[j])) for i in eachindex(v), j in eachindex(w))
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(ω * β * v[j] / 2) - 2 / (ω * β * v[j])) for i in eachindex(v), j in eachindex(w))
 
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
-    return 3 * s
+    return 3 * s * ω
 end
+
+C(v::Vector, w::Vector, ω::Vector, β) = sum(C(v, w, ω[i], β) for i in eachindex(ω)) / length(ω)
 
 """
     C(v, w)
@@ -383,12 +401,14 @@ Calculates `C(v, w, β)` but at zero-temperature, `β = Inf`.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function C(v::Vector, w::Vector)
+function C(v::Vector, w::Vector, ω)
     # Sum over the contributions from each fictitious mass.
     s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) for i in eachindex(v), j in eachindex(w))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
-    return 3 * s
+    return 3 * s * ω
 end
+
+C(v::Vector, w::Vector, ω::Vector) = sum(C(v, w, ω[i]) for i in eachindex(ω)) / length(ω)
 
 """
     A(v, w, β)
@@ -404,14 +424,16 @@ Required for calculating the polaron free energy.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function A(v::Vector, w::Vector, β)
+function A(v::Vector, w::Vector, ω, β)
     # Sum over the contributions from each fictitious mass.
-    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0 :
-                               log(v[i]) - log(w[i]) - β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * β)) + log(1 - exp(-w[i] * β))
+    s = -log(2π * ω * β) / 2 + sum(v[i] == w[i] ? 0 :
+                               log(v[i]) - log(w[i]) - ω * β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * ω * β)) + log(1 - exp(-w[i] * ω * β))
                                for i in eachindex(v))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
-    3 / β * s
+    3 / β * s * ω
 end
+
+A(v::Vector, w::Vector, ω::Vector, β) = sum(A(v, w, ω[i], β) for i in eachindex(ω)) / length(ω)
 
 """
     A(v, w, n)
@@ -422,10 +444,12 @@ Calculates `A(v, w, β)` but at zero-temperature, `β = Inf`.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function A(v::Vector, w::Vector)
+function A(v::Vector, w::Vector, ω)
     s = sum(v .- w)
-    return -3 * s / 2
+    return -3 * s / 2 * ω
 end
+
+A(v::Vector, w::Vector, ω::Vector) = sum(A(v, w, ω[i]) for i in eachindex(ω)) / length(ω)
 
 """
     F(v, w, α, ω, β)
@@ -446,27 +470,14 @@ See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., B
 function F(v, w, α, ω, β)
 
     # Insurance to avoid breaking the integrals with Infinite beta.
-    if any(x -> x == Inf, β)
+    if β == Inf
         return F(v, w, α, ω)
     end
-
-    N_modes = length(ω)
-
-    Ar = Vector{Any}(undef, N_modes)
-    Br = Vector{Any}(undef, N_modes)
-    Cr = Vector{Any}(undef, N_modes)
-    energy = 0.0
-
-    # Add contribution to the total free energy from the phonon mode.
-    for j in eachindex(ω)
-        Ar[j] = A(v, w, β[j]) / N_modes * ω[j]
-        Br[j] = B(v, w, α[j], β[j]) * ω[j]
-        Cr[j] = C(v, w, β[j]) / N_modes * ω[j]
-        energy -= (Ar[j] + Br[j] + Cr[j])
-    end
-
+    Ar = A(v, w, ω, β)
+    Br = B(v, w, α, ω, β) 
+    Cr = C(v, w, ω, β)   
     # Free energy in units of meV
-    return energy, sum(Ar), sum(Br), sum(Cr)
+    return -(Ar + Br + Cr), Ar, Br, Cr
 end
 
 """
@@ -483,22 +494,11 @@ Calculates the zero-temperature ground-state energy of the polaron for a materia
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
 function F(v, w, α, ω)
-
-    N_modes = length(ω)
-
-    Ar = A(v, w)
-    Br = Vector{Any}(undef, N_modes)
-    Cr = C(v, w)
-    energy = -(Ar + Cr) * sum(ω) / N_modes
-
-    # Add contribution to the total free energy from the phonon mode.
-    for j in eachindex(ω)
-        Br[j] = B(v, w, α[j]) * ω[j]
-        energy -= Br[j]
-    end
-
+    Ar = A(v, w, ω)
+    Br = B(v, w, α, ω)
+    Cr = C(v, w, ω) 
     # Free energy in units of meV
-    return energy, Ar, sum(Br), Cr
+    return -(Ar + Br + Cr), Ar, Br, Cr
 end
 
 """
