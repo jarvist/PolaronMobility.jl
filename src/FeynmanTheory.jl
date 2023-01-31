@@ -23,6 +23,10 @@ end
 # Athermal (Feynman 1955) model.
 # Set up equations for the polaron free energy, which we will variationally improve upon.
 
+D_imag(τ, v, w, ω, β) = (v^2 - w^2) / v^3 * sinh(v * τ / 2) * sinh(v * (β * ω - τ) / 2) / sinh(v * ω * β / 2) + w^2 / v^2 * τ * (1 - τ / β / ω)
+
+D_imag(τ, v, w) = w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))
+
 """
     B(τ, v, w)
 
@@ -30,7 +34,7 @@ Integrand of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy 
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-B_integrand(τ, v, w) = (abs(w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))))^(-1 / 2) * exp(-τ)
+B_integrand(τ, v, w) = (abs(D_imag(τ, v, w)))^(-1 / 2) * exp(-τ)
 
 """
     B(v, w, α)
@@ -590,3 +594,5 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
     # Return the variational parameters that minimised the free energy.
     return Δv .+ w, w, E, A, B, C
 end
+
+feynmanvw(αωβ...; upper_limit=1e6) = feynmanvw(3.4, 2.6, αωβ...; upper_limit=upper_limit)
