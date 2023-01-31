@@ -11,11 +11,13 @@ export Polaron, polaron                                   # Type to hold the pol
 export Material, material                                 # Type to hold material specific data.
 export frohlichalpha, ϵ_ionic_mode, F, A, B, C, feynmanvw # Frohlich alpha, energy and minimisation functions.              
 export HellwarthBScheme, HellwarthAScheme                 # Hellwarth effective mode schemes.
-export polaron_memory_function                            # Polaron memory functions
+export polaron_memory_function, D, S                      # Polaron memory functions
 export polaron_complex_impedence, polaron_complex_conductivity, optical_absorption        # Response functions.
 export polaron_mobility, Hellwarth_mobility, Kadanoff_mobility_lowT, FHIP_mobility_lowT   # Mobility functions.
 export save_polaron, load_polaron # Functions to save and load Polaron types to/from .jld format.
 export reduce_array
+export polaron_effective_mass
+export holstein_B, holstein_energy, holsteinvw
 
 ##### load in library routines... #####
 # stdlib
@@ -24,14 +26,18 @@ using Printf
 using JLD
 
 #Key numerics used:
-# one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
+# One-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
 import QuadGK.quadgk
+# Special function arising from cutoff k-space integrals (c.f. Holstein model).
+import SpecialFunctions.erf
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
 
-include("FeynmanTheory.jl")     # Actions + variational functions.
+include("FeynmanTheory.jl")     # Frohlich actions + variational functions.
+include("HolsteinTheory.jl")    # Holstein actions + variational functions.
 include("HellwarthTheory.jl")   # multimode -> equivalent mode.
 include("MemoryFunction.jl")    # Memory function X calculation.
+include("EffectiveMass.jl")     # Effective mass (Feynman's ansatz).
 include("ResponseFunctions.jl") # Linear reponse functions for polaron.
 include("Material.jl")          # Material type and constructors.
 include("Polaron.jl")           # Polaron type and constructors.
