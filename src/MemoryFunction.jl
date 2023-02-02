@@ -120,7 +120,7 @@ function polaron_memory_function_athermal(v, w, α, ω, Ω)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w))
 
-    integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-1-eps(Float64))[1]
+    integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-eps(Float64))[1]
 
     memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
 
