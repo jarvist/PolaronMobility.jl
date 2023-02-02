@@ -25,7 +25,7 @@ end
 
 D_imag(τ, v, w, ω, β) = (v^2 - w^2) / v^3 * sinh(v * τ / 2) * sinh(v * (β * ω - τ) / 2) / sinh(v * ω * β / 2) + w^2 / v^2 * τ * (1 - τ / β / ω)
 
-D_imag(τ, v, w) = w^2 * τ + (v^2 - w^2) / v * (1 - exp(-v * τ))
+D_imag(τ, v, w) = w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) + eps(Float64)
 
 """
     B(τ, v, w)
@@ -43,7 +43,7 @@ Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy e
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-B(v, w, α, ω) = ω * π^(-1 / 2) * α * v * quadgk(τ -> B_integrand(τ / (1 - τ), v, w) / (1 - τ)^2, 0, 1)[1]
+B(v, w, α, ω) = ω * π^(-1 / 2) * α * quadgk(τ -> B_integrand(τ, v, w), 0, Inf)[1]
 
 B(v, w, α::Vector, ω::Vector) = sum(B.(v, w, α, ω))
 
