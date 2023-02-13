@@ -8,16 +8,16 @@ Calculates the Frohlich alpha parameter, for a given dielectric constant, freque
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
 function frohlichalpha(ϵ_optic, ϵ_static, freq, m_eff)
-    ω = 2π * freq * 1e12 # frequency to angular velocity
+    ω = freq * ω0_pu # frequency to angular velocity
     # Note: we need to add a 4*pi factor to the permitivity of freespace.
     # This gives numeric agreement with literature values.  This is required as
     # the contemporary 1950s and 1960s literature implicitly used atomic units,
     # where the electric constant ^-1 has this factor baked in, k_e=1/(4πϵ_0).
-    α = 1 / 2 / (4 * π * ϵ_0) *           # Units: m/F
+    α = 1 / 2 / (4 * π * u"ϵ0") *           # Units: m/F
         (1 / ϵ_optic - 1 / ϵ_static) *   # Units: none
-        (eV^2 / (ħ * ω)) *               # Units: F
-        sqrt(2 * me * m_eff * ω / ħ)    # Units: 1/m
-    return α
+        (e_pu^2 / (ħ_pu * ω)) *               # Units: F
+        sqrt(2 * m_eff * m0_pu * ω / ħ_pu)    # Units: 1/m
+    return upreferred(α)
 end
 
 # Athermal (Feynman 1955) model.
@@ -535,7 +535,7 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
     upper = fill(upper_limit, 2 * N_params)
 
     # The multiple phonon mode free energy function to minimise.
-    f(x) = F([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
+    f(x) = -log(F([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1])
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -563,12 +563,14 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
 end
 
 function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
+    
+    αωβ = pustrip.(αωβ)
 
     Δv = v .- w
     initial = [Δv + eps(Float64), w]
 
     # Limits of the optimisation.
-    lower = [0.0, 0.0]
+    lower = [0, 0]
     upper = [upper_limit, upper_limit]
 
     # The multiple phonon mode free energy function to minimise.
@@ -587,9 +589,9 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
     Δv, w = Optim.minimizer(solution)
     E, A, B, C = F(Δv .+ w, w, αωβ...)
 
-    # if Optim.converged(solution) == false
-    #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    # end
+    if Optim.converged(solution) == false
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    end
 
     # Return the variational parameters that minimised the free energy.
     return Δv .+ w, w, E, A, B, C

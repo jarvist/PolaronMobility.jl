@@ -3,7 +3,7 @@
 """
     HellwarthBScheme(LO)
 
-LO an array assumed to be of [freq ; absolute ir activity ]
+LO an array assumed to be of [freq ; absolute ir activity]
 
 Multiple phonon mode reduction to a single effective frequency.
 Hellwarth et al. 1999 PRB, 'B scheme'; the athermal method.  Averaging procedure is
@@ -31,7 +31,7 @@ end
 # More complex scheme, involving thermodynamic Beta
 # Hellwarth(50), RHS
 """
-    HellwarthAScheme(phonon_modes; T = 295, convergence = 1e-6)
+    HellwarthAScheme(phonon_modes; T=295, convergence=1e-6)
 
 Multiple phonon mode reduction to a single effective frequency.
 Temperature dependent, defaults to T = 295 K.
