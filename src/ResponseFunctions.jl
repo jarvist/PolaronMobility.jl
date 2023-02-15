@@ -176,7 +176,7 @@ function inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
         # we define equilibrium number of phonons (just from temperature T and phonon ω):
         # N̄ = (exp(β) - 1)^-1.
         # But! We find that:
-        N̄ = exp(-β) 
+        N̄ = exp(-β * ω) 
 
         # is only way to get Kadanoff1963 to be self-consistent with
         # FHIP, and later statements (Devreese) of the Kadanoff mobility.

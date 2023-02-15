@@ -119,16 +119,16 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         "Ma"    => Array{Unitful.Mass,3}(undef, num_T, num_α, num_vw),  # Thermal asymptotic approximate fictitious mass (v/w).
         "Mr"    => Array{Unitful.Mass,3}(undef, num_T, num_α, num_vw),  # Thermal reduced mass of particle + fictitious particle system.
         "R"     => Array{Unitful.Length,3}(undef, num_T, num_α, num_vw), # Polaron radii.
-        "μ"     => Matrix{Float64}(undef, num_T, num_α), # Mobilities.
-        "μFHIP" => Matrix{Float64}(undef, num_T, num_α), # FHIP low-temperature DC mobiltiy approximation.
-        "μD"    => Matrix{Float64}(undef, num_T, num_α), # Kadanoff DC mobility, low-temperature approximation using Devreese2016.
-        "μK"    => Matrix{Float64}(undef, num_T, num_α), # Kadanoff DC mobility, low-temperature approximation.
-        "τ"     => Matrix{Float64}(undef, num_T, num_α), # relaxation time from Kadanoff Boltzmann transport equation.
-        "μH"    => Matrix{Float64}(undef, num_T, num_α), # Hellwarth DC mobility.
-        "μH0"   => Matrix{Float64}(undef, num_T, num_α), # Hellwarth DC mobility with b=0.
-        "χ"     => Array{ComplexF64,3}(undef, num_Ω, num_T, num_α), # 'Memory function' or self energy.
-        "z"     => Array{ComplexF64,3}(undef, num_Ω, num_T, num_α), # Complex impedences.
-        "σ"     => Array{ComplexF64,3}(undef, num_Ω, num_T, num_α), # Complex conductivities.
+        "μ"     => Matrix{Any}(undef, num_T, num_α), # Mobilities.
+        "μFHIP" => Matrix{Any}(undef, num_T, num_α), # FHIP low-temperature DC mobiltiy approximation.
+        "μD"    => Matrix{Any}(undef, num_T, num_α), # Kadanoff DC mobility, low-temperature approximation using Devreese2016.
+        "μK"    => Matrix{Any}(undef, num_T, num_α), # Kadanoff DC mobility, low-temperature approximation.
+        "τ"     => Matrix{Any}(undef, num_T, num_α), # relaxation time from Kadanoff Boltzmann transport equation.
+        "μH"    => Matrix{Any}(undef, num_T, num_α), # Hellwarth DC mobility.
+        "μH0"   => Matrix{Any}(undef, num_T, num_α), # Hellwarth DC mobility with b=0.
+        "χ"     => Array{Any,3}(undef, num_Ω, num_T, num_α), # 'Memory function' or self energy.
+        "z"     => Array{Any,3}(undef, num_Ω, num_T, num_α), # Complex impedences.
+        "σ"     => Array{Any,3}(undef, num_Ω, num_T, num_α), # Complex conductivities.
     )
 
     # Print the phonon frequencies. 
@@ -173,7 +173,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         end
 
         # Small alpha (α → 0) approximate energy.
-        F_small = (-αeff - αeff^2 / 81) .* E0_pu
+        F_small = (-αeff - αeff^2 / 81) .* E0_pu .|> u"meV"
         p["Fs"][j] = F_small
 
         # Print small alpha energy.
@@ -182,7 +182,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         end
 
         # Large alpha (α → ∞) approximate energy.
-        F_large = (-αeff^2 / 3π - 3 * log(2) - 3 / 4) .* E0_pu
+        F_large = (-αeff^2 / 3π - 3 * log(2) - 3 / 4) .* E0_pu .|> u"meV"
         p["Fl"][j] = F_large
 
         # Print large alpha energy.
@@ -246,10 +246,10 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         # Store the athermal data.
         p["v0"][j, :] .= v_gs
         p["w0"][j, :] .= w_gs
-        p["F0"][j] = F_gs .* E0_pu
-        p["A0"][j] = A_gs .* E0_pu
-        p["B0"][j] = B_gs .* E0_pu
-        p["C0"][j] = C_gs .* E0_pu
+        p["F0"][j] = F_gs .* E0_pu .|> u"meV"
+        p["A0"][j] = A_gs .* E0_pu .|> u"meV"
+        p["B0"][j] = B_gs .* E0_pu .|> u"meV"
+        p["C0"][j] = C_gs .* E0_pu .|> u"meV"
 
         # Print athermal variational parameter and energy data.
         if verbose
@@ -258,16 +258,16 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             println(io, "\e[K-----------------------------------------------------------------------")
             println(io, "\e[KVariational parameter          | v₀ = ", v_gs)
             println(io, "\e[KVariational parameter          | w₀ = ", w_gs)
-            println(io, "\e[KEnergy                         | E₀ = ", F_gs)
-            println(io, "\e[KElectron energy                | A₀ = ", A_gs)
-            println(io, "\e[KInteraction energy             | B₀ = ", B_gs)
-            println(io, "\e[KTrial energy                   | C₀ = ", C_gs)
+            println(io, "\e[KEnergy                         | E₀ = ", F_gs .* E0_pu .|> u"meV")
+            println(io, "\e[KElectron energy                | A₀ = ", A_gs .* E0_pu .|> u"meV")
+            println(io, "\e[KInteraction energy             | B₀ = ", B_gs .* E0_pu .|> u"meV")
+            println(io, "\e[KTrial energy                   | C₀ = ", C_gs .* E0_pu .|> u"meV")
             Tprocess = 1    # Counter for Trange.
             αprocess += 1   # Increment αrange iteration.
         end
 
         # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
-        κ_gs = (v_gs .^ 2 .- w_gs .^ 2) .* m0_pu
+        κ_gs = (v_gs .^ 2 .- w_gs .^ 2) .* m0_pu * ω0_pu^2
         p["κ0"][j, :] .= κ_gs
 
         # Print athermal fictitious spring constant.
@@ -276,7 +276,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         end
 
         # Calculate and store fictitious masses. Athermal.
-        M_gs = κ_gs ./ w_gs .^ 2
+        M_gs = κ_gs ./ w_gs .^ 2 ./ ω0_pu^2
         p["M0"][j, :] .= M_gs
 
         # Print athermal fictitious mass.
@@ -294,7 +294,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         end
 
         # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-        M_reduced_gs = v_gs .^2 .- w_gs .^2 / v_gs .^ 2 .* m0_pu
+        M_reduced_gs = (v_gs .^2 .- w_gs .^2) / v_gs .^ 2 .* m0_pu
         p["M0r"][j, :] .= M_reduced_gs
 
         # Print athermal reduced mass.
@@ -312,7 +312,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
         end
 
         for i in eachindex(Trange)  # Temperatures loop.
-            T = Trange[i]
+            T = Trange[i] * u"K"
 
             # Print temperature.
             if verbose
@@ -323,7 +323,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             end
 
             # Calculate the reduced (unitless) thermodynamic betas for each phonon mode.
-            β = 1 ./ T ./ E0_pu .* k_pu
+            β = 1 ./ T .* ħ_pu ./ k_pu
             p["β"][i, :] .= β
 
             # Print thermodynamic betas.
@@ -340,25 +340,25 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             v_guesses, w_guesses = v, w
 
             # Store thermal data.
-            p["v"][i, j, :] .= v .* 
+            p["v"][i, j, :] .= v
             p["w"][i, j, :] .= w
-            p["F"][i, j] = F * E₀
-            p["A"][i, j] = A * E₀
-            p["B"][i, j] = B * E₀
-            p["C"][i, j] = C * E₀
+            p["F"][i, j] = F .* E0_pu .|> u"meV"
+            p["A"][i, j] = A .* E0_pu .|> u"meV"
+            p["B"][i, j] = B .* E0_pu .|> u"meV"
+            p["C"][i, j] = C .* E0_pu .|> u"meV"
 
             # Print thermal data.
             if verbose
                 println(io, "\e[KVariational parameter          | v = ", v)
                 println(io, "\e[KVariational parameter          | w = ", w)
-                println(io, "\e[KFree energy                    | F = ", F)
-                println(io, "\e[KElectron energy                | A = ", A)
-                println(io, "\e[KInteraction energy             | B = ", B)
-                println(io, "\e[KTrial energy                   | C = ", C)
+                println(io, "\e[KFree energy                    | F = ", F .* E0_pu .|> u"meV")
+                println(io, "\e[KElectron energy                | A = ", A .* E0_pu .|> u"meV")
+                println(io, "\e[KInteraction energy             | B = ", B .* E0_pu .|> u"meV")
+                println(io, "\e[KTrial energy                   | C = ", C .* E0_pu .|> u"meV")
             end
 
             # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
-            κ = v .^ 2 .- w .^ 2
+            κ = (v .^ 2 .- w .^ 2) .* m0_pu * ω0_pu^2
             p["κ"][i, j, :] .= κ
 
             # Print spring constants.
@@ -367,8 +367,8 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             end
 
             # Calculate and store fictitious masses. Thermal.
-            M = κ ./ w .^ 2
-            p["M"][i, j, :] .= M * m₀
+            M = κ ./ w .^ 2 ./ ω0_pu^2
+            p["M"][i, j, :] .= M
 
             # Print masses.
             if verbose
@@ -376,8 +376,8 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             end
 
             # Approximate large coupling asymptotic limit for the polaron mass. Feynman1962. Thermal
-            M_asymp = v ./ w
-            p["Ma"][i, j, :] .= M_asymp * m₀
+            M_asymp = v ./ w .* m0_pu
+            p["Ma"][i, j, :] .= M_asymp
 
             # Print asymptotic masses.
             if verbose
@@ -385,21 +385,21 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             end
 
             # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-            M_reduced = v .^2 .- w .^2 / v .^ 2
-            p["Mr"][i, j, :] .= M_reduced * m₀
+            M_reduced = (v .^2 .- w .^2) / v .^ 2 .* m0_pu
+            p["Mr"][i, j, :] .= M_reduced
 
             # Print redcued masses.
             if verbose
-                println(io, "\e[KReduced mass                   | μᵣ = ", M_reduced * m₀)
+                println(io, "\e[KReduced mass                   | μᵣ = ", M_reduced)
             end
 
             # Calculate and store polaron radii.
-            R = sqrt.(3 .* v ./ (v .^ 2 .- w .^ 2) .^ 2)
-            p["R"][i, j, :] .= R * r₀
+            R = sqrt.(3 .* v ./ (v .^ 2 .- w .^ 2) .^ 2) .* a0_pu
+            p["R"][i, j, :] .= R
 
             # Print polaron radius.
             if verbose
-                println(io, "\e[KPolaron radius                 | R = ", R * r₀)
+                println(io, "\e[KPolaron radius                 | R = ", R)
             end
 
             if verbose
@@ -409,22 +409,22 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             end
 
             # Calculate and store the DC mobiliies.
-            μ = polaron_mobility(v, w, α, ω, β)
-            p["μ"][i, j] = μ / m₀ * q * 1e4 / ω₀
+            μ = polaron_mobility(v, w, α, ω, β) / m0_pu * e_pu |> u"cm^2/V/s"
+            p["μ"][i, j] = μ 
 
             # Print DC mobilities.
             if verbose
-                println(io, "\e[KFinite temperature mobility    | μ = ", μ / m₀ * q * 1e4 / ω₀)
+                println(io, "\e[KFinite temperature mobility    | μ = ", μ)
             end
 
             # FHIP low-temperature mobility, final result of Feynman1962.
             # Eqn. (1.60) in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv).
-            μ_FHIP = FHIP_mobility_lowT(v, w, α, ω, β)
-            p["μFHIP"][i, j] = μ_FHIP / ω₀ / m₀ * q * 1e4
+            μ_FHIP = FHIP_mobility_lowT(v, w, α, ω, β) / m0_pu * e_pu |> u"cm^2/V/s"
+            p["μFHIP"][i, j] = μ_FHIP
 
             # Print low-temperature FHIP mobility.
             if verbose
-                println(io, "\e[KFHIP low-temp. mobility        | μFHIP = ", μ_FHIP / ω₀ / m₀ * q * 1e4)
+                println(io, "\e[KFHIP low-temp. mobility        | μFHIP = ", μ_FHIP)
             end
 
             # Kadanoff low-temperaure mobility, constructed around Boltzmann equation.
@@ -434,15 +434,15 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             # It suggests that Kadanoff used the wrong identy for Nbar in Eqn. (23b) for
             # the Γ₀ function, and should have used a version with the -1 to
             # account for Bose / phonon statistics!
-            μ_Kadanoff_Devreese, μ_Kadanoff, rel_time = Kadanoff_mobility_lowT(v, w, α, ω, β)
-            p["μD"][i, j] = μ_Kadanoff_Devreese / ω₀ / m₀ * q * 1e4
-            p["μK"][i, j] = μ_Kadanoff / ω₀ / m₀ * q * 1e4
-            p["τ"][i, j] = rel_time
+            μ_Kadanoff_Devreese, μ_Kadanoff, rel_time = Kadanoff_mobility_lowT(v, w, α, ω, β) ./ m0_pu .* e_pu .|> u"cm^2/V/s"
+            p["μD"][i, j] = μ_Kadanoff_Devreese
+            p["μK"][i, j] = μ_Kadanoff
+            p["τ"][i, j] = rel_time .* m0_pu ./ e_pu .|> u"ns"
 
             # Print low-temperature Kadanoff mobility (both original and Devreese-corrected versions).
             if verbose
-                println(io, "\e[KDevreese low-temp. mobility    | μDev = ", μ_Kadanoff_Devreese / ω₀ / m₀ * q * 1e4)
-                println(io, "\e[KKadanoff low-temp. mobility    | μKad = ", μ_Kadanoff / ω₀ / m₀ * q * 1e4)
+                println(io, "\e[KDevreese low-temp. mobility    | μDev = ", μ_Kadanoff_Devreese)
+                println(io, "\e[KKadanoff low-temp. mobility    | μKad = ", μ_Kadanoff)
             end
 
             #C alculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
@@ -450,21 +450,21 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
             # Eqns. (2) and (1) are going back to the general (pre low-T limit) formulas in Feynman1962.  
             # To evaluate these, you need to do the explicit contour integration to get the polaron self-energy.
             # See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-            μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β)
-            p["μH"][i, j] = μ_Hellwarth / ω₀ / m₀ * q * 1e4
-            p["μH0"][i, j] = μ_Hellwarth_b0 / ω₀ / m₀ * q * 1e4
+            μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β) ./ m0_pu .* e_pu ./ ω0_pu^2 .|> u"cm^2/V/s"
+            p["μH"][i, j] = μ_Hellwarth
+            p["μH0"][i, j] = μ_Hellwarth_b0
 
             # Print Hellwarth mobility (both with b and b=0) and Kadanoff relaxation time.
             if verbose
-                println(io, "\e[KHellwarth mobility             | μHel = ", μ_Hellwarth / ω₀ / m₀ * q * 1e4)
-                println(io, "\e[KHellwarth mobility (b=0)       | μHel₀ = ", μ_Hellwarth_b0 / ω₀ / m₀ * q * 1e4)
-                println(io, "\e[KKadanoff relaxation time       | τ = ", rel_time)
+                println(io, "\e[KHellwarth mobility             | μHel = ", μ_Hellwarth)
+                println(io, "\e[KHellwarth mobility (b=0)       | μHel₀ = ", μ_Hellwarth_b0)
+                println(io, "\e[KKadanoff relaxation time       | τ = ", rel_time .* m0_pu ./ e_pu .|> u"ns")
                 Ωprocess = 1    # Counter for Ωrange.
                 Tprocess += 1   # Increment Trange iterator.
             end
 
             for k in eachindex(Ωrange)  # E-field frequencies loop. 
-                Ω = Ωrange[k] * 2π
+                Ω = Ωrange[k] .* ω0_pu
 
                 # Print E-field frequency.
                 if verbose
@@ -475,32 +475,31 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; verbose=fal
                 end
 
                 # Calculate and store polaron memory functions (akin to self energy).
-                χ = polaron_memory_function(v, w, α, ω, β, Ω)
+                χ = polaron_memory_function(v, w, α, ω, β, Ω) .|> u"THz2π" 
                 p["χ"][k, i, j] = χ
 
                 # Print memory function.
                 if verbose
-                    println(io, "\e[KMemory function                | χ = ", χ .|> y -> ComplexF64.(y))
+                    println(io, "\e[KMemory function                | χ = ", χ)
                 end
 
                 # Calculate and store polaron complex impedances.
 
-                z = -im * Ω + im * χ
+                z = (-im * Ω + im * χ) ./ ω0_pu .* u"Ω" .|> u"Ω"
                 p["z"][k, i, j] = z 
 
                 # Print complex impedances.
                 if verbose
-                    println(io, "\e[KComplex impedance              | z = ", z 
-                    .|> y -> ComplexF64.(y))
+                    println(io, "\e[KComplex impedance              | z = ", z)
                 end
 
                 # Calculate and store polaron complex conductivities.
-                σ = 1 / z 
+                σ = 1 / z .|> u"mS"
                 p["σ"][k, i, j] = σ 
 
                 # Print complex conductivities and show total algorithm progress.
                 if verbose
-                    println(io, "\e[KComplex conductivity           | σ = ", σ  .|> y -> ComplexF64.(y))
+                    println(io, "\e[KComplex conductivity           | σ = ", σ)
                     println(io, "\e[K-----------------------------------------------------------------------")
                     println(io, "\e[K[Total Progress: $(process[]) / $(num_α * num_T * num_Ω) ($(round(process[] / (num_α * num_T * num_Ω) * 100, digits=1)) %)]")
                     print(io, "\e[9F")

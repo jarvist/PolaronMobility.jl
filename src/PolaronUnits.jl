@@ -81,7 +81,7 @@ module PolaronUnits
     ```
     E₀ = ħω₀
     ```
-    Printed as "Eₕ".
+    Printed as "E₀".
     Dimension: 𝐋^2 𝐌 𝐓^-2.
     See also: `Unitful.me`, `Unitful.q`, `Unitful.ε0`, `Unitful.ħ`, `Unitful.J`, `Unitful.eV`, [`UnitfulAtomic.Ry`](@ref).
     """
@@ -92,27 +92,20 @@ module PolaronUnits
         punit(x::Unitful.Units)
         punit(x::Unitful.Dimensions)
     Returns the appropriate polaron unit (a `Unitful.Units` object) for the dimension of `x`.
-    # Examples
-    ```jldoctest
-    julia> punit(2.3u"cm")
-    a₀
-    julia> punit(u"T")
-    a₀^-2 e^-1 ħ
-    ```
     """
     punit(x) = punit(dimension(x))
 
-    # `aunit` for `Dimension` types
+    # `punit` for `Dimension` types
     punit(x::Dimension{:Length})      = (a0_pu)^x.power
     punit(x::Dimension{:Mass})        = (m0_pu)^x.power
     punit(x::Dimension{:Time})        = (ħ_pu/E0_pu)^x.power
     punit(x::Dimension{:Current})     = (e_pu*E0_pu/ħ_pu)^x.power
     punit(x::Dimension{:Temperature}) = (E0_pu/k_pu)^x.power
 
-    # For dimensions not specified above, there is no atomic unit.
+    # For dimensions not specified above, there is no polaron unit.
     punit(::Dimension{D}) where D = throw(ArgumentError("No polaron unit defined for dimension $D."))
 
-    # `aunit` for `Dimensions` types
+    # `punit` for `Dimensions` types
     @generated punit(::Dimensions{N}) where N = prod(punit, N)
     punit(::typeof(NoDims)) = NoUnits
 
@@ -132,27 +125,13 @@ module PolaronUnits
 
     """
         puconvert(x::Unitful.Quantity)
-    Convert a quantity to the appropriate atomic unit.
-    # Examples
-    ```jldoctest
-    julia> puconvert(13.6u"eV")
-    0.4997907858599377 E₀
-    julia> puconvert(20u"nm")
-    377.94522509156565 a₀
-    ```
+    Convert a quantity to the appropriate polaron unit.
     """
     puconvert(x) = uconvert(punit(x), x)
 
     """
         puconvert(u::Unitful.Units, x::Number)
-    Interpret `x` as a quantity given in atomic units and convert it to the unit `u`.
-    # Examples
-    ```jldoctest
-    julia> puconvert(u"eV", 1)  # convert 1 Eₕ to eV
-    27.211386013449417 eV
-    julia> puconvert(u"m", 1)   # convert 1 a₀ to m
-    5.2917721067e-11 m
-    ```
+    Interpret `x` as a quantity given in polaron units and convert it to the unit `u`.
     """
     puconvert(u::Units, x::Number) = uconvert(u, x*punit(u))
 
@@ -160,13 +139,6 @@ module PolaronUnits
         pustrip(x::Unitful.Quantity)
     Returns the value of the quantity converted to polaron units as a number type (i.e., with the
     units removed). This is equivalent to `Unitful.ustrip(puconvert(x))`.
-    # Examples
-    ```jldoctest
-    julia> pustrip(13.6u"eV")
-    0.4997907858599377
-    julia> pustrip(20u"nm")
-    377.94522509156565
-    ```
     """
     pustrip(x) = ustrip(puconvert(x))      
 
