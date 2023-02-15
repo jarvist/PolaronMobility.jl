@@ -19,6 +19,8 @@ export reduce_array
 export polaron_effective_mass
 export holstein_B, holstein_energy, holsteinvw
 
+export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu
+
 ##### load in library routines... #####
 # stdlib
 using LinearAlgebra
@@ -32,13 +34,14 @@ import QuadGK.quadgk
 import SpecialFunctions.erf
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
-
 using Unitful
+using Unitful: @unit, Dimension, Dimensions, NoDims, NoUnits, Units, dimension, uconvert, ustrip
+import Unitful
+
 
 include("PolaronUnits.jl")
-Unitful.register(PolaronUnits)
-using .PolaronUnits
-
+Unitful.register(PolaronMobility)
+__init__() = Unitful.register(PolaronMobility)
 include("FeynmanTheory.jl")     # Frohlich actions + variational functions.
 include("HolsteinTheory.jl")    # Holstein actions + variational functions.
 include("HellwarthTheory.jl")   # multimode -> equivalent mode.

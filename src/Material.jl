@@ -18,7 +18,7 @@ end
 function material(ϵ_optical, ϵ_static, m_eff, phonon_freq)
     ϵ_ionic = ϵ_static - ϵ_optical
     α = frohlichalpha(ϵ_optical, ϵ_static, phonon_freq, m_eff)
-    return Material(ϵ_optical * u"ϵ0", ϵ_static * u"ϵ0", ϵ_ionic * u"ϵ0", m_eff * m0_pu, α, phonon_freq * u"THz", phonon_freq * u"THz", 1, 1u"m^3")
+    return Material(ϵ_optical, ϵ_static, ϵ_ionic, m_eff, α, phonon_freq, phonon_freq, 1, 1)
 end
 
 function material(ϵ_optic, ϵ_static, m_eff, phonon_freqs, ir_activity, volume)

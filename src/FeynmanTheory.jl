@@ -130,13 +130,13 @@ Calculate the ionic contribution to the dielectric function for a given phonon m
 function ϵ_ionic_mode(phonon_mode_freq, ir_activity, volume) # single ionic mode
 
     # Angular phonon frequency for the phonon mode (rad Hz)
-    ω_j = 2π * phonon_mode_freq * 1e12
+    ω_j = phonon_mode_freq * ω0_pu
 
     # Dielectric contribution from a single ionic phonon mode
-    ϵ_mode = eV^2 * ir_activity / (3 * volume * ω_j^2 * amu)
+    ϵ_mode = e_pu^2 * ir_activity / (3 * volume * ω_j^2 * u"u") 
 
     # Normalise ionic dielectric contribution with 1 / (4π ϵ_0) (NB: the 4π has been pre-cancelled)
-    return ϵ_mode / ϵ_0
+    return upreferred(ϵ_mode / u"ϵ0")
 end
 
 """
@@ -222,18 +222,18 @@ branches.
 function frohlichalpha(ϵ_optic, ϵ_ionic, ϵ_total, phonon_mode_freq, m_eff)
 
     # The Rydberg energy unit
-    Ry = eV^4 * me / (2 * ħ^2)
+    Ry = e_pu^4 * m0_pu / (2 * ħ_pu^2)
 
     # Angular phonon frequency for the phonon mode (rad Hz).
-    ω = 2π * phonon_mode_freq * 1e12
+    ω = phonon_mode_freq * ω0_pu
 
     # The static dielectric constant. Calculated here instead of inputted so that ionic modes are properly normalised.
     ϵ_static = ϵ_total + ϵ_optic
 
     # The contribution to the electron-phonon parameter from the currrent phonon mode. 1 / (4π ϵ_0) is the dielectric normalisation.
-    α_j = (m_eff * Ry / (ħ * ω))^(1 / 2) * ϵ_ionic / (4π * ϵ_0) / (ϵ_optic * ϵ_static)
+    α_j = (m_eff * Ry / (E0_pu))^(1 / 2) * ϵ_ionic / (4π * u"ϵ0") / (ϵ_optic * ϵ_static)
 
-    return α_j
+    return upreferred(α_j)
 end
 
 #  Extending the Feynman theory to multiple variational parameters
@@ -521,6 +521,8 @@ See also [`F`](@ref).
 """
 function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
 
+    αωβ = pustrip.(αωβ)
+
     if length(v) != length(w)
         return error("The number of variational parameters v & w must be equal.")
     end
@@ -564,7 +566,7 @@ end
 
 function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
     
-    αωβ = pustrip.(αωβ)
+    αωβ = map(x -> pustrip.(x), αωβ)
 
     Δv = v .- w
     initial = [Δv + eps(Float64), w]
