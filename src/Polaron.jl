@@ -455,7 +455,7 @@ function polaron(αrange, Trange, Ωrange, ω, v_guesses, w_guesses; ω0=ω0_pu,
             # Eqns. (2) and (1) are going back to the general (pre low-T limit) formulas in Feynman1962.  
             # To evaluate these, you need to do the explicit contour integration to get the polaron self-energy.
             # See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-            μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β) ./ mb .* μ0_pu ./ ω0_pu .|> μ0
+            μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β) ./ mb .* μ0_pu .|> μ0
             p["μH"][i, j] = μ_Hellwarth
             p["μH0"][i, j] = μ_Hellwarth_b0
 
