@@ -35,6 +35,8 @@ import QuadGK.quadgk
 import SpecialFunctions.erf
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim
+
+# Import required Unitful units, for mutability (generating new polaron units)
 using Unitful
 using Unitful: @unit, Dimension, Dimensions, NoDims, NoUnits, Units, dimension, uconvert, ustrip
 
@@ -46,7 +48,9 @@ include("EffectiveMass.jl")     # Effective mass (Feynman's ansatz).
 include("ResponseFunctions.jl") # Linear reponse functions for polaron.
 include("Material.jl")          # Material type and constructors.
 include("Polaron.jl")           # Polaron type and constructors.
-include("PolaronUnits.jl")
+include("PolaronUnits.jl")      # Implements internal Feynman 'polaron units', and SI conversions
+
+# Register newly defined units with Unitful
 Unitful.register(PolaronMobility)
 __init__() = Unitful.register(PolaronMobility)
 
