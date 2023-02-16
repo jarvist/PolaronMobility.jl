@@ -1,4 +1,22 @@
 # The following five constants are used as the “base” atomic units
+
+# Physical constants
+
+"Planck's constant, (kgm²s⁻¹)."
+const hbar = ħ = 1.054571817e-34
+"Electron charge, (kgm²s⁻²)."
+const eV = q = ElectronVolt = 1.602176634e-19
+"Electron mass, (kg)."
+const me = MassElectron = 9.1093837015e-31
+"Boltzmann's constant, (kgm²K⁻¹)."
+const Boltzmann = kB = 1.380649e-23
+"Permittivity of free space, (C²N⁻¹m⁻²)."
+const ε_0 = ϵ_0 = 8.85418682e-12
+"Speed of light, (ms⁻¹)."
+const c = 299792458
+"Atomic mass unit, (kg)"
+const amu = 1.660_539_066_60e-27
+
 """
     PolaronUnits.m0_pu
 A unit equal to the electron rest mass mₑ ≈ 9.109,383,7015 × 10^-31 kg.
@@ -152,4 +170,59 @@ units removed). This is equivalent to `Unitful.ustrip(puconvert(x))`.
 """
 pustrip(x) = ustrip(puconvert(x))      
 
+"""
+    addunits!(polaron::Polaron)
+"""
+function addunits!(polaron::Polaron)
+    polaron.ω = polaron.ω .* ω0_pu
+    polaron.Fs = polaron.Fs .* E0_pu
+    polaron.Fl = polaron.Fl .* E0_pu
+    polaron.Ms = polaron.Ms .* m0_pu
+    polaron.Ml = polaron.Ml .* m0_pu
+    polaron.Rs = polaron.Rs .* a0_pu
+    polaron.Rl = polaron.Rl .* a0_pu
+    polaron.ΩFC = polaron.ΩFC .* ω0_pu
+    polaron.F0 = polaron.F0 .* E0_pu
+    polaron.A0 = polaron.A0 .* E0_pu
+    polaron.B0 = polaron.B0 .* E0_pu
+    polaron.C0 = polaron.C0 .* E0_pu
+    polaron.κ0 = polaron.κ0 .* m0_pu * ω0_pu^2
+    polaron.M0 = polaron.M0 .* m0_pu
+    polaron.M0a = polaron.M0a .* m0_pu
+    polaron.M0r = polaron.M0r .* m0_pu
+    polaron.R0 = polaron.R0 .* a0_pu
+    polaron.T = polaron.T .* T0_pu
+    polaron.β = polaron.β .* β0_pu
+    polaron.F = polaron.F .* E0_pu
+    polaron.A = polaron.A .* E0_pu
+    polaron.B = polaron.B .* E0_pu
+    polaron.C = polaron.C .* E0_pu
+    polaron.κ = polaron.κ .* m0_pu * ω0_pu^2
+    polaron.M = polaron.M .* m0_pu
+    polaron.Ma = polaron.Ma .* m0_pu
+    polaron.Mr = polaron.Mr .* m0_pu
+    polaron.R = polaron.R .* a0_pu
+    polaron.μ = polaron.μ .* μ0_pu
+    polaron.μFHIP = polaron.μFHIP .* μ0_pu
+    polaron.μD = polaron.μD .* μ0_pu
+    polaron.μK = polaron.μK .* μ0_pu
+    polaron.μH = polaron.μH .* μ0_pu
+    polaron.μH0 = polaron.μH0 .* μ0_pu
+    polaron.τ = polaron.τ .* t0_pu
+    polaron.Ω = polaron.Ω .* ω0_pu
+    polaron.χ = polaron.χ .* ω0_pu
+    polaron.z = polaron.z .* punit(u"Ω")
+    polaron.σ = polaron.σ .* punit(u"S")
+end
 
+"""
+    addunits!(polaron::Material)
+"""
+function addunits!(material::Material)
+    material.freq_eff = material.freq_eff .* ω0_pu
+    material.freqs = material.freqs .* ω0_pu
+    material.ionic = material.ionic .* punit(u"ϵ0")
+    material.mb = material.mb .* m0_pu
+    material.optical = material.optical .* punit(u"ϵ0")
+    material.static = material.static .* punit(u"ϵ0")
+end

@@ -1,6 +1,6 @@
 # Material.jl
 
-struct Material
+mutable struct Material
     optical     # Optical dielectric constant
     static      # Static dielectric constant
     ionic       # Ionic dielectric contributions

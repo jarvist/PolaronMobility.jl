@@ -18,6 +18,7 @@ export save_polaron, load_polaron # Functions to save and load Polaron types to/
 export reduce_array
 export polaron_effective_mass
 export holstein_B, holstein_energy, holsteinvw
+export addunits!
 
 export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu
 
@@ -36,12 +37,7 @@ import SpecialFunctions.erf
 using Optim
 using Unitful
 using Unitful: @unit, Dimension, Dimensions, NoDims, NoUnits, Units, dimension, uconvert, ustrip
-import Unitful
 
-
-include("PolaronUnits.jl")
-Unitful.register(PolaronMobility)
-__init__() = Unitful.register(PolaronMobility)
 include("FeynmanTheory.jl")     # Frohlich actions + variational functions.
 include("HolsteinTheory.jl")    # Holstein actions + variational functions.
 include("HellwarthTheory.jl")   # multimode -> equivalent mode.
@@ -50,6 +46,9 @@ include("EffectiveMass.jl")     # Effective mass (Feynman's ansatz).
 include("ResponseFunctions.jl") # Linear reponse functions for polaron.
 include("Material.jl")          # Material type and constructors.
 include("Polaron.jl")           # Polaron type and constructors.
+include("PolaronUnits.jl")
+Unitful.register(PolaronMobility)
+__init__() = Unitful.register(PolaronMobility)
 
 # QOL function for removing singleton dimensions.
 reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims=tuple(findall(size(a) .== 1)...))
