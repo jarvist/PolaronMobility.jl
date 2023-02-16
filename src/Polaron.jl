@@ -159,7 +159,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, mb=1, β0=1, v_guesses=3.11, w_
             if num_ω == 1
                 println(io, "\e[KPhonon frequencies             | ω = ", ω)
             else
-                println(io, "\e[KPhonon frequencies             | ω = ", join(first(ω, 2), ", ")..., " ... ", join(last(ω, 2), ", ")...)
+                println(io, "\e[KPhonon frequencies             | ω = ", join(round.(first(ω, 2), digits=2), ", ")..., " ... ", join(round.(last(ω, 2), digits=2), ", ")...)
             end
         end
 
@@ -254,7 +254,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, mb=1, β0=1, v_guesses=3.11, w_
         # Print athermal variational parameter and energy data.
         if verbose
             println(io, "\e[K-----------------------------------------------------------------------")
-            println(io, "\e[K                      Zero Temperature Information:                    ")
+            println(io, "\e[K                   Zero Temperature Information:                       ")
             println(io, "\e[K-----------------------------------------------------------------------")
             println(io, "\e[KVariational parameter          | v₀ = ", v_gs)
             println(io, "\e[KVariational parameter          | w₀ = ", w_gs)
@@ -475,7 +475,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, mb=1, β0=1, v_guesses=3.11, w_
                 end
 
                 # Calculate and store polaron memory functions (akin to self energy).
-                χ = polaron_memory_function(v, w, α, ω, β, Ω .* 2π)
+                χ = polaron_memory_function(v, w, α, ω, β, Ω)
                 p["χ"][k, i, j] = χ
 
                 # Print memory function.
@@ -699,19 +699,45 @@ function save_polaron(polaron::Polaron, prefix)
     println("Saving polaron data to $prefix.jld ...")
 
     JLD.save("$prefix.jld",
-        "alpha", polaron.α,
+        "phonon freq", polaron.ω,
+        "small alpha energy", polaron.Fs,
+        "large alpha energy", polaron.Fl,
+        "small alpha mass", polaron.Ms,
+        "large alpha mass", polaron.Ml,
+        "small alpha size", polaron.Rs,
+        "large alpha size", polaron.Rl,
+        "FC freq", polaron.ΩFC,
+        "athermal energy", polaron.F0,
+        "athermal A", polaron.A0,
+        "athermal B", polaron.B0,
+        "athermal C", polaron.C0,
+        "athermal spring", polaron.κ0,
+        "athermal mass", polaron.M0,
+        "athermal asympt mass", polaron.M0a,
+        "athermal reduced mass", polaron.M0r,
+        "athermal size", polaron.R0,
         "temperature", polaron.T,
         "beta", polaron.β,
-        "phonon freq", polaron.ω,
-        "v", polaron.v,
-        "w", polaron.w,
-        "spring", polaron.κ,
-        "mass", polaron.M,
-        "energy", polaron.F,
-        "efield freq", polaron.Ω,
-        "impedance", polaron.Z,
-        "conductivity", polaron.σ,
-        "mobility", polaron.μ
+        "thermal energy", polaron.F,
+        "thermal A", polaron.A,
+        "thermal B", polaron.B,
+        "thermal C", polaron.C,
+        "thermal spring", polaron.κ,
+        "thermal mass", polaron.M,
+        "thermal asympt mass", polaron.Ma,
+        "thermal reduced mass", polaron.Mr,
+        "thermal size", polaron.R,
+        "mobility", polaron.μ,
+        "FHIP mobility", polaron.μFHIP,
+        "Devreese mobility", polaron.μD,
+        "Kadanoff mobility", polaron.μK,
+        "Hellwarth mobility", polaron.μH,
+        "b=0 mobility", polaron.μH0,
+        "relaxation time", polaron.τ,
+        "E-field freq", polaron.Ω,
+        "memory function", polaron.χ,
+        "impedance", polaron.z,
+        "conductivity", polaron.σ
     )
 
     println("... Polaron data saved.")
@@ -743,6 +769,46 @@ function load_polaron(polaron_file_path)
         data["conductivity"],
         data["mobility"]
     )
+
+    data["phonon freq"]
+    data["small alpha energy"]
+    data["large alpha energy"]
+    data["small alpha mass"]
+    data["large alpha mass"]
+    data["small alpha size"]
+    data["large alpha size"]
+    data["FC freq"]
+    data["athermal energy"]
+    data["athermal A"]
+    data["athermal B"]
+    data["athermal C"]
+    data["athermal spring"]
+    data["athermal mass"]
+    data["athermal asympt mass"]
+    data["athermal reduced mass"]
+    data["athermal size"]
+    data["temperature"]
+    data["beta"]
+    data["thermal energy"]
+    data["thermal A"]
+    data["thermal B"]
+    data["thermal C"]
+    data["thermal spring"]
+    data["thermal mass"]
+    data["thermal asympt mass"]
+    data["thermal reduced mass"]
+    data["thermal size"]
+    data["mobility"]
+    data["FHIP mobility"]
+    data["Devreese mobility"]
+    data["Kadanoff mobility"]
+    data["Hellwarth mobility"]
+    data["b=0 mobility"]
+    data["relaxation time"]
+    data["E-field freq"]
+    data["memory function"]
+    data["impedance"]
+    data["conductivity"]
 
     println("... Polaron loaded.")
 

@@ -2,30 +2,6 @@
 # A Friday afternoon of hacking to try and implement the T-dep electron-phonon coupling from the above PRB
 # Which was unusually successful! And more or less reproduced Table III
 
-# one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
-using QuadGK
-
-# Equation numbers follow above Hellwarth 1999 PRB
-# 62b
-A(v,w,β)=3/β*( log(v/w) - 1/2*log(2*π*β) - log(sinh(v*β/2)/sinh(w*β/2)))
-
-# 62d
-Y(x,v,β)=1/(1-exp(-v*β))*(1+exp(-v*β)-exp(-v*x)-exp(v*(x-β)))
-# 62c integrand
-f(x,v,w,β)=(exp(β-x)+exp(x))/(w^2*x*(1-x/β)+Y(x,v,β)*(v^2-w^2)/v)^(1/2)
-# 62c
-B(v,w,β,α) = α*v/(sqrt(π)*(exp(β)-1)) * quadgk(x->f(x,v,w,β),0,β/2)[1]
-#62e
-C(v,w,β)=3/4*(v^2-w^2)/v * (coth(v*β/2)-2/(v*β))
-
-F(v,w,β,α)=-(A(v,w,β)+B(v,w,β,α)+C(v,w,β)) #(62a)
-
-# Can now evaluate, e.g.
-# F(v,w,β,α)=F(7.2,6.5,1.0,1.0)
-# BUT - this is just the objective function! Not the optimised parameters.
-# Also there's a scary numeric integration (quadgk) buried within...
-
-
 "Print out F(alpha,beta) for a specific v,w; as a test"
 function test_fns()
     @printf("\t\t")
@@ -38,7 +14,7 @@ function test_fns()
         v=w=4
         print("β: $β  \t||")
         for α in 1:5
-            @printf("%f\t",F(v,w,β,α))
+            @printf("%f\t",F(v, w, α, 1, β))
         end
         println()
     end
@@ -57,30 +33,26 @@ function test_trace()
 	β=1.0
 
 	for v=6:0.1:8
-    	@printf("%f %f\n",v,F(v,w,β,α))
+    	@printf("%f %f\n",v,F(v, w, α, 1, β))
 	end
 
 	@printf("\n")
 	v=7.20
 	for w=6:0.1:7
-    	@printf("%f %f\n",w,F(v,w,β,α))
+    	@printf("%f %f\n",w,F(v, w, α, 1, β))
 	end
 end
 test_trace()
 
 # Angle for the ringside seats, when the fall, don't blame me, Bring on the Major Leagues
-using Optim
-# Julia package stuffed full of magic, does auto-differentation & etc. etc.
-
 Fopt(x) = F(x[1],x[2],1,1)
 
 function test_Fopt()
     show(Fopt([7.2,6.5]))
-# OK! It looks like I can bury the alpha, beta parameters (which we don't optimise), by wrapping our function in a function definition.
+	# OK! It looks like I can bury the alpha, beta parameters (which we don't optimise), by wrapping our function in a function definition.
     initial=[7.2,6.5]
 
     show(optimize(Fopt,  initial, LBFGS()))
-
     show(optimize(Fopt, initial, BFGS(), Optim.Options(autodiff=true)))
 end
 
@@ -104,7 +76,7 @@ function test_Optim()
 	for β in 1:0.25:3.0
 		print("β: $β  \t||")
 		for α in 1:5
-			myf(x) = F(x[1],x[2],β,α)
+			myf(x) = F(x[1], x[2], α, 1, β)
 			solution=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = ConjugateGradient, optimizer_o=Optim.Options(autodiff=true))
 			minimum=Optim.minimizer(solution)
 
@@ -144,7 +116,7 @@ function test_Optimisers()
 		for β in 1:0.25:3.0
 			print("β: $β  \t||")
 			for α in 1:5
-				myf(x) = F(x[1],x[2],β,α)
+				myf(x) = F(x[1], x[2], α, 1, β)
 				res=optimize(DifferentiableFunction(myf), initial, lower, upper, Fminbox(); optimizer = optimizer, optimizer_o=Optim.Options(autodiff=true))
 				minimum=Optim.minimizer(res)
 				#show(Optim.converged(res)) # All came out as 'true'

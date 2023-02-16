@@ -2,6 +2,9 @@ push!(LOAD_PATH, "../src/") # load module from local directory
 
 using PolaronMobility
 using Printf # used for some stdout
+using Unitful
+using QuadGK # one-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
+using Optim # Julia package stuffed full of magic, does auto-differentation & etc. etc.
 
 using Test
 
