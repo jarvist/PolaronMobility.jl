@@ -754,62 +754,47 @@ function load_polaron(polaron_file_path)
 
     data = JLD.load("$polaron_file_path")
 
-    polaron = NewPolaron(
-        data["alpha"],
-        data["temperature"],
-        data["beta"],
-        data["phonon freq"],
-        data["v"],
-        data["w"],
-        data["spring"],
-        data["mass"],
-        data["energy"],
-        data["efield freq"],
-        data["impedance"],
-        data["conductivity"],
+    polaron = Polaron(
+        data["phonon freq"]
+        data["small alpha energy"]
+        data["large alpha energy"]
+        data["small alpha mass"]
+        data["large alpha mass"]
+        data["small alpha size"]
+        data["large alpha size"]
+        data["FC freq"]
+        data["athermal energy"]
+        data["athermal A"]
+        data["athermal B"]
+        data["athermal C"]
+        data["athermal spring"]
+        data["athermal mass"]
+        data["athermal asympt mass"]
+        data["athermal reduced mass"]
+        data["athermal size"]
+        data["temperature"]
+        data["beta"]
+        data["thermal energy"]
+        data["thermal A"]
+        data["thermal B"]
+        data["thermal C"]
+        data["thermal spring"]
+        data["thermal mass"]
+        data["thermal asympt mass"]
+        data["thermal reduced mass"]
+        data["thermal size"]
         data["mobility"]
+        data["FHIP mobility"]
+        data["Devreese mobility"]
+        data["Kadanoff mobility"]
+        data["Hellwarth mobility"]
+        data["b=0 mobility"]
+        data["relaxation time"]
+        data["E-field freq"]
+        data["memory function"]
+        data["impedance"]
+        data["conductivity"]
     )
-
-    data["phonon freq"]
-    data["small alpha energy"]
-    data["large alpha energy"]
-    data["small alpha mass"]
-    data["large alpha mass"]
-    data["small alpha size"]
-    data["large alpha size"]
-    data["FC freq"]
-    data["athermal energy"]
-    data["athermal A"]
-    data["athermal B"]
-    data["athermal C"]
-    data["athermal spring"]
-    data["athermal mass"]
-    data["athermal asympt mass"]
-    data["athermal reduced mass"]
-    data["athermal size"]
-    data["temperature"]
-    data["beta"]
-    data["thermal energy"]
-    data["thermal A"]
-    data["thermal B"]
-    data["thermal C"]
-    data["thermal spring"]
-    data["thermal mass"]
-    data["thermal asympt mass"]
-    data["thermal reduced mass"]
-    data["thermal size"]
-    data["mobility"]
-    data["FHIP mobility"]
-    data["Devreese mobility"]
-    data["Kadanoff mobility"]
-    data["Hellwarth mobility"]
-    data["b=0 mobility"]
-    data["relaxation time"]
-    data["E-field freq"]
-    data["memory function"]
-    data["impedance"]
-    data["conductivity"]
-
     println("... Polaron loaded.")
 
     return polaron
