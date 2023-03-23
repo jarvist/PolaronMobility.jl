@@ -43,4 +43,3 @@ function Base.show(io::IO, ::MIME"text/plain", x::Material)
     println(io_limit, "\e[KUnit cell volume   | V₀ = ", x.volume)
     println("\e[K-------------------------------------------")
 end
-
