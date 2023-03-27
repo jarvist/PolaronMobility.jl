@@ -535,7 +535,7 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
     upper = fill(upper_limit, 2 * N_params)
 
     # The multiple phonon mode free energy function to minimise.
-    f(x) = -log(F([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1])
+    f(x) = F([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
