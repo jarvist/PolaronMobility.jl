@@ -21,6 +21,7 @@ export holstein_B, holstein_energy, holsteinvw
 export addunits!
 
 export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu
+export frohlich_matrix, spherical_k_integral, frohlich_B, frohlich_energy, frohlich_vw_k
 
 ##### load in library routines... #####
 # stdlib
@@ -42,6 +43,7 @@ using Unitful: @unit, Dimension, Dimensions, NoDims, NoUnits, Units, dimension, 
 
 include("FeynmanTheory.jl")     # Frohlich actions + variational functions.
 include("HolsteinTheory.jl")    # Holstein actions + variational functions.
+include("KSpaceTheory.jl")      # K-space dependent integral code.
 include("HellwarthTheory.jl")   # multimode -> equivalent mode.
 include("MemoryFunction.jl")    # Memory function X calculation.
 include("EffectiveMass.jl")     # Effective mass (Feynman's ansatz).
