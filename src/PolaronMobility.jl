@@ -60,4 +60,3 @@ __init__() = Unitful.register(PolaronMobility)
 reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims=tuple(findall(size(a) .== 1)...))
 
 end # module
-

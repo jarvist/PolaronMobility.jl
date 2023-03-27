@@ -65,4 +65,3 @@ function holsteinvw(v::Real, w::Real, αaωβ...; upper_limit=Inf)
 end
 
 # holsteinvw(α, γ, ω; upper_limit=1e6) = holsteinvw(3.4, 2.6, α, γ, ω; upper_limit=upper_limit)
-
