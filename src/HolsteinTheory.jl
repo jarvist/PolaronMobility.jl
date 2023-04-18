@@ -4,35 +4,34 @@
 # Compared to Hellwarth's presentation of the Feynman variational approach for the Frohlich
 # Hamiltonian, then only thing that changes with the Holstein Hamiltonian is in the
 # calculation of the 'B' component (the coupled electron-phonon component).
-function holstein_B(v, w, α, a, ω)
+function holstein_B(v, w, α, ω; dims=3)
     d(τ) = D_imag(τ, v, w)
 
-    integrand(τ) = exp(-τ) * erf(π / a * sqrt(d(τ) / 2))^3 / d(τ)^(3/2)
+    integrand(τ) = exp(-τ * ω) * (erf(π * sqrt(d(τ))) / sqrt(d(τ)))^(dims)
 
     integral = quadgk(τ -> integrand(τ), 0, Inf)[1]
 
-    return α * ω * integral / √2 / π^(3/2)
+    return 2 * α * dims * ω * (1 / 4π)^(dims/2) * integral 
 end
 
-function holstein_B(v, w, α, a, ω, β)
-    d(τ) = D_imag(τ, v, w, ω, β)
+function holstein_B(v, w, α, ω, β; dims=3)
+    d(τ) = D_imag(τ, v, w, ω, β) / dims * 2
 
-    integrand(τ) = cosh(τ - ω * β / 2) / sinh(ω * β / 2) * erf(π / a * sqrt(d(τ) / 2))^3 / d(τ)^(3/2)
+    integrand(τ) = cosh(τ - ω * β / 2) / sinh(ω * β / 2) * (erf(π * sqrt(d(τ))) / sqrt(d(τ)))^(dims)
 
-    integral = quadgk(τ -> integrand(τ * ω * β / 2), 0, 1)[1] * ω * β / 2
+    integral = quadgk(τ -> integrand(τ), 0, β / 2)[1] 
 
-    return α * ω * integral / √2 / π^(3/2)
+    return 2 * α * dims * ω / (4π)^(dims/2) * integral
 end
 
-function holstein_energy(v, w, α, a, ωβ...)
-    Ar = A(v, w, ωβ...)
-    Br = holstein_B(v, w, α, a, ωβ...)
-    Cr = C(v, w, ωβ...)
-    total_energy = -(Ar + Br + Cr)
-    return total_energy, Ar, Br, Cr
+function holstein_energy(v, w, α, ω; dims=3)
+    f = (A(v, w, 1) + C(v, w, 1)) / 3 + 2 * dims
+    Br = holstein_B(v, w, α, ω; dims=dims)
+    total_energy = -f - Br
+    return total_energy, f, Br
 end
 
-function holsteinvw(v::Real, w::Real, αaωβ...; upper_limit=Inf)
+function holsteinvw(v::Real, w::Real, α, ω; dims=3, upper_limit=Inf)
     Δv = v .- w
     initial = [Δv + eps(Float64), w]
 
@@ -41,7 +40,7 @@ function holsteinvw(v::Real, w::Real, αaωβ...; upper_limit=Inf)
     upper = [upper_limit, upper_limit]
 
     # The multiple phonon mode free energy function to minimise.
-    f(x) = holstein_energy(x[1] .+ x[2], x[2], αaωβ...)[1]
+    f(x) = holstein_energy(x[1] .+ x[2], x[2], α, ω; dims=dims)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -54,14 +53,14 @@ function holsteinvw(v::Real, w::Real, αaωβ...; upper_limit=Inf)
 
     # Extract the v and w parameters that minimised the free energy.
     Δv, w = Optim.minimizer(solution)
-    E, A, B, C = holstein_energy(Δv .+ w, w, αaωβ...)
+    E, f, B = holstein_energy(Δv .+ w, w, α, ω; dims=dims)
 
     # if Optim.converged(solution) == false
     #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
     # end
 
     # Return the variational parameters that minimised the free energy.
-    return Δv .+ w, w, E, A, B, C
+    return Δv .+ w, w, E, f, B
 end
 
 # holsteinvw(α, γ, ω; upper_limit=1e6) = holsteinvw(3.4, 2.6, α, γ, ω; upper_limit=upper_limit)
