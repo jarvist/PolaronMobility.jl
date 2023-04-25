@@ -5,13 +5,13 @@
 # Hamiltonian, then only thing that changes with the Holstein Hamiltonian is in the
 # calculation of the 'B' component (the coupled electron-phonon component).
 function holstein_B(v, w, α, ω; dims=3)
-    d(τ) = D_imag(τ, v, w)
+    d(τ) = D_imag(τ, v, w) * dims / ω
 
-    integrand(τ) = exp(-τ * ω) * (erf(π * sqrt(d(τ))) / sqrt(d(τ)))^(dims)
+    integrand(τ) = exp(-τ) * (erf(π * sqrt(d(τ))) / sqrt(d(τ)))^(dims)
 
     integral = quadgk(τ -> integrand(τ), 0, Inf)[1]
 
-    return 2 * α * dims * ω * (1 / 4π)^(dims/2) * integral 
+    return 2 * α * dims * integral / (2π)^(dims)
 end
 
 function holstein_B(v, w, α, ω, β; dims=3)
@@ -25,9 +25,9 @@ function holstein_B(v, w, α, ω, β; dims=3)
 end
 
 function holstein_energy(v, w, α, ω; dims=3)
-    f = (A(v, w, 1) + C(v, w, 1)) / 3 + 2 * dims
+    f = (v - w)^2 / v * ω / 4
     Br = holstein_B(v, w, α, ω; dims=dims)
-    total_energy = -f - Br
+    total_energy = f - Br
     return total_energy, f, Br
 end
 
@@ -48,7 +48,7 @@ function holsteinvw(v::Real, w::Real, α, ω; dims=3, upper_limit=Inf)
         lower,
         upper,
         initial,
-        Fminbox(BFGS())
+        Fminbox(LBFGS())
     )
 
     # Extract the v and w parameters that minimised the free energy.
