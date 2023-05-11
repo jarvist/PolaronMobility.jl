@@ -1,66 +1,60 @@
 # HolsteinTheory.jl
-#  A work in progress.
+# A work in progress.
 
 # Compared to Hellwarth's presentation of the Feynman variational approach for the Frohlich
 # Hamiltonian, then only thing that changes with the Holstein Hamiltonian is in the
 # calculation of the 'B' component (the coupled electron-phonon component).
+
 function holstein_B(v, w, α, ω; dims=3)
-    d(τ) = D_imag(τ, v, w) * dims / ω
 
-    integrand(τ) = exp(-τ) * (erf(π * sqrt(d(τ))) / sqrt(d(τ)))^(dims)
+    # Trial polaron green's function
+	G(τ) = D_imag(τ, v, w) / ω * dims
 
-    integral = quadgk(τ -> integrand(τ), 0, Inf)[1]
+    integral = quadgk(τ -> exp(-τ) * (erf(π * √G(τ)) / √G(τ))^dims, 0.0, Inf)[1]
 
-    return 2 * α * dims * integral / (2π)^(dims)
-end
-
-function holstein_B(v, w, α, ω, β; dims=3)
-    d(τ) = D_imag(τ, v, w, ω, β) / dims * 2
-
-    integrand(τ) = cosh(τ - ω * β / 2) / sinh(ω * β / 2) * (erf(π * sqrt(d(τ))) / sqrt(d(τ)))^(dims)
-
-    integral = quadgk(τ -> integrand(τ), 0, β / 2)[1] 
-
-    return 2 * α * dims * ω / (4π)^(dims/2) * integral
+    return 2 * dims * α / (π)^(dims/2) * integral
 end
 
 function holstein_energy(v, w, α, ω; dims=3)
-    f = (v - w)^2 / v * ω / 4
-    Br = holstein_B(v, w, α, ω; dims=dims)
-    total_energy = f - Br
-    return total_energy, f, Br
+
+	kinetic_energy = -2 * dims - dims * (A(v, w, ω) + C(v, w, ω)) / 4
+
+	potential_energy = -holstein_B(v, w, α, ω; dims=dims)
+
+    total_energy = kinetic_energy + potential_energy
+
+	return total_energy, kinetic_energy, potential_energy
 end
 
-function holsteinvw(v::Real, w::Real, α, ω; dims=3, upper_limit=Inf)
-    Δv = v .- w
-    initial = [Δv + eps(Float64), w]
+function holsteinvw(v, w, αωβ...; dims=3, upperlimit=Inf)
 
     # Limits of the optimisation.
     lower = [0.0, 0.0]
-    upper = [upper_limit, upper_limit]
+    upper = [upperlimit, upperlimit]
 
-    # The multiple phonon mode free energy function to minimise.
-    f(x) = holstein_energy(x[1] .+ x[2], x[2], α, ω; dims=dims)[1]
+    Δv = v - w # defines a constraint, so that v>w
+    initial = [Δv + eps(Float64), w]
 
-    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+    # Feynman 1955 athermal action 
+    f(x) = holstein_energy((x[1] + x[2]), x[2], αωβ...; dims=dims)[1]
+
+    # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
         Optim.OnceDifferentiable(f, initial; autodiff=:forward),
         lower,
         upper,
         initial,
-        Fminbox(LBFGS())
+        Fminbox(BFGS()),
     )
 
-    # Extract the v and w parameters that minimised the free energy.
-    Δv, w = Optim.minimizer(solution)
-    E, f, B = holstein_energy(Δv .+ w, w, α, ω; dims=dims)
+    # Get v and w values that minimise the free energy.
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
+	total_energy, kinetic_energy, potential_energy = holstein_energy(Δv + w, w, αωβ...; dims=dims)
 
-    # if Optim.converged(solution) == false
-    #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    # end
+	if Optim.converged(solution) == false
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    end
 
-    # Return the variational parameters that minimised the free energy.
-    return Δv .+ w, w, E, f, B
+    # Return variational parameters that minimise the free energy.
+    return Δv + w, w, total_energy, kinetic_energy, potential_energy
 end
-
-# holsteinvw(α, γ, ω; upper_limit=1e6) = holsteinvw(3.4, 2.6, α, γ, ω; upper_limit=upper_limit)

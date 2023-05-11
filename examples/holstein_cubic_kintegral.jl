@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
@@ -21,40 +21,40 @@ function D(τ, v, w)
 end
 
 # ╔═╡ cce8fa1c-1eae-4273-a2b1-8cc9e9870230
-function holstein_matrix(k; α = 1.0, γ = 1.0)
-	4π / 3.0 * α / γ
+function holstein_matrix(k; α = 1, ω = 1, d = 3)
+	2 * d * α * ω
 end
 
 # ╔═╡ b76ba787-a3fb-46a1-8a61-84c4e0670808
-function frohlich_matrix(k; α = 1.0, ω₀ = 1.0)
+function frohlich_matrix(k; α = 1, ω₀ = 1)
 	ω₀^(3/2) * 2√2 * π * α / k^2
 end
 
 # ╔═╡ bc7e787b-9718-4552-ba63-11bc3869c74d
-function spherical_k_integral(τ, elph_matrix, α, v, w; cutoff = Inf64)
-	return quadgk(k -> k^2 * elph_matrix(k; α = α) * exp(-k^2 * D(τ, v, w) / 2), 0.0, cutoff)[1]
+function spherical_k_integral(τ, elph_matrix, α, ω₀, v, w; cutoff = Inf)
+	return quadgk(k -> k^2 * elph_matrix(k; α = α, ω₀=ω₀) * exp(-k^2 * D(τ, v, w) / 2), 0, cutoff)[1]
 end
 
 # ╔═╡ 558d84b1-23ac-4406-9513-2d5e3bf4b9e0
-function frohlich_el_integral(elph_matrix, α, v, w; cutoff = Inf64)
-    quadgk(τ -> exp(-τ) * spherical_k_integral(τ, elph_matrix, α, v, w; cutoff = cutoff), 0.0, Inf64)[1] / 2π^2
+function frohlich_el_integral(elph_matrix, α, ω₀, v, w; cutoff = Inf)
+    quadgk(τ -> exp(-τ * ω₀) * spherical_k_integral(τ, elph_matrix, α, ω₀, v, w; cutoff = cutoff), 0, Inf)[1] / 2π^2
 end
 
 # ╔═╡ 27cd10cf-febe-42df-a13c-cca0ae35b045
-function frohlich_energy(elph_matrix, α, v, w; cutoff = Inf64)
-    3 * (v - w)^2 / (4 * v) - frohlich_el_integral(elph_matrix, α, v, w; cutoff = cutoff)
+function frohlich_energy(elph_matrix, α, ω₀, v, w; cutoff = Inf64)
+    3 * (v - w)^2 / (4 * v) - frohlich_el_integral(elph_matrix, α, ω₀, v, w; cutoff = cutoff)
 end
 
 # ╔═╡ d21df028-04d7-45b7-8c73-6fe09e4678af
-function frohlich_vw_k(elph_matrix, α; v = 3.0, w = 3.0, cutoff = Inf64)
+function frohlich_vw_k(elph_matrix, α, ω₀; v = 3.0, w = 3.0, cutoff = Inf)
     # Limits of the optimisation.
     lower = [0.0, 0.0]
-    upper = [Inf64, Inf64]
+    upper = [Inf, Inf]
     Δv = v - w # defines a constraint, so that v>w
     initial = [Δv + eps(Float64), w]
 
     # Feynman 1955 athermal action 
-    f(x) = frohlich_energy(elph_matrix, α, x[1] + x[2], x[2]; cutoff = cutoff)
+    f(x) = frohlich_energy(elph_matrix, α, ω₀, x[1] + x[2], x[2]; cutoff = cutoff)
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
@@ -77,11 +77,20 @@ function frohlich_vw_k(elph_matrix, α; v = 3.0, w = 3.0, cutoff = Inf64)
     return Δv + w, w, E
 end
 
+# ╔═╡ 4b9c44fb-ae8e-4989-b5b5-648ff9429de0
+frohlich_vw_k(frohlich_matrix, 1, 1)
+
 # ╔═╡ 7b5631b7-4a20-4bd7-8276-c8371be890de
+# ╠═╡ disabled = true
+#=╠═╡
 α_range = 0.1:0.1:12.0
+  ╠═╡ =#
 
 # ╔═╡ 03a50257-7aaf-46c1-a015-96ab1b1a5741
+# ╠═╡ disabled = true
+#=╠═╡
 γ_range = 0.1:0.1:2.0
+  ╠═╡ =#
 
 # ╔═╡ fbeefdc4-1882-49d8-a01d-724e3f227e8e
 # ╠═╡ disabled = true
@@ -95,109 +104,16 @@ vh_s, wh_s, Eh_s = unzip(frohlich_vw_k.(holstein_matrix, α_range, cutoff = 2π 
 vf, wf, Ef = unzip(frohlich_vw_k.(frohlich_matrix, α_range))
   ╠═╡ =#
 
-# ╔═╡ c59b1c5b-bc81-4323-8f35-cd2ce81465d0
-α_range_many = 0.01:0.01:12.0
-
-# ╔═╡ b8a192d3-3769-4dea-960f-f21bfe7103cd
-γ_range_many = 0.01:0.01:6.0
-
-# ╔═╡ fa71f9d4-1db5-438d-8d3d-0533308c9ceb
-function cubic_k_integral(τ, elph_matrix, α, γ, v, w; cutoff = π)
-	return elph_matrix(1.0; α = α, γ = γ) * (quadgk(k -> exp(-k^2 * D(τ, v, w) / γ / 2.0), -cutoff, cutoff)[1])^3 / (2π)^3
-end
-
-# ╔═╡ 142685e4-9223-4af7-89b0-c22292fda31b
-function holstein_el_integral_k(elph_matrix, α, γ, v, w; cutoff = π)
-    quadgk(τ -> exp(-τ) * cubic_k_integral(τ, elph_matrix, α, γ, v, w; cutoff = cutoff), 0.0, Inf64)[1] 
-end
-
-# ╔═╡ 859747d7-6233-4334-8141-a247e892263f
-function holstein_energy_k(elph_matrix, α, γ, v, w; cutoff = π)
-    3.0 * (v - w)^2 / (4.0 * v) - holstein_el_integral_k(elph_matrix, α, γ, v, w; cutoff = cutoff)
-end
-
-# ╔═╡ 8fef2ab6-7662-4257-82db-5f892b80a8c1
-function holstein_vw_k(elph_matrix, α, γ; v = 3.0, w = 3.0, cutoff = π)
-    # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [Inf64, Inf64]
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), w]
-
-    # Feynman 1955 athermal action 
-    f(x) = holstein_energy_k(elph_matrix, α, γ, x[1] + x[2], x[2]; cutoff = cutoff)
-
-    # Use Optim to optimise v and w to minimise enthalpy.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-    )
-
-    # Get v and w values that minimise the free energy.
-    Δv, w = Optim.minimizer(solution) # v=Δv+w
-	E = Optim.minimum(solution)
-
-	if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
-
-    # Return variational parameters that minimise the free energy.
-    return Δv + w, w, E
-end
-
 # ╔═╡ 69d5e14a-2e49-4e8a-8b4e-7d461f678a2d
 # ╠═╡ disabled = true
 #=╠═╡
 vh_c, wh_c, Eh_c = unzip(holstein_vw_k.(holstein_matrix, α_range, 1.0, cutoff = π))
   ╠═╡ =#
 
-# ╔═╡ 56bf3062-d733-4e42-a9b3-27d2f7d0e306
-function holstein_el_integral(α, γ, v, w)
-    4π * α * sqrt(γ / π^3) / (2√2) / 3.0 * quadgk(τ -> exp(-τ) * (erf(π * √(D(τ, v, w) / (2.0 * γ))) / √D(τ, v, w))^3, 0.0, Inf64)[1]
-end
-
-# ╔═╡ 84fedd69-edb8-43a2-94e8-704c34aa484e
-function holstein_energy(α, γ, v, w)
-	3.0 * (v - w)^2 / (4.0 * v) - holstein_el_integral(α, γ, v, w)
-end
-
-# ╔═╡ 840d9328-b43d-46bf-b7a7-cdda6c59b2de
-function holstein_vw(α, γ; v = 3.0, w = 3.0,)
-    # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [Inf64, Inf64]
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), w]
-
-    # Feynman 1955 athermal action 
-    f(x) = holstein_energy(α, γ, x[1] + x[2], x[2])
-
-    # Use Optim to optimise v and w to minimise enthalpy.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-    )
-
-    # Get v and w values that minimise the free energy.
-    Δv, w = Optim.minimizer(solution) # v=Δv+w
-	E = Optim.minimum(solution)
-
-	if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
-
-    # Return variational parameters that minimise the free energy.
-    return Δv + w, w, E
-end
-
 # ╔═╡ ee221e77-ef2c-4f0c-9183-ea601ad1cb9e
+#=╠═╡
 vh, wh, Eh = unzip(holstein_vw.(α_range, 0.1))
+  ╠═╡ =#
 
 # ╔═╡ 8d861a36-5308-4d2e-9e7a-02c59fff0839
 #=╠═╡
@@ -220,17 +136,154 @@ begin
 end
   ╠═╡ =#
 
+# ╔═╡ c59b1c5b-bc81-4323-8f35-cd2ce81465d0
+# ╠═╡ disabled = true
+#=╠═╡
+α_range_many = 0.01:0.01:12.0
+  ╠═╡ =#
+
+# ╔═╡ b8a192d3-3769-4dea-960f-f21bfe7103cd
+# ╠═╡ disabled = true
+#=╠═╡
+γ_range_many = 0.01:0.01:6.0
+  ╠═╡ =#
+
 # ╔═╡ 3ccf5787-adce-43b3-b566-b2c07ae5e9fd
+#=╠═╡
 vhm, whm, Ehm = unzip([holstein_vw(α, γ) for α in α_range_many, γ in γ_range_many])
+  ╠═╡ =#
 
 # ╔═╡ fe39e213-de08-4144-a386-89d7d4a1ed3a
+#=╠═╡
 surface(γ_range_many, α_range_many, log.(abs.(vhm)), xaxis = :log, ylabel = "alpha", minorgrid = true, xlabel = "gamma", linewidth = 2.0)
+  ╠═╡ =#
 
 # ╔═╡ d009afc6-2ff5-4ad2-afe6-b3806e613b5f
+#=╠═╡
 surface(γ_range_many, α_range_many, log.(abs.(whm)), xaxis = :log, minorgrid = true, ylabel = "alpha", xlabel = "gamma", linewidth = 2.0)
+  ╠═╡ =#
 
 # ╔═╡ 99a04579-ea25-42e2-a13d-0c6a98363e27
+#=╠═╡
 surface(γ_range_many, α_range_many, log.(abs.(Ehm)), xaxis = :log, minorgrid = true, ylabel = "alpha", xlabel = "gamma", linewidth = 2.0)
+  ╠═╡ =#
+
+# ╔═╡ fa71f9d4-1db5-438d-8d3d-0533308c9ceb
+function cubic_k_integral(τ, elph_matrix, α, ω, v, w; cutoff = π, d=3)
+	return elph_matrix(1; α=α, ω=ω, d=d) * quadgk(k -> exp(-k^2 * D(τ * ω, v, w) * d / ω), -cutoff, cutoff)[1] / (2π)^3
+end
+
+# ╔═╡ 142685e4-9223-4af7-89b0-c22292fda31b
+function holstein_el_integral_k(elph_matrix, α, ω, v, w; cutoff = π, d=3)
+    quadgk(τ -> exp(-τ) * cubic_k_integral(τ, elph_matrix, α, ω, v, w; cutoff = cutoff, d=d), 0, Inf)[1]
+end
+
+# ╔═╡ 859747d7-6233-4334-8141-a247e892263f
+function holstein_energy_k(elph_matrix, α, ω, v, w; cutoff = π, d=3)
+    -2 * d + d * ω * (v - w)^2 / (4 * v) - holstein_el_integral_k(elph_matrix, α, ω, v, w; cutoff = cutoff, d=d)
+end
+
+# ╔═╡ 8fef2ab6-7662-4257-82db-5f892b80a8c1
+function holstein_vw_k(elph_matrix, α, ω; v = 3.0, w = 3.0, cutoff = π, d=3)
+    # Limits of the optimisation.
+    lower = [0, 0]
+    upper = [Inf, Inf]
+    Δv = v - w # defines a constraint, so that v>w
+    initial = [Δv + eps(Float64), w]
+
+    # Feynman 1955 athermal action 
+    f(x) = holstein_energy_k(elph_matrix, α, ω, x[1] + x[2], x[2]; cutoff = cutoff, d=d)
+
+    # Use Optim to optimise v and w to minimise enthalpy.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS()),
+    )
+
+    # Get v and w values that minimise the free energy.
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
+	E = Optim.minimum(solution)
+
+	if Optim.converged(solution) == false
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    end
+
+    # Return variational parameters that minimise the free energy.
+    return Δv + w, w, E
+end
+
+# ╔═╡ 56bf3062-d733-4e42-a9b3-27d2f7d0e306
+function holstein_el_integral(α, ω, v, w; d = 3)
+	G(τ) = D(τ, v, w) / ω * d
+    2 * d * α / (π)^(d/2) * quadgk(τ -> exp(-τ) * (erf(π * √G(τ)) / √G(τ))^d, 0.0, Inf)[1]
+end
+
+# ╔═╡ 84fedd69-edb8-43a2-94e8-704c34aa484e
+function holstein_energy(α, ω, v, w; d = 3)
+	E0 = -2 * d
+	K = -2 * d + d * (v - w)^2 * ω / (4 * v)
+	P = -holstein_el_integral(α, ω, v, w; d=d)
+	K + P, E0, K, P
+end
+
+# ╔═╡ 840d9328-b43d-46bf-b7a7-cdda6c59b2de
+function holstein_vw(α, ω; v = 3.0, w = 3.0, d=3)
+    # Limits of the optimisation.
+    lower = [0.0, 0.0]
+    upper = [Inf, Inf]
+    Δv = v - w # defines a constraint, so that v>w
+    initial = [Δv + eps(Float64), w]
+
+    # Feynman 1955 athermal action 
+    f(x) = holstein_energy(α, ω, x[1] + x[2], x[2]; d=d)[1]
+
+    # Use Optim to optimise v and w to minimise enthalpy.
+    solution = Optim.optimize(
+        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
+        lower,
+        upper,
+        initial,
+        Fminbox(BFGS()),
+    )
+
+    # Get v and w values that minimise the free energy.
+    Δv, w = Optim.minimizer(solution) # v=Δv+w
+	E, E0, K, P = holstein_energy(α, ω, Δv + w, w; d = d)
+
+	if Optim.converged(solution) == false
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+    end
+
+    # Return variational parameters that minimise the free energy.
+    return Δv + w, w, E, E0, K, P
+end
+
+# ╔═╡ c30de4ba-8088-451f-b697-ffd80c2a3e7e
+αrange = 0.01:0.01:3
+
+# ╔═╡ 5bde9868-494c-42c5-9a9c-a05ab7d16c93
+ω1 = 1
+
+# ╔═╡ 4c5cc150-8373-44f4-a8ae-5c07acc9a8ea
+dim = 3
+
+# ╔═╡ 6e8d79fb-d1eb-4fd0-bde0-6cd7b2024784
+v, w, E, E0, K, P = unzip(holstein_vw.(αrange, ω1; d=dim))
+
+# ╔═╡ 80aa4def-2a80-4987-af3c-ce00c683209b
+E
+
+# ╔═╡ 6100e6cc-b588-47db-b529-304d74388704
+plot(αrange, [v, w], linewidth = 2, labels=["v" "w"], linestyle=[:solid :dash :dot :dashdot], xlabel = "α", ylabel = "v, w (t/ħ)")
+
+# ╔═╡ 679bea03-e81b-4241-8a47-20a68193ef16
+plot(αrange, [E, E0, K, P], labels=["E" "E0" "K" "P"], linewidth = 2, linestyles=[:solid :dot :dash :dashdot], xlabel = "α", ylabel = "E/t", yticks=-30:2:10)
+
+# ╔═╡ f6d98d07-15d2-4225-a68a-b9c79ef09603
+plot(αrange, [P, -αrange .* 4], labels=["P" "Es"], linewidth = 2, linestyles=[:solid :dot :dash :dashdot], xlabel = "α", ylabel = "E/t")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -253,17 +306,17 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "cde5d2e3d3224a2d76fc5a77c92c01107618ebed"
+project_hash = "311508682b7972799e0d73c1e2459faa0350cda8"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
 
 [[deps.ArrayInterfaceCore]]
-deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
-git-tree-sha1 = "badccc4459ffffb6bce5628461119b7057dec32c"
+deps = ["LinearAlgebra", "SnoopPrecompile", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "e5f08b5689b1aad068e01751889f2f615c7db36d"
 uuid = "30b0a656-2188-435a-8636-2ec0e6a096e2"
-version = "0.1.27"
+version = "0.1.29"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -283,28 +336,28 @@ uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.8+0"
 
 [[deps.Cairo_jll]]
-deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
+deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "e7ff6cadf743c098e08fca25c91103ee4303c9bb"
+git-tree-sha1 = "c6d890a52d2c4d55d326439580c3b8d0875a77d9"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.15.6"
+version = "1.15.7"
 
 [[deps.ChangesOfVariables]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
-git-tree-sha1 = "38f7a08f19d8810338d4f5085211c7dfa5d5bdd8"
+git-tree-sha1 = "844b061c104c408b24537482469400af6075aae4"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
-version = "0.1.4"
+version = "0.1.5"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "ded953804d019afa9a3f98981d99b33e3db7b6da"
+git-tree-sha1 = "9c209fb7536406834aa938fb149964b985de6c83"
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.0"
+version = "0.7.1"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "Random", "SnoopPrecompile"]
@@ -320,9 +373,9 @@ version = "0.11.4"
 
 [[deps.ColorVectorSpace]]
 deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "SpecialFunctions", "Statistics", "TensorCore"]
-git-tree-sha1 = "d08c20eef1f2cbc6e60fd3612ac4340b89fea322"
+git-tree-sha1 = "600cc5508d66b78aae350f7accdb58763ac18589"
 uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
-version = "0.9.9"
+version = "0.9.10"
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
@@ -338,9 +391,9 @@ version = "0.3.0"
 
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
-git-tree-sha1 = "00a2cccc7f098ff3b66806862d275ca3db9e6e5a"
+git-tree-sha1 = "61fdd77467a5c3ad071ef8277ac6bd6af7dd4c04"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.5.0"
+version = "4.6.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -427,9 +480,9 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "9a0472ec2f5409db243160a8b030f94c380167a3"
+git-tree-sha1 = "d3ba08ab64bdfd27234d3f61956c966266757fe6"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.13.6"
+version = "0.13.7"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterfaceCore", "LinearAlgebra", "Requires", "Setfield", "SparseArrays", "StaticArrays"]
@@ -485,15 +538,15 @@ version = "3.3.8+0"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "UUIDs", "p7zip_jll"]
-git-tree-sha1 = "051072ff2accc6e0e87b708ddee39b18aa04a0bc"
+git-tree-sha1 = "9e23bd6bb3eb4300cb567bdf63e2c14e5d2ffdbc"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.71.1"
+version = "0.71.5"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "501a4bf76fd679e7fcd678725d5072177392e756"
+git-tree-sha1 = "aa23c9f9b7c0ba6baeabe966ea1c7d2c7487ef90"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.71.1+0"
+version = "0.71.5+0"
 
 [[deps.Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -520,9 +573,9 @@ version = "1.0.2"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "Dates", "IniFile", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
-git-tree-sha1 = "2e13c9956c82f5ae8cbdb8335327e63badb8c4ff"
+git-tree-sha1 = "37e4657cd56b11abe3d10cd4a1ec5fbdb4180263"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "1.6.2"
+version = "1.7.4"
 
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg"]
@@ -599,9 +652,9 @@ version = "1.3.0"
 
 [[deps.Latexify]]
 deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Printf", "Requires"]
-git-tree-sha1 = "ab9aa169d2160129beb241cb2750ca499b4e90e9"
+git-tree-sha1 = "2422f47b34d4b127720a18f86fa7b1aa2e141f29"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
-version = "0.15.17"
+version = "0.15.18"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -685,9 +738,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "946607f84feb96220f480e0422d3484c49c00239"
+git-tree-sha1 = "45b288af6956e67e621c5cbb2d75a261ab58300b"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.19"
+version = "0.3.20"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -726,9 +779,9 @@ version = "0.3.2"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
-git-tree-sha1 = "bf210ce90b6c9eed32d25dbcae1ebc565df2687f"
+git-tree-sha1 = "f66bdc5de519e8f8ae43bdc598782d35a25b1272"
 uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
-version = "1.0.2"
+version = "1.1.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -771,9 +824,9 @@ version = "0.8.1+0"
 
 [[deps.OpenSSL]]
 deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
-git-tree-sha1 = "df6830e37943c7aaa10023471ca47fb3065cc3c4"
+git-tree-sha1 = "6503b77492fd7fcb9379bf73cd31035670e3c509"
 uuid = "4d8831e6-92b7-49fb-bdf8-b643e874388c"
-version = "1.3.2"
+version = "1.3.3"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -817,9 +870,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates", "SnoopPrecompile"]
-git-tree-sha1 = "6466e524967496866901a78fca3f2e9ea445a559"
+git-tree-sha1 = "151d91d63d8d6c1a5789ecb7de51547e00480f1b"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.5.2"
+version = "2.5.4"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
@@ -845,15 +898,15 @@ version = "3.1.0"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "SnoopPrecompile", "Statistics"]
-git-tree-sha1 = "5b7690dd212e026bbab1860016a6601cb077ab66"
+git-tree-sha1 = "c95373e73290cf50a8a22c3375e4625ded5c5280"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.3.2"
+version = "1.3.4"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Preferences", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SnoopPrecompile", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "513084afca53c9af3491c94224997768b9af37e8"
+git-tree-sha1 = "87036ff7d1277aa624ce4d211ddd8720116f80bf"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.38.0"
+version = "1.38.4"
 
 [[deps.PositiveFactorizations]]
 deps = ["LinearAlgebra"]
@@ -893,9 +946,9 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[deps.RecipesBase]]
 deps = ["SnoopPrecompile"]
-git-tree-sha1 = "18c35ed630d7229c5584b945641a73ca83fb5213"
+git-tree-sha1 = "261dddd3b862bd2c940cf6ca4d1c8fe593e457c8"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.3.2"
+version = "1.3.3"
 
 [[deps.RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase", "SnoopPrecompile"]
@@ -951,9 +1004,10 @@ uuid = "777ac1f9-54b0-4bf8-805c-2214025038e7"
 version = "1.1.0"
 
 [[deps.SnoopPrecompile]]
-git-tree-sha1 = "f604441450a3c0569830946e5b33b78c928e1a85"
+deps = ["Preferences"]
+git-tree-sha1 = "e760a70afdcd461cf01a575947738d359234665c"
 uuid = "66db9d55-30c0-4569-8b51-7e840670fc0c"
-version = "1.0.1"
+version = "1.0.3"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
@@ -976,9 +1030,9 @@ version = "2.1.7"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "ffc098086f35909741f71ce21d03dadf0d2bfa76"
+git-tree-sha1 = "6954a456979f23d05085727adb17c4551c19ecd1"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.11"
+version = "1.5.12"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
@@ -1027,9 +1081,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.TranscodingStreams]]
 deps = ["Random", "Test"]
-git-tree-sha1 = "e4bdc63f5c6d62e80eb1c0043fcc0360d5950ff7"
+git-tree-sha1 = "94f38103c984f89cf77c402f2a68dbd870f8165f"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
-version = "0.9.10"
+version = "0.9.11"
 
 [[deps.URIs]]
 git-tree-sha1 = "ac00576f90d8a259f2c9d823e91d1de3fd44d348"
@@ -1061,9 +1115,9 @@ version = "0.2.0"
 
 [[deps.Wayland_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
-git-tree-sha1 = "3e61f0b86f90dacb0bc0e73a0c5a83f6a8636e23"
+git-tree-sha1 = "ed8d92d9774b077c53e1da50fd81a36af3744c1c"
 uuid = "a2964d1f-97da-50d4-b82a-358c7fce9d89"
-version = "1.19.0+0"
+version = "1.21.0+0"
 
 [[deps.Wayland_protocols_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1073,9 +1127,9 @@ version = "1.25.0+0"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "58443b63fb7e465a8a7210828c91c08b92132dff"
+git-tree-sha1 = "93c41695bc1c08c46c5899f4fe06d6ead504bb73"
 uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
-version = "2.9.14+0"
+version = "2.10.3+0"
 
 [[deps.XSLT_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgcrypt_jll", "Libgpg_error_jll", "Libiconv_jll", "Pkg", "XML2_jll", "Zlib_jll"]
@@ -1300,6 +1354,7 @@ version = "1.4.1+0"
 # ╠═558d84b1-23ac-4406-9513-2d5e3bf4b9e0
 # ╠═27cd10cf-febe-42df-a13c-cca0ae35b045
 # ╠═d21df028-04d7-45b7-8c73-6fe09e4678af
+# ╠═4b9c44fb-ae8e-4989-b5b5-648ff9429de0
 # ╠═7b5631b7-4a20-4bd7-8276-c8371be890de
 # ╠═03a50257-7aaf-46c1-a015-96ab1b1a5741
 # ╠═fbeefdc4-1882-49d8-a01d-724e3f227e8e
@@ -1321,5 +1376,13 @@ version = "1.4.1+0"
 # ╠═56bf3062-d733-4e42-a9b3-27d2f7d0e306
 # ╠═84fedd69-edb8-43a2-94e8-704c34aa484e
 # ╠═840d9328-b43d-46bf-b7a7-cdda6c59b2de
+# ╠═c30de4ba-8088-451f-b697-ffd80c2a3e7e
+# ╠═5bde9868-494c-42c5-9a9c-a05ab7d16c93
+# ╠═4c5cc150-8373-44f4-a8ae-5c07acc9a8ea
+# ╠═6e8d79fb-d1eb-4fd0-bde0-6cd7b2024784
+# ╠═80aa4def-2a80-4987-af3c-ce00c683209b
+# ╠═6100e6cc-b588-47db-b529-304d74388704
+# ╠═679bea03-e81b-4241-8a47-20a68193ef16
+# ╠═f6d98d07-15d2-4225-a68a-b9c79ef09603
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
