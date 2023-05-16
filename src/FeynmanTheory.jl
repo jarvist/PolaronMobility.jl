@@ -23,7 +23,7 @@ end
 # Athermal (Feynman 1955) model.
 # Set up equations for the polaron free energy, which we will variationally improve upon.
 
-D_imag(τ, v, w, ω, β) = (v^2 - w^2) / v^3 * sinh(v * τ / 2) * sinh(v * (β * ω - τ) / 2) / sinh(v * ω * β / 2) + w^2 / v^2 * τ * (1 - τ / β / ω)
+D_imag(τ, v, w, ω, β) = (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β * ω - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * (1 - τ / β / ω) + eps(Float64)
 
 D_imag(τ, v, w) = w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) + eps(Float64)
 
