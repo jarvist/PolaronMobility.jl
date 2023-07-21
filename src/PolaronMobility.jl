@@ -17,11 +17,11 @@ export polaron_mobility, Hellwarth_mobility, Kadanoff_mobility_lowT, FHIP_mobili
 export save_polaron, load_polaron # Functions to save and load Polaron types to/from .jld format.
 export reduce_array
 export polaron_effective_mass
-export holstein_B, holstein_energy, holsteinvw
+export holstein_B, holstein_energy, holsteinvw, holstein_memory_function
 export addunits!
 
 export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu
-export frohlich_matrix, spherical_k_integral, frohlich_B, frohlich_energy, frohlich_vw_k
+export frohlich_matrix, spherical_k_integral, frohlich_B, frohlich_energy, frohlich_vw_k, holstein_matrix, holstein_vw_k
 
 ##### load in library routines... #####
 # stdlib
