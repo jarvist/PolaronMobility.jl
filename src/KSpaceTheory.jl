@@ -5,7 +5,7 @@ function frohlich_matrix(k; α=1, ω=1)
 end
 
 function holstein_matrix(k, α, ω, z)
-    z * α * ω
+    z * α * ω 
 end
 
 function spherical_k_integral(τ, elph_matrix, v, w, α, ω; cutoff = [0, Inf])
@@ -14,7 +14,7 @@ function spherical_k_integral(τ, elph_matrix, v, w, α, ω; cutoff = [0, Inf])
 end
 
 function cartesian_k_integral(τ, elph_matrix, v, w, α, ω; dims = 3, cutoff = [-π, π])
-    k_integrand(k) = elph_matrix(k, α, ω, 2 * dims) * exp(-k^2 * D_imag(τ * ω, v, w) / 2)
+    k_integrand(k) = elph_matrix(k, α, ω, 2 * dims) * exp(-k^2 * D_imag(τ * ω, v, w) * dims / ω)
     integral, _ = quadgk(k -> k_integrand(k), cutoff[1], cutoff[2])
     return (integral / 2π)^dims
 end
@@ -34,7 +34,7 @@ function frohlich_energy(elph_matrix, v, w, α, ω; cutoff = [0, Inf])
 end
 
 function holstein_energy_k(elph_matrix, v, w, α, ω; dims = 3, cutoff = [-π, π])
-    -dims / 3 * (A(v, w, ω) + C(v, w, ω)) - holstein_B_k(elph_matrix, v, w, α, ω; dims = dims, cutoff = cutoff)
+    -dims * (A(v, w, ω) + C(v, w, ω)) / 3 - holstein_B_k(elph_matrix, v, w, α, ω; dims = dims, cutoff = cutoff)
 end
 
 function frohlich_vw_k(elph_matrix, v, w, α, ω; cutoff = [0, Inf], lower = [0, 0], upper = [Inf, Inf])
