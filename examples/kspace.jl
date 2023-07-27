@@ -1,11 +1,11 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ cd6cae06-27d1-11ee-1f4b-07833f940a86
-using QuadGK, Optim, Plots
+using QuadGK, Optim, Plots, SpecialFunctions
 
 # ╔═╡ 9ed21af8-f7c9-4cba-b172-e3b376665add
 """
@@ -21,7 +21,7 @@ md"# Green's Functions"
 	Imaginary time polaron Green's function with temperature dependence.
 """
 function polaron_propagator(τ, v, w, ω, β)
-	(v^2 - w^2) / v^3 / ω * (1 - exp(-v * τ * ω)) * (1 - exp(-v * ω * (β - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * ω * (1 - τ / β) + eps(Float64)
+	(v^2 - w^2) / v^3 / ω * (1 - exp(-v * τ * ω)) * (1 - exp(-v * ω * (β - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * ω * (1 - τ / β)
 end
 
 # ╔═╡ 6c51fe56-6a20-48c2-b6e4-4075350b807e
@@ -106,7 +106,7 @@ function frohlich_coupling(k, α, ω)
 end
 
 # ╔═╡ 577587db-25b0-463b-ab44-38522bcd0039
-md"# Polaron Free Energies"
+md"# Polaron Free Energies (K Space)"
 
 # ╔═╡ f73c700b-2f00-4deb-85cc-abdaaa4118e5
 """
@@ -115,7 +115,7 @@ md"# Polaron Free Energies"
 function holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = 3)
 	coupling(k) = holstein_coupling(k, α, ω; dims = dims)
 	propagator = polaron_propagator(τ, v, w, ω, β)
-	phonon_propagator(τ, ω, β) * cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1.0, limits = [-π, π])^dims
+	phonon_propagator(τ, ω, β) * cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1, limits = [-π, π])^dims
 end
 
 # ╔═╡ 4143c668-699d-46ea-b825-bc4996fb26a4
@@ -220,6 +220,105 @@ function frohlich_energy(v, w, α, ωβ...)
 	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
 end
 
+# ╔═╡ b175dd29-6925-4352-9914-91d8e2f5fa9c
+md"# Polaron Free Energy (Analytic)"
+
+# ╔═╡ 0e99ecd9-f2ff-4536-8d8d-a04e42f6c98f
+"""
+	Integrand for imaginary time integral for the holstein interaction energy at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy_integrand_analytic(τ, v, w, α, ω, β; dims = 3)
+	coupling = holstein_coupling(1, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w, ω, β)
+	phonon_propagator(τ, ω, β) * (coupling * erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator))^dims
+end
+
+# ╔═╡ c1dd1475-4ad6-478f-9c18-7c20df32be81
+"""
+	Integrand for imaginary time integral for the holstein interaction energy at zero temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy_integrand_analytic(τ, v, w, α, ω; dims = 3)
+	coupling = holstein_coupling(1, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w, ω)
+	phonon_propagator(τ, ω) * (coupling * erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator))^dims
+end
+
+# ╔═╡ fe21e743-2cf4-4e62-857a-aebbe539287e
+"""
+	Integrand for imaginary time integral for the frohlich interaction energy at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function frohlich_interaction_energy_integrand_analytic(τ, v, w, α, ω, β)
+	coupling = frohlich_coupling(1, α, ω)
+	propagator = polaron_propagator(τ, v, w, ω, β)
+	phonon_propagator(τ, ω, β) * coupling * 4π / (2π)^3 * sqrt(π / 2 / propagator)
+end
+
+# ╔═╡ fe0642f4-09b9-4209-baf8-959d46d593ad
+"""
+	Integrand for imaginary time integral for the frohlich interaction energy at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function frohlich_interaction_energy_integrand_analytic(τ, v, w, α, ω)
+	coupling = frohlich_coupling(1, α, ω)
+	propagator = polaron_propagator(τ, v, w, ω)
+	phonon_propagator(τ, ω) * coupling * 4π / (2π)^3 * sqrt(π / 2 / propagator)
+end
+
+# ╔═╡ b2622ccb-9c3d-40a3-9a4d-f248e90632dc
+"""
+	Electron-phonon interaction energy for the Holstein mode at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy_analytic(v, w, α, ω, β; dims = 3)
+	integral, _ = quadgk(τ -> holstein_interaction_energy_integrand_analytic(τ, v, w, α, ω, β; dims = dims), 0, β/2)
+	return integral
+end
+
+# ╔═╡ 7b893719-994e-4a8b-83f8-67b61f158189
+"""
+	Electron-phonon interaction energy for the Holstein mode at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy_analytic(v, w, α, ω; dims = 3)
+	integral, _ = quadgk(τ -> holstein_interaction_energy_integrand_analytic(τ, v, w, α, ω; dims = dims), 0, Inf)
+	return integral
+end
+
+# ╔═╡ 4bdfeceb-01a1-43f4-8634-54ed51f5ad82
+"""
+	Electron-phonon interaction energy for the Frohlich mode at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function frohlich_interaction_energy_analytic(v, w, α, ω, β)
+	integral, _ = quadgk(τ -> frohlich_interaction_energy_integrand_analytic(τ, v, w, α, ω, β), 0, β/2)
+	return integral
+end
+
+# ╔═╡ 11a19771-8cf0-4f4a-98d4-5a1060d500de
+"""
+	Electron-phonon interaction energy for the Frohlich mode at zero temperature. Here the k-space integral is evaluated analytically.
+"""
+function frohlich_interaction_energy_analytic(v, w, α, ω)
+	integral, _ = quadgk(τ -> frohlich_interaction_energy_integrand_analytic(τ, v, w, α, ω), 0, Inf)
+	return integral
+end
+
+# ╔═╡ 0c5fc742-029a-4f47-8897-c9c1483e90bd
+"""
+	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
+"""
+function holstein_energy_analytic(v, w, α, ωβ...; dims = 3)
+	kinetic_energy = -2 * dims - electron_energy(v, w, ωβ...; dims = dims) 
+	potential_energy = -holstein_interaction_energy_analytic(v, w, α, ωβ...; dims = dims)
+	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
+end
+
+# ╔═╡ 9e8e3e8f-095a-4bd0-a44e-54e9a0be3ebe
+"""
+	Total free energy for the Frohlich model. Here the k-space integral is evaluated analytically.
+"""
+function frohlich_energy_analytic(v, w, α, ωβ...)
+	kinetic_energy = -electron_energy(v, w, ωβ...) 
+	potential_energy = -frohlich_interaction_energy_analytic(v, w, α, ωβ...)
+	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
+end
+
 # ╔═╡ fef541dc-568a-477f-9343-bee877a46b4a
 md"# Optimization"
 
@@ -257,14 +356,14 @@ function optimize(energy, v, w; lower = [0, 0], upper = [Inf, Inf])
 end
 
 # ╔═╡ 9a43b38c-8769-426c-99a9-98cdc6fbebac
-md"# Dynamical functions: Memory function, conductivity and mobility"
+md"# Dynamical functions: Memory function, conductivity and mobility (K Space)"
 
 # ╔═╡ f93fc7a5-f59d-4158-aa5b-eec93598cdf9
 """
 	General memory function for a given structure factor with frequency dependence.
 """
 function memory_function(Ω, structure_factor; limits = [0, Inf])
-	integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-3)
+	integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
 	return integral
 end
 
@@ -273,7 +372,7 @@ end
 	General memory function for a given structure factor in the DC limit.
 """
 function memory_function(structure_factor; limits = [0, Inf])
-	integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-3)
+	integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
 	return integral
 end
 
@@ -321,7 +420,7 @@ end
 """
 function frohlich_structure_factor(t, v, w, α, ω, β)
 	
-	coupling(k) = frohlich_coupling(k, α, ω)
+	coupling(k) = frohlich_coupling(k, α, ω) * k^2
 
 	propagator = polaron_propagator(im * t, v, w, ω, β)
 	
@@ -364,7 +463,7 @@ end
 """
 function holstein_memory_function(Ω, v, w, α, ω; dims = 3)
 	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω; dims = dims)
-	 return memory_function(Ω, structure_factor)
+	 return memory_function(Ω, structure_factor, limits = [0, 1e3])
 end
 
 # ╔═╡ f2a175aa-6854-4b0b-b811-2dd0783aca60
@@ -391,95 +490,555 @@ end
 """
 function frohlich_memory_function(Ω, v, w, α, ω)
 	 structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω)
-	 return memory_function(Ω, structure_factor; limits = [0, Inf])
+	 return memory_function(Ω, structure_factor; limits = [0, 1e3])
 end
 
 # ╔═╡ ae71295e-6fab-4360-b6ec-e2d4db10f9ae
 """
-	DC Mobility for the Holstein model.
+	DC Mobility for the Frohlich model.
 """
 function frohlich_mobility(v, w, α, ω, β)
 	 structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
 	 1 / imag(memory_function(structure_factor); limits = [0, Inf])
 end
 
+# ╔═╡ 7560cf27-f085-4f74-99f0-d33bfa542a9f
+md"# Dynamical functions: Memory function, conductivity and mobility (Analytic)"
+
+# ╔═╡ e8cf5096-e167-4a66-9fbd-ec1181602e77
+"""
+	The Dynamical Structure Factor for the Holstein model with temperature dependence. Here the k-space integral is evaulated analytically.
+"""
+function holstein_structure_factor_analytic(t, v, w, α, ω, β; dims = 3)
+	
+	coupling = holstein_coupling(1, α, ω; dims = dims)^dims
+
+	propagator = polaron_propagator(im * t, v, w, ω, β)
+	
+	first_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π) / propagator^(3/2) - exp(-π^2 * propagator / 2) / propagator
+	second_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
+
+	prefactor * dims * coupling * first_integral * second_integral^(dims - 1)
+end
+
+# ╔═╡ ea7f5541-84b8-453a-aa0f-84f7df119b3f
+"""
+	The Dynamical Structure Factor for the Holstein model at zero dependence. Here the k-space integral is evaulated analytically.
+"""
+function holstein_structure_factor_analytic(t, v, w, α, ω; dims = 3)
+	
+	coupling = holstein_coupling(1, α, ω; dims = dims)^dims
+
+	propagator = polaron_propagator(im * t, v, w, ω)
+	
+	first_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π) / propagator^(3/2) - exp(-π^2 * propagator / 2) / propagator
+	second_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
+
+	prefactor * dims * coupling * first_integral * second_integral^(dims - 1)
+end
+
+# ╔═╡ 03b981b7-d257-4c89-a16d-613815486ac1
+"""
+	The Dynamical Structure Factor for the Frohlich model with temperature dependence. Here the k-space integral is evaulated analytically.
+"""
+function frohlich_structure_factor_analytic(t, v, w, α, ω, β)
+	
+	coupling = frohlich_coupling(1, α, ω)
+
+	propagator = polaron_propagator(im * t, v, w, ω, β)
+	
+	integral = 4π / (2π)^3 * sqrt(π / 2) / propagator^(3/2)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
+
+	prefactor * coupling * integral
+end
+
+# ╔═╡ 20afdee0-d3be-48fc-8f61-705680397432
+"""
+	The Dynamical Structure Factor for the Frohlich model at zero temperature. Here the k-space integral is evaulated analytically.
+"""
+function frohlich_structure_factor_analytic(t, v, w, α, ω)
+	
+	coupling = frohlich_coupling(1, α, ω)
+
+	propagator = polaron_propagator(im * t, v, w, ω)
+	
+	integral = 4π / (2π)^3 * sqrt(π / 2) / propagator^(3/2)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
+
+	prefactor * coupling * integral
+end
+
+# ╔═╡ 95ae687b-1cd3-43f5-bf28-d8a4f5cca022
+"""
+	Memory function for the Holstein model with temperature dependence. Here the k-space integral is evaulated analytically.
+"""
+function holstein_memory_function_analytic(Ω, v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_analytic(t, v, w, α, ω, β; dims = dims)
+	 return memory_function(Ω, structure_factor)
+end
+
+# ╔═╡ 92964c87-3fa3-40de-8f08-4b773b229a6a
+"""
+	Memory function for the Holstein model at zero temperature. Here the k-space integral is evaulated analytically.
+"""
+function holstein_memory_function_analytic(Ω, v, w, α, ω; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_analytic(t, v, w, α, ω; dims = dims)
+	 return memory_function(Ω, structure_factor, limits = [0, 1e3])
+end
+
+# ╔═╡ 7e00a70f-5a52-42f5-9056-efc47b4ab839
+"""
+	Memory function for the Frohlich model with temperature dependence. Here the k-space integral is evaulated analytically.
+"""
+function frohlich_memory_function_analytic(Ω, v, w, α, ω, β)
+	 structure_factor(t) = frohlich_structure_factor_analytic(t, v, w, α, ω, β)
+	 return memory_function(Ω, structure_factor; limits = [0, Inf])
+end
+
+# ╔═╡ b3818117-e954-4081-ad92-ce066d0fc1b6
+"""
+	Memory function for the Frohlich model at zero temperature. Here the k-space integral is evaulated analytically.
+"""
+function frohlich_memory_function_analytic(Ω, v, w, α, ω)
+	 structure_factor(t) = frohlich_structure_factor_analytic(t, v, w, α, ω)
+	 return memory_function(Ω, structure_factor; limits = [0, 1e3])
+end
+
+# ╔═╡ f2ede4d0-d51e-4e55-af43-cb22fffe30f4
+"""
+	DC Mobility for the Holstein model. Here the k-space integral is evaulated analytically.
+"""
+function holstein_mobility_analytic(v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_analytic(t, v, w, α, ω, β; dims = dims)
+	 1 / imag(memory_function(structure_factor))
+end
+
+# ╔═╡ bb9fe3b2-c1d4-4806-8b14-d234e91ee8a9
+"""
+	DC Mobility for the Frohlich model. Here the k-space integral is evaulated analytically.
+"""
+function frohlich_mobility_analytic(v, w, α, ω, β)
+	 structure_factor(t) = frohlich_structure_factor_analytic(t, v, w, α, ω, β)
+	 1 / imag(memory_function(structure_factor; limits = [0, Inf]))
+end
+
 # ╔═╡ ed021864-b2de-4f4b-8aac-175896e7bd39
 md"# Calculations"
 
+# ╔═╡ b10da998-6267-49b1-88ce-09ee7774eebc
+md"## Dependence on α (athermal)"
+
 # ╔═╡ 9b079f65-9dc9-4578-bba0-c55dbe9563ef
-# ╠═╡ disabled = true
-#=╠═╡
 begin
-	αrange = 0.01:0.01:4
-	ω = 1
-	d = 3
+	αrange = 0.01:0.01:4 # Electron-phonon coupling (dimensionless)
+	ω = 1 # Adiabaticity (units of J)
+	d = 3 # Dimensionality of lattice for Holstein
 	holstein_energies = []
 	frohlich_energies = []
+	holstein_energies_analytic = []
+	frohlich_energies_analytic = []
 	for α in αrange
 		best_holstein_energy(v, w) = holstein_energy(v, w, α, ω; dims = d)
-		best_frohlich_energy(v, w) = frohlich_energy(v, w, α, ω)
+		best_frohlich_energy(v, w) = frohlich_energy(v, w, α .* 3, ω)
+		best_holstein_energy_analytic(v, w) = holstein_energy_analytic(v, w, α, ω; dims = d)
+		best_frohlich_energy_analytic(v, w) = frohlich_energy_analytic(v, w, α .* 3, ω)
 		push!(holstein_energies, best_holstein_energy)
 		push!(frohlich_energies, best_frohlich_energy)
+		push!(holstein_energies_analytic, best_holstein_energy_analytic)
+		push!(frohlich_energies_analytic, best_frohlich_energy_analytic)
 	end
 end
-  ╠═╡ =#
+
+# ╔═╡ 1641996e-41f2-4e31-bb1d-bc7a1763274c
+# Optimise the variational paramaters and energy for Holstein (analytic)
+vhaα, whaα, Ehaα, Khaα, Phaα = unzip(optimize.(holstein_energies_analytic, 5, 2, upper=[100, 100]))
 
 # ╔═╡ 0ae0ef1d-0c63-43c6-8e67-55b44dba6b67
-# ╠═╡ disabled = true
-#=╠═╡
-vh, wh, Eh, Kh, Ph = unzip(optimize.(holstein_energies, 5, 2, upper=[100, 100]))
-  ╠═╡ =#
+# Optimise the variational paramaters and energy for Holstein (k-space)
+vhα, whα, Ehα, Khα, Phα = unzip(optimize.(holstein_energies, 5, 2, upper=[100, 100]))
+
+# ╔═╡ 1b2e2933-623f-4560-9527-e24fe55ca485
+plot(αrange, [vhα whα vhaα whaα], title="GS Holstein Analytic and K-Space v,w", linestyle=:auto, linewidth = 2, xlabel = "α", ylabel = "v, w", labels = ["v k-space" "w k-space" "v analytic" "w analytic"], yticks = 1:9)
+
+# ╔═╡ 37387a74-af02-4485-9edf-3a950fcb822a
+plot(αrange, [Ehα Khα Phα Ehaα Khaα Phaα], title="GS Holstein Analytic and K-Space Energies", linestyle=:auto, linewidth = 2, xlabel = "α", ylabel = "Total Energy, Kinetic and Potential (J)", labels = ["E k-space" "K k-space" "P k-space" "E analytic" "K analytic" "P analytic"], yticks = -16:2:0)
+
+# ╔═╡ ea012194-878d-433b-bf97-d2e8e90e7125
+# Optimise the variational paramaters and energy for Frohlich (analytic)
+vfaα, wfaα, Efaα, Kfaα, Pfaα = unzip(optimize.(frohlich_energies_analytic, 5, 2, upper=[100, 100]))
 
 # ╔═╡ 2be6279b-f73e-4253-8f30-460d3444841d
-# ╠═╡ disabled = true
-#=╠═╡
-vf, wf, Ef, Kf, Pf = unzip(optimize.(frohlich_energies, 5, 2, upper=[100, 100]))
-  ╠═╡ =#
+# Optimise the variational paramaters and energy for Frohlich (k-space)
+vfα, wfα, Efα, Kfα, Pfα = unzip(optimize.(frohlich_energies, 5, 2, upper=[100, 100]))
 
-# ╔═╡ 785fd2a7-5db6-4242-9ed0-f3c7fd1b4955
-βrange = [1/x for x in 0.1:0.01:3]
+# ╔═╡ d11918c4-cb56-4566-9b4f-e7ddec05cdc5
+plot(αrange, [vfα wfα vfaα wfaα], title="GS Frohlich Analytic and K-Space v,w", linestyle=:auto, linewidth = 2, xlabel = "α", ylabel = "v, w", labels = ["v k-space" "w k-space" "v analytic" "w analytic"], yticks = 1:2:19)
+
+# ╔═╡ 52f64be4-46b8-4b5a-adc8-500e5d3a11bc
+plot(αrange, [Efα Kfα Pfα Efaα Kfaα Pfaα], title="GS Frohlich Analytic and K-Space Energies", linestyle=:auto, linewidth = 2, legend = :bottomleft, xlabel = "α", ylabel = "Total Energy, Kinetic and Potential (J)", labels = ["E k-space" "K k-space" "P k-space" "E analytic" "K analytic" "P analytic"], yticks = -28:4:12)
+
+# ╔═╡ 78878f4e-7c74-4a61-862e-b934cfedb10c
+plot(αrange, [vhaα whaα vfaα wfaα], title="GS Comparison of Holstein and Frohlich v & w", linestyle=:auto, linewidth = 2, xlabel = "α", ylabel = "v, w", labels = ["v Holstein" "w Holstein" "v Frohlich" "w Frohlich"], yticks = 1:2:19)
+
+# ╔═╡ a930fe34-d9e3-4dd7-bd9b-dd457e23587a
+plot(αrange, [Ehaα .+ 6 Khaα .+ 6 Phaα Efaα Kfaα Pfaα], title="GS Comparison of Holstein and Frohlich Energies", linestyle=:auto, linewidth = 2, legend = :bottomleft, xlabel = "α", ylabel = "Total Energy, Kinetic and Potential", labels = ["E Holstein" "K Holstein" "P Holstein" "E Frohlich" "K Frohlich" "P Frohlich"], yticks = -28:4:12)
+
+# ╔═╡ 180ca806-a36f-47e9-a287-07b5a9624a0c
+md"## Dependence on Frequency Ω"
 
 # ╔═╡ c1022521-a44f-4c4e-9fe7-92be7842651d
+# Frequency Range
 Ωrange = 0.1:0.1:20
-
-# ╔═╡ 0eaabb5b-8b21-4c59-b859-14a3d919bc95
-n=160
 
 # ╔═╡ 45b7b0d6-8ab8-4aa4-af9d-1da6dcdd7d26
 begin
-	α = 1.5
-	ω = 1
-	d = 3
-	β = 10
-	best_holstein_energy(v, w) = holstein_energy(v, w, α, ω, β; dims = d)
-	best_frohlich_energy(v, w) = frohlich_energy(v, w, α, ω, β)
-	vh, wh, Eh, Kh, Ph = optimize(best_holstein_energy, 5, 2, upper=[100, 100])
-	vf, wf, Ef, Kf, Pf = optimize(best_frohlich_energy, 5, 2, upper=[100, 100])
+	α = 2
+	β = 1 # Temperature T = 1
+	best_holstein_energy_thermal(v, w) = holstein_energy_analytic(v, w, α, ω, β; dims = d)
+	best_frohlich_energy_thermal(v, w) = frohlich_energy_analytic(v, w, α * 3, ω, β)
+	best_holstein_energy_athermal(v, w) = holstein_energy_analytic(v, w, α, ω; dims = d)
+	best_frohlich_energy_athermal(v, w) = frohlich_energy_analytic(v, w, α * 3, ω)
+	vh, wh, Eh, Kh, Ph = optimize(best_holstein_energy_thermal, 5, 2, upper=[100, 100])
+	vf, wf, Ef, Kf, Pf = optimize(best_frohlich_energy_thermal, 5, 2, upper=[100, 100])
+	vh0, wh0, Eh0, Kh0, Ph0 = optimize(best_holstein_energy_athermal, 5, 2, upper=[100, 100])
+	vf0, wf0, Ef0, Kf0, Pf0 = optimize(best_frohlich_energy_athermal, 5, 2, upper=[100, 100])
 end
 
+# ╔═╡ 36540645-f6b4-4415-95b2-4110cb8eab50
+# ╠═╡ disabled = true
+#=╠═╡
+# Holstein mobility from k-space integral at T = 0 (Took 4000s)
+χh0 = holstein_memory_function.(Ωrange, vh0, wh0, α, ω; dims = d)
+  ╠═╡ =#
+
+# ╔═╡ e31fd984-0a12-4c09-9249-3191d900aaec
+# Saved Holstein Memory at zero temperature (takes a while to generate)
+χh0_saved = [0.714308+0.000359172im
+1.44904+0.000314577im
+2.22692+0.000247171im
+3.07586+0.000166002im
+4.03345+8.24917e-5im
+5.15511+6.33179e-6im
+6.53083-5.38311e-5im
+8.32657-9.29601e-5im
+10.9193-0.000115636im
+15.9211+0.0018468im
+22.3336+7.56354im
+22.2644+16.9262im
+18.4343+24.7751im
+12.4448+30.5718im
+5.09489+34.4193im
+-3.85212+36.6126im
+-14.8963+32.0148im
+-19.4273+25.0047im
+-21.2523+18.8364im
+-21.4796+13.5716im
+-20.6724+9.18444im
+-19.1477+5.60342im
+-16.8872+2.88562im
+-14.6384+1.50579im
+-12.8168+0.74979im
+-11.3388+0.333921im
+-10.1371+0.118942im
+-9.15834+0.0241481im
+-8.36215-1.3158e-6im
+-7.71908-1.9818e-6im
+-7.17777-1.26125e-6im
+-6.70973+1.30417e-5im
+-6.29797+1.56332e-8im
+-5.93061-1.6093e-5im
+-5.59914+4.39882e-5im
+-5.29697+2.60442e-6im
+-5.01894+2.57487e-5im
+-4.76102+3.13111e-6im
+-4.51974-1.27429e-6im
+-4.29228-2.31081e-5im
+-4.076-1.96178e-7im
+-3.86884+1.19525e-5im
+-3.66874+1.41835e-5im
+-3.47369-1.48267e-6im
+-3.28181-2.04871e-8im
+-3.09105+6.38322e-5im
+-2.89929-1.71331e-6im
+-2.70401+1.00471e-5im
+-2.50229-6.32094e-5im
+-2.29041+6.75686e-6im
+-2.06349+5.40051e-6im
+-1.81473+2.27459e-6im
+-1.53407-2.05391e-6im
+-1.20534-1.71706e-5im
+-0.799332-1.02498e-5im
+-0.248097-1.19029e-5im
+0.656061+0.157971im
+1.70032+0.89669im
+2.49314+2.21208im
+2.78457+3.95708im
+2.39069+5.96159im
+1.0439+8.06967im
+-1.90589+8.92784im
+-3.99312+8.36222im
+-5.57254+7.41574im
+-6.71421+6.20294im
+-7.42395+4.82683im
+-7.68806+3.37489im
+-7.36461+1.9653im
+-6.70259+1.13723im
+-6.0984+0.629242im
+-5.55941+0.312303im
+-5.08888+0.125754im
+-4.68775+0.0308771im
+-4.35718+0.000357018im
+-4.10323+3.4417e-6im
+-3.89773-6.66468e-6im
+-3.72294+1.70585e-6im
+-3.5704-2.55643e-6im
+-3.43476+1.37726e-5im
+-3.31241+1.46601e-5im
+-3.20075+2.19683e-5im
+-3.09776-3.25089e-7im
+-3.00188-7.6029e-6im
+-2.91185+3.47485e-5im
+-2.8269+4.90909e-6im
+-2.74587-6.53358e-7im
+-2.66817+6.96592e-6im
+-2.59311-4.50089e-8im
+-2.5201+1.44941e-7im
+-2.44853+2.41606e-7im
+-2.37783+2.84775e-7im
+-2.3074+3.31745e-7im
+-2.23655+4.10858e-7im
+-2.16452+5.18092e-7im
+-2.0904+6.01349e-7im
+-2.01305-1.85874e-5im
+-1.93093+3.61666e-7im
+-1.84196+1.15586e-7im
+-1.743-1.21993e-5im
+-1.62911-1.47657e-6im
+-1.49122-2.0946e-6im
+-1.30609+0.00340405im
+-1.04138+0.0556191im
+-0.717158+0.230313im
+-0.399561+0.581906im
+-0.185613+1.13675im
+-0.219172+1.89578im
+-0.842331+2.5712im
+-1.49047+2.8021im
+-2.13768+2.84262im
+-2.75369+2.68644im
+-3.28387+2.34253im
+-3.66409+1.83055im
+-3.77025+1.18428im
+-3.59515+0.742127im
+-3.39959+0.446935im
+-3.1964+0.242298im
+-2.9969+0.107955im
+-2.8113+0.0310045im
+-2.65002+0.00116994im
+-2.52918+8.75116e-6im
+-2.43655+1.81599e-5im
+-2.35938-4.82626e-6im
+-2.29283+1.01454e-6im
+-2.23407+1.06562e-6im
+-2.18127+7.02253e-6im
+-2.13319-3.89211e-6im
+-2.0889+5.94968e-8im
+-2.04772-4.91017e-6im
+-2.00908-1.00413e-5im
+-1.97261-8.23645e-7im
+-1.9379-2.68213e-6im
+-1.90472-1.87335e-6im
+-1.87276+5.30589e-7im
+-1.84183-5.14919e-6im
+-1.81172+4.67904e-7im
+-1.78222+5.19284e-7im
+-1.75316+4.36296e-7im
+-1.72432-1.07579e-6im
+-1.69551+4.94391e-8im
+-1.66647-1.3375e-7im
+-1.63691-2.49325e-7im
+-1.60648-2.84875e-7im
+-1.57472-2.57578e-7im
+-1.54096-2.02246e-7im
+-1.50427-1.58817e-7im
+-1.4631-1.51812e-7im
+-1.41454+3.46395e-5im
+-1.35208+0.00244588im
+-1.26867+0.0179816im
+-1.16501+0.0656179im
+-1.05532+0.168015im
+-0.97485+0.347109im
+-1.0267+0.578631im
+-1.14292+0.734356im
+-1.30573+0.852048im
+-1.50792+0.908942im
+-1.72727+0.886664im
+-1.93014+0.772324im
+-2.05627+0.558844im
+-2.03868+0.376117im
+-1.99826+0.24584im
+-1.94051+0.145045im
+-1.87113+0.0711513im
+-1.79666+0.023553im
+-1.72514+0.00171474im
+-1.67024-3.19806e-6im
+-1.63027+3.04318e-7im
+-1.5974-7.86344e-6im
+-1.56911+2.39457e-7im
+-1.5441+1.05948e-7im
+-1.52146+4.42655e-7im
+-1.50073+3.62264e-6im
+-1.48151+4.02764e-7im
+-1.46352-8.5689e-7im
+-1.44654-1.40424e-6im
+-1.43041-8.76726e-7im
+-1.41498-1.67512e-6im
+-1.40018-3.0136e-7im
+-1.38589-9.81452e-6im
+-1.37204+1.6597e-8im
+-1.35856+1.77867e-7im
+-1.34539+2.82861e-7im
+-1.33246+3.06497e-7im
+-1.31972+2.48798e-7im
+-1.30711-7.83314e-6im
+-1.29458-1.56239e-8im
+-1.28203+1.38553e-5im
+-1.26941-2.29906e-7im
+-1.25658-3.34723e-7im
+-1.24343-2.01715e-7im
+-1.22976+3.52006e-5im
+-1.21529+1.10967e-6im
+-1.19959-1.47843e-5im
+-1.18172+7.16373e-5im
+-1.16006+0.00103244im
+-1.13273+0.00568186im
+-1.09947+0.0193611im
+-1.06446+0.0500102im]
+
+# ╔═╡ 7411b9e8-e515-4e4a-9f24-0d3c36844fb5
+# Hosltein mobility from analytic at T = 0
+χha0 = holstein_memory_function_analytic.(Ωrange, vh0, wh0, α, ω; dims = d)
+
+# ╔═╡ 3ee52dc5-3665-4d0a-a9a2-c50c9ff8219c
+plot(Ωrange, [real.(χh0_saved) imag.(χh0_saved) real.(χha0) imag.(χha0)], title="Holstein Memory for K-Space and Analytic T = 0", linestyle=:auto, linewidth = 2, xlabel = "Frequency Ω (J/ħ)", ylabel = "Memory Function χ(Ω)", labels = ["ℜχ k-space" "ℑχ k-space" "ℜχ analytic" "ℑχ analytic"])
+
 # ╔═╡ d18c413d-7262-4041-9ca9-fd1c9e84b44a
+# Holstein mobility from k-space integral at T = 1
 χh = holstein_memory_function.(Ωrange, vh, wh, α, ω, β; dims = d)
 
-# ╔═╡ e8d0364f-5b84-4ade-ae2d-9e356d12058d
-# ╠═╡ disabled = true
-#=╠═╡
-χf = frohlich_memory_function.(Ωrange, vf, wf, α, ω, β)
-  ╠═╡ =#
+# ╔═╡ e1df0094-3bfc-4cd4-8c28-d58804bd0209
+# Hosltein mobility from analytic at T = 1
+χha = holstein_memory_function_analytic.(Ωrange, vh, wh, α, ω, β; dims = d)
 
 # ╔═╡ 5bbffee3-d9d1-4001-b17a-e951747271ac
-plot(Ωrange, [imag.(im .* (Ωrange .- χh)) real.(im .* (Ωrange .- χh))])
+plot(Ωrange, [real.(χh) imag.(χh) real.(χha) imag.(χha)], title="Holstein Memory for K-Space and Analytic T = 1", linestyle=:auto, linewidth = 2, xlabel = "Frequency Ω (J/ħ)", ylabel = "Memory Function χ(Ω)", labels = ["ℜχ k-space" "ℑχ k-space" "ℜχ analytic" "ℑχ analytic"])
+
+# ╔═╡ b50f0096-ec99-4a7a-b076-be02dbb6f66d
+plot(Ωrange, [real.(χha0) imag.(χha0) real.(χha) imag.(χha)], title="Holstein Memory for T = 0 and 1", linestyle=:auto, linewidth = 2, xlabel = "Frequency Ω (J/ħ)", ylabel = "Memory Function χ(Ω)", labels = ["ℜχ T=0" "ℑχ T=0" "ℜχ T = 1" "ℑχ T = 1"])
+
+# ╔═╡ 49094531-c2fe-4eec-9740-c4b8fe22e578
+# Frohlich mobility from analytic T = 1
+χfa = frohlich_memory_function_analytic.(Ωrange, vf, wf, α * 3, ω, β)
+
+# ╔═╡ b01bd192-90d9-486b-9847-f18ccc516b16
+# Frohlich mobility from analytic T = 0
+χfa0 = frohlich_memory_function_analytic.(Ωrange, vf0, wf0, α * 3, ω)
+
+# ╔═╡ 892ef1e9-716a-4118-9415-863acc3fd9a6
+plot(Ωrange, [real.(χha0) imag.(χha0) real.(χfa0) imag.(χfa0)], title="Comparison of Holstein and Frohlich Memory T = 0", linestyle=:auto, linewidth = 2, xlabel = "Frequency Ω (J/ħ)", ylabel = "Memory Function χ(Ω)", labels = ["ℜχ Holstein" "ℑχ Holstein" "ℜχ Frohlich" "ℑχ Frohlich"])
+
+# ╔═╡ df2af8d4-9356-4bf9-a4ab-423eca2a8a83
+plot(Ωrange, [real.(χha) imag.(χha) real.(χfa) imag.(χfa)], title="Comparison of Holstein and Frohlich Memory T = 1", linestyle=:auto, linewidth = 2, xlabel = "Frequency Ω (J/ħ)", ylabel = "Memory Function χ(Ω)", labels = ["ℜχ Holstein" "ℑχ Holstein" "ℜχ Frohlich" "ℑχ Frohlich"])
+
+# ╔═╡ 63e75af5-bdfb-4152-9bcb-0110aa13a193
+md"## Dependence on Temperature T = 1/β"
+
+# ╔═╡ 785fd2a7-5db6-4242-9ed0-f3c7fd1b4955
+# Temperature range T = 0.1 to 100
+βrange = [1/x for x in 0.1:0.01:100]
 
 # ╔═╡ b304bc21-d50e-4c84-8aa9-0daba2f98de9
+# Holstein DC mobility (k-space)
 μh = holstein_mobility.(vh, wh, α, ω, βrange; dims = d)
 
-# ╔═╡ ef7889fd-1cf8-4424-ab0f-eeb32e2b6a30
-# ╠═╡ disabled = true
-#=╠═╡
-μf = frohlich_mobility.(vf, wf, α, ω, βrange)
-  ╠═╡ =#
+# ╔═╡ 3ad7f9d9-1620-4e9d-b577-2ba723220f4a
+# Holstein DC mobility (analytic)
+μha = holstein_mobility_analytic.(vh, wh, α, ω, βrange; dims = d)
 
 # ╔═╡ d3f94402-1cb6-4aa5-8eb2-5d94040af4eb
-plot(1 ./ βrange, [μh], yaxis = :log, ylims = (0.1, 1))
+plot(1 ./ βrange, [μh μha], yaxis = :log, xaxis = :log, title="Holstein K-Space and Analytic Mobility", linestyle=:auto, linewidth = 2, xlabel = "Temperature T (J/kB)", ylabel = "DC Mobility μ(T)", labels = ["μ k-space" "μ analytic"], yticks = ([2.0^x for x in -4:5], ["2^$x" for x in -4:5]), xticks = ([2.0^x for x in -3:6], ["2^$x" for x in -3:6]))
+
+# ╔═╡ ef7889fd-1cf8-4424-ab0f-eeb32e2b6a30
+# Frohlich DC mobility (analytic)
+μf = frohlich_mobility_analytic.(vf, wf, α * 3, ω, βrange)
+
+# ╔═╡ b4c58d45-f857-4e3b-a579-1b2ca930c778
+plot(1 ./ βrange, [μf μh], yaxis = :log, xaxis = :log, title="Comparison of Holstein and Frohlich Mobility", linestyle=:auto, linewidth = 2, xlabel = "Temperature T (J/kB)", ylabel = "DC Mobility μ(T)", labels = ["μ Holstein" "μ Frohlich"], yticks = ([2.0^x for x in -6:5], ["2^$x" for x in -6:5]), xticks = ([2.0^x for x in -3:6], ["2^$x" for x in -3:6]))
+
+# ╔═╡ 3740c483-035d-4e54-9588-50ec52eb4cbd
+md"## Dependence on Adiabaticity / Phonon Frequency ω"
+
+# ╔═╡ dc8ffa26-381a-4647-bccf-2fceb3dd5d69
+# Adiabaticity / Phonon Frequency range ω = 0.1 to 2
+ωrange = 0.1:0.01:2
+
+# ╔═╡ 75ed1295-a710-4fa8-80ab-7be1af3fc54a
+begin
+	holstein_energies_ω = []
+	frohlich_energies_ω = []
+	holstein_energies_analytic_ω = []
+	frohlich_energies_analytic_ω = []
+	for ω in ωrange
+		best_holstein_energy_ω(v, w) = holstein_energy(v, w, α, ω; dims = d)
+		best_frohlich_energy_ω(v, w) = frohlich_energy(v, w, α .* 3, ω)
+		best_holstein_energy_analytic_ω(v, w) = holstein_energy_analytic(v, w, α, ω; dims = d)
+		best_frohlich_energy_analytic_ω(v, w) = frohlich_energy_analytic(v, w, α .* 3, ω)
+		push!(holstein_energies_ω, best_holstein_energy_ω)
+		push!(frohlich_energies_ω, best_frohlich_energy_ω)
+		push!(holstein_energies_analytic_ω, best_holstein_energy_analytic_ω)
+		push!(frohlich_energies_analytic_ω, best_frohlich_energy_analytic_ω)
+	end
+end
+
+# ╔═╡ c4567ab7-7a04-4a66-8ffc-78992122ad9a
+# Optimise the variational paramaters and energy for Holstein (k-space)
+vhω, whω, Ehω, Khω, Phω = unzip(optimize.(holstein_energies_ω, 5, 2, upper=[200, 200]))
+
+# ╔═╡ a11b5f7e-b252-4735-b539-95dbd37dadfd
+# Optimise the variational paramaters and energy for Frohlich (k-space)
+vfω, wfω, Efω, Kfω, Pfω = unzip(optimize.(frohlich_energies_ω, 5, 2, upper=[200, 200]))
+
+# ╔═╡ d05e8814-360c-419d-8b2b-16f8cde823ad
+# Optimise the variational paramaters and energy for Holstein (analytic)
+vhaω, whaω, Ehaω, Khaω, Phaω = unzip(optimize.(holstein_energies_analytic_ω, 5, 2, upper=[200, 200]))
+
+# ╔═╡ 89c437e9-b13e-4d71-a789-a2bd1a33c63b
+# Optimise the variational paramaters and energy for Frohlich (analytic)
+vfaω, wfaω, Efaω, Kfaω, Pfaω = unzip(optimize.(frohlich_energies_analytic_ω, 5, 2, upper=[200, 200]))
+
+# ╔═╡ 4275c478-b59d-4574-805e-b1fed99e292d
+plot(ωrange, [vhω whω vhaω whaω], title="GS Holstein Analytic and K-Space v,w", linestyle=:auto, linewidth = 2, xlabel = "ω", ylabel = "v, w", labels = ["v k-space" "w k-space" "v analytic" "w analytic"])
+
+# ╔═╡ 3e029c3e-cb3a-42af-90a1-40ccf33f096a
+plot(ωrange, [Ehω Khω Phω Ehaω Khaω Phaω], title="GS Holstein Analytic and K-Space Energies", linestyle=:auto, linewidth = 2, xlabel = "ω", ylabel = "Total Energy, Kinetic and Potential (J)", labels = ["E k-space" "K k-space" "P k-space" "E analytic" "K analytic" "P analytic"])
+
+# ╔═╡ 8ea0f8d6-4e9c-4278-ac8e-cb9e149c3092
+plot(ωrange, [vfω wfω vfaω wfaω], title="GS Frohlich Analytic and K-Space v,w", linestyle=:auto, linewidth = 2, xlabel = "ω", ylabel = "v, w", labels = ["v k-space" "w k-space" "v analytic" "w analytic"])
+
+# ╔═╡ b0fd79fc-6da4-4fa6-b20d-b214258969fa
+plot(ωrange, [Efω Kfω Pfω Efaω Kfaω Pfaω], title="GS Frohlich Analytic and K-Space Energies", linestyle=:auto, linewidth = 2, legend = :bottomleft, xlabel = "ω", ylabel = "Total Energy, Kinetic and Potential (J)", labels = ["E k-space" "K k-space" "P k-space" "E analytic" "K analytic" "P analytic"])
+
+# ╔═╡ d849bfe9-2eaa-48e2-b0d1-7b7cfb0686e8
+plot(ωrange, [vhaω whaω vfaω wfaω], title="GS Comparison of Holstein and Frohlich v & w", linestyle=:auto, linewidth = 2, xlabel = "ω", ylabel = "v, w", labels = ["v Holstein" "w Holstein" "v Frohlich" "w Frohlich"])
+
+# ╔═╡ a0f847b4-ed1e-45cf-bf96-974f4ae5d358
+plot(ωrange, [Ehaω .+ 6 Khaω .+ 6 Phaω Efaω Kfaω Pfaω], title="GS Comparison of Holstein and Frohlich Energies", linestyle=:auto, linewidth = 2, legend = :bottomleft, xlabel = "ω", ylabel = "Total Energy, Kinetic and Potential", labels = ["E Holstein" "K Holstein" "P Holstein" "E Frohlich" "K Frohlich" "P Frohlich"])
 
 # ╔═╡ 999fb552-2430-4956-98e7-1faddd6e9a3e
 md"# Self Consistent Extension"
@@ -506,11 +1065,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 Optim = "~1.7.6"
 Plots = "~1.38.16"
 QuadGK = "~2.8.2"
+SpecialFunctions = "~2.3.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -519,7 +1080,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.1"
 manifest_format = "2.0"
-project_hash = "ac0debfc49df8118c11bc884ba4d7dbe97ca2ebf"
+project_hash = "d6c55742439aa5a81796cef27d56a91be9ba8b7e"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -1623,7 +2184,18 @@ version = "1.4.1+0"
 # ╠═d94ab3bf-ef6e-4c1b-ba54-c025916e42e1
 # ╠═62faa65d-d426-4d53-9816-ca1de8b24874
 # ╠═293773c1-f0f1-4f74-8434-3b82f6cf8883
-# ╟─fef541dc-568a-477f-9343-bee877a46b4a
+# ╟─b175dd29-6925-4352-9914-91d8e2f5fa9c
+# ╠═0e99ecd9-f2ff-4536-8d8d-a04e42f6c98f
+# ╠═c1dd1475-4ad6-478f-9c18-7c20df32be81
+# ╠═fe21e743-2cf4-4e62-857a-aebbe539287e
+# ╠═fe0642f4-09b9-4209-baf8-959d46d593ad
+# ╠═b2622ccb-9c3d-40a3-9a4d-f248e90632dc
+# ╠═7b893719-994e-4a8b-83f8-67b61f158189
+# ╠═4bdfeceb-01a1-43f4-8634-54ed51f5ad82
+# ╠═11a19771-8cf0-4f4a-98d4-5a1060d500de
+# ╠═0c5fc742-029a-4f47-8897-c9c1483e90bd
+# ╠═9e8e3e8f-095a-4bd0-a44e-54e9a0be3ebe
+# ╠═fef541dc-568a-477f-9343-bee877a46b4a
 # ╠═3a1ade3b-c89e-4137-9a7d-2faa572bea7c
 # ╟─9a43b38c-8769-426c-99a9-98cdc6fbebac
 # ╠═f93fc7a5-f59d-4158-aa5b-eec93598cdf9
@@ -1638,20 +2210,65 @@ version = "1.4.1+0"
 # ╠═9aa269c6-1df3-4553-ba61-c0b0fd2608c9
 # ╠═24fec156-91bd-4761-9933-e7c5ade3693b
 # ╠═ae71295e-6fab-4360-b6ec-e2d4db10f9ae
+# ╟─7560cf27-f085-4f74-99f0-d33bfa542a9f
+# ╠═e8cf5096-e167-4a66-9fbd-ec1181602e77
+# ╠═ea7f5541-84b8-453a-aa0f-84f7df119b3f
+# ╠═03b981b7-d257-4c89-a16d-613815486ac1
+# ╠═20afdee0-d3be-48fc-8f61-705680397432
+# ╠═95ae687b-1cd3-43f5-bf28-d8a4f5cca022
+# ╠═92964c87-3fa3-40de-8f08-4b773b229a6a
+# ╠═7e00a70f-5a52-42f5-9056-efc47b4ab839
+# ╠═b3818117-e954-4081-ad92-ce066d0fc1b6
+# ╠═f2ede4d0-d51e-4e55-af43-cb22fffe30f4
+# ╠═bb9fe3b2-c1d4-4806-8b14-d234e91ee8a9
 # ╟─ed021864-b2de-4f4b-8aac-175896e7bd39
+# ╟─b10da998-6267-49b1-88ce-09ee7774eebc
 # ╠═9b079f65-9dc9-4578-bba0-c55dbe9563ef
+# ╠═1641996e-41f2-4e31-bb1d-bc7a1763274c
 # ╠═0ae0ef1d-0c63-43c6-8e67-55b44dba6b67
+# ╠═1b2e2933-623f-4560-9527-e24fe55ca485
+# ╠═37387a74-af02-4485-9edf-3a950fcb822a
+# ╠═ea012194-878d-433b-bf97-d2e8e90e7125
 # ╠═2be6279b-f73e-4253-8f30-460d3444841d
-# ╠═785fd2a7-5db6-4242-9ed0-f3c7fd1b4955
+# ╠═d11918c4-cb56-4566-9b4f-e7ddec05cdc5
+# ╠═52f64be4-46b8-4b5a-adc8-500e5d3a11bc
+# ╠═78878f4e-7c74-4a61-862e-b934cfedb10c
+# ╠═a930fe34-d9e3-4dd7-bd9b-dd457e23587a
+# ╟─180ca806-a36f-47e9-a287-07b5a9624a0c
 # ╠═c1022521-a44f-4c4e-9fe7-92be7842651d
-# ╠═0eaabb5b-8b21-4c59-b859-14a3d919bc95
 # ╠═45b7b0d6-8ab8-4aa4-af9d-1da6dcdd7d26
+# ╠═36540645-f6b4-4415-95b2-4110cb8eab50
+# ╟─e31fd984-0a12-4c09-9249-3191d900aaec
+# ╠═7411b9e8-e515-4e4a-9f24-0d3c36844fb5
+# ╠═3ee52dc5-3665-4d0a-a9a2-c50c9ff8219c
 # ╠═d18c413d-7262-4041-9ca9-fd1c9e84b44a
-# ╠═e8d0364f-5b84-4ade-ae2d-9e356d12058d
+# ╠═e1df0094-3bfc-4cd4-8c28-d58804bd0209
 # ╠═5bbffee3-d9d1-4001-b17a-e951747271ac
+# ╠═b50f0096-ec99-4a7a-b076-be02dbb6f66d
+# ╠═49094531-c2fe-4eec-9740-c4b8fe22e578
+# ╠═b01bd192-90d9-486b-9847-f18ccc516b16
+# ╠═892ef1e9-716a-4118-9415-863acc3fd9a6
+# ╠═df2af8d4-9356-4bf9-a4ab-423eca2a8a83
+# ╟─63e75af5-bdfb-4152-9bcb-0110aa13a193
+# ╠═785fd2a7-5db6-4242-9ed0-f3c7fd1b4955
 # ╠═b304bc21-d50e-4c84-8aa9-0daba2f98de9
-# ╠═ef7889fd-1cf8-4424-ab0f-eeb32e2b6a30
+# ╠═3ad7f9d9-1620-4e9d-b577-2ba723220f4a
 # ╠═d3f94402-1cb6-4aa5-8eb2-5d94040af4eb
+# ╠═ef7889fd-1cf8-4424-ab0f-eeb32e2b6a30
+# ╠═b4c58d45-f857-4e3b-a579-1b2ca930c778
+# ╟─3740c483-035d-4e54-9588-50ec52eb4cbd
+# ╠═dc8ffa26-381a-4647-bccf-2fceb3dd5d69
+# ╠═75ed1295-a710-4fa8-80ab-7be1af3fc54a
+# ╠═c4567ab7-7a04-4a66-8ffc-78992122ad9a
+# ╠═a11b5f7e-b252-4735-b539-95dbd37dadfd
+# ╠═d05e8814-360c-419d-8b2b-16f8cde823ad
+# ╠═89c437e9-b13e-4d71-a789-a2bd1a33c63b
+# ╠═4275c478-b59d-4574-805e-b1fed99e292d
+# ╠═3e029c3e-cb3a-42af-90a1-40ccf33f096a
+# ╠═8ea0f8d6-4e9c-4278-ac8e-cb9e149c3092
+# ╠═b0fd79fc-6da4-4fa6-b20d-b214258969fa
+# ╠═d849bfe9-2eaa-48e2-b0d1-7b7cfb0686e8
+# ╠═a0f847b4-ed1e-45cf-bf96-974f4ae5d358
 # ╠═999fb552-2430-4956-98e7-1faddd6e9a3e
 # ╠═ede8cba2-cb70-4c6f-94ef-2474ad7e4823
 # ╠═538f0863-b572-4cf9-97e5-ceafac10b5be
