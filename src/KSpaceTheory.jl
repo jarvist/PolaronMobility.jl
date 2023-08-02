@@ -1,96 +1,261 @@
 # KSpaceTheory.jl
 
-function frohlich_matrix(k; α=1, ω=1)
+"""
+	Integrand for a k-space integral in cartesian coordinates.
+"""
+function cartesian_k_integrand(k, coupling, propagator; rₚ = 1)
+	coupling(k) * exp(-k^2 * rₚ^2 * propagator / 2)
+end
+
+"""
+	Integrand for a k-space integral in spherical coordinates.
+"""
+function spherical_k_integrand(k, coupling, propagator; rₚ = 1)
+	4π * k^2 * coupling(k) * exp(-k^2 * rₚ^2 * propagator / 2)
+end
+
+"""
+	Integral over first Brillioun Zone in cartesian coordinates.
+"""
+function cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1, limits = [-π, π])
+	integral, _ = quadgk(k -> cartesian_k_integrand(k, coupling, propagator; rₚ = rₚ), limits[1] / a, limits[2] / a)
+	integral * a / 2π
+end
+
+"""
+	Integral over all k-space in spherical coordinates.
+"""
+function spherical_k_integral(coupling, propagator; rₚ = 1, limits = [0, Inf])
+	integral, _ = quadgk(k -> spherical_k_integrand(k, coupling, propagator; rₚ = rₚ), limits[1], limits[2])
+	integral / 8π^3
+end
+
+"""
+	Electron-phonon coupling matrix for the Holstein model.
+"""
+function holstein_coupling(k, α, ω; dims = 3)
+	(2 * dims * α * ω)^(1/dims)
+end
+
+"""
+	Electron-phonon coupling matrix for the Frohlich model.
+"""
+function frohlich_coupling(k, α, ω)
 	ω^(3/2) * 2√2 * π * α / k^2
 end
 
-function holstein_matrix(k, α, ω, z)
-    z * α * ω 
+"""
+	Integrand for imaginary time integral for the holstein interaction energy at finite temperature.
+"""
+function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = 3)
+	coupling(k) = holstein_coupling(k, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w, ω, β)
+	phonon_propagator(τ, ω, β) * cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1, limits = [-π, π])^dims
 end
 
-function spherical_k_integral(τ, elph_matrix, v, w, α, ω; cutoff = [0, Inf])
-	integral, _ = quadgk(k -> k^2 * elph_matrix(k; α = α, ω = ω) * exp(-k^2 * D_imag(τ * ω, v, w) / 2), cutoff[1], cutoff[2]) 
-    return integral / 2π^2
+"""
+	Integrand for imaginary time integral for the holstein interaction energy at zero temperature.
+"""
+function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = 3)
+	coupling(k) = holstein_coupling(k, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w, ω)
+	phonon_propagator(τ, ω) * (cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1.0, limits = [-π, π]))^dims
 end
 
-function cartesian_k_integral(τ, elph_matrix, v, w, α, ω; dims = 3, cutoff = [-π, π])
-    k_integrand(k) = elph_matrix(k, α, ω, 2 * dims) * exp(-k^2 * D_imag(τ * ω, v, w) * dims / ω)
-    integral, _ = quadgk(k -> k_integrand(k), cutoff[1], cutoff[2])
-    return (integral / 2π)^dims
+"""
+	Integrand for imaginary time integral for the frohlich interaction energy at finite temperature.
+"""
+function frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β)
+	coupling(k) = frohlich_coupling(k, α, ω)
+	propagator = polaron_propagator(τ, v, w, ω, β)
+	phonon_propagator(τ, ω, β) * spherical_k_integral(coupling, propagator; rₚ = 1.0, limits = [0, Inf])
 end
 
-function frohlich_B(elph_matrix, v, w, α, ω, ; cutoff = [0, Inf])
-    integral, _ = quadgk(τ -> exp(-τ * ω) * spherical_k_integral(τ, elph_matrix, v, w, α, ω; cutoff = cutoff), 0, Inf)
-    return integral
+"""
+	Integrand for imaginary time integral for the frohlich interaction energy at zero temperature.
+"""
+function frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω)
+	coupling(k) = frohlich_coupling(k, α, ω)
+	propagator = polaron_propagator(τ, v, w, ω)
+	phonon_propagator(τ, ω) * spherical_k_integral(coupling, propagator; rₚ = 1.0, limits = [0, Inf])
 end
 
-function holstein_B_k(elph_matrix, v, w, α, ω; dims = 3, cutoff = [-π, π])
-    integral, _ = quadgk(τ -> exp(-τ * ω) * cartesian_k_integral(τ, elph_matrix, v, w, α, ω; dims = dims, cutoff = cutoff), 0, Inf)
-    return integral
+"""
+	Electron-phonon interaction energy for the Holstein mode at finite temperature.
+"""
+function holstein_interaction_energy_k_space(v, w, α, ω, β; dims = 3)
+	integral, _ = quadgk(τ -> holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = dims), 0, β/2)
+	return integral
 end
 
-function frohlich_energy(elph_matrix, v, w, α, ω; cutoff = [0, Inf])
-    -(A(v, w, ω) + C(v, w, ω)) - frohlich_B(elph_matrix, v, w, α, ω; cutoff = cutoff)
+"""
+	Electron-phonon interaction energy for the Holstein mode at zero temperature.
+"""
+function holstein_interaction_energy_k_space(v, w, α, ω; dims = 3)
+	integral, _ = quadgk(τ -> holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = dims), 0, Inf)
+	return integral
 end
 
-function holstein_energy_k(elph_matrix, v, w, α, ω; dims = 3, cutoff = [-π, π])
-    -dims * (A(v, w, ω) + C(v, w, ω)) / 3 - holstein_B_k(elph_matrix, v, w, α, ω; dims = dims, cutoff = cutoff)
+"""
+	Electron-phonon interaction energy for the Frohlich model at finite temperature.
+"""
+function frohlich_interaction_energy_k_space(v, w, α, ω, β)
+	integral, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β), 0, β/2)
+	return integral
 end
 
-function frohlich_vw_k(elph_matrix, v, w, α, ω; cutoff = [0, Inf], lower = [0, 0], upper = [Inf, Inf])
-
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), w]
-
-    # Feynman 1955 athermal action 
-    f(x) = frohlich_energy(elph_matrix, x[1] + x[2], x[2], α, ω; cutoff = cutoff)
-
-    # Use Optim to optimise v and w to minimise enthalpy.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-    )
-
-    # Get v and w values that minimise the free energy.
-    Δv, w = Optim.minimizer(solution) # v=Δv+w
-	E = Optim.minimum(solution)
-
-	if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
-
-    # Return variational parameters that minimise the free energy.
-    return Δv + w, w, E
+"""
+	Electron-phonon interaction energy for the Frohlich mode at zero temperature.
+"""
+function frohlich_interaction_energy_k_space(v, w, α, ω)
+	integral, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω), 0, Inf)
+	return integral
 end
 
-function holstein_vw_k(elph_matrix, v, w, α, ω; dims = 3, cutoff = [-π, π], lower = [0, 0], upper = [Inf, Inf])
+"""
+	Energy associated with the free electron at finite temperature.
+"""
+function electron_energy(v, w, ω, β; dims = 3)
+	dims / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) + dims / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
+end
 
-    Δv = v - w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), w]
+"""
+	Energy associated with the free electron at zero temperature.
+"""
+function electron_energy(v, w, ω; dims = 3)
+	-dims * (v - w) / 2 * ω + (dims / (4 * v)) * (v^2 - w^2) * ω
+end
 
-    # Feynman 1955 athermal action 
-    f(x) = holstein_energy_k(elph_matrix, x[1] + x[2], x[2], α, ω; dims = dims, cutoff = cutoff)
+"""
+	Total free energy for the Holstein model.
+"""
+function holstein_energy_k_space(v, w, α, ωβ...; dims = 3)
+	kinetic_energy = -2 * dims - electron_energy(v, w, ωβ...; dims = dims) 
+	potential_energy = -holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = dims)
+	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
+end
 
-    # Use Optim to optimise v and w to minimise enthalpy.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS()),
-    )
+"""
+	Total free energy for the Frohlich model.
+"""
+function frohlich_energy_k_space(v, w, α, ωβ...)
+	kinetic_energy = -electron_energy(v, w, ωβ...) 
+	potential_energy = -frohlich_interaction_energy_k_space(v, w, α, ωβ...)
+	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
+end
 
-    # Get v and w values that minimise the free energy.
-    Δv, w = Optim.minimizer(solution) # v=Δv+w
-	E = Optim.minimum(solution)
+"""
+	The Dynamical Structure Factor for the Holstein model with temperature dependence.
+"""
+function holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = 3)
+	
+	coupling_one(k) = holstein_coupling(k, α, ω; dims = dims) * k^2
+	coupling_two(k) = holstein_coupling(k, α, ω; dims = dims)
 
-	if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
+	propagator = polaron_propagator(im * t, v, w, ω, β)
+	
+	first_integral = cartesian_k_integral(coupling_one, propagator)
+	second_integral = cartesian_k_integral(coupling_two, propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
 
-    # Return variational parameters that minimise the free energy.
-    return Δv + w, w, E
+	prefactor * dims * first_integral * second_integral^(dims - 1)
+end
+
+"""
+	The Dynamical Structure Factor for the Holstein model at zero temperature.
+"""
+function holstein_structure_factor_k_space(t, v, w, α, ω; dims = 3)
+	
+	coupling_one(k) = holstein_coupling(k, α, ω; dims = dims) * k^2
+	coupling_two(k) = holstein_coupling(k, α, ω; dims = dims)
+
+	propagator = polaron_propagator(im * t, v, w, ω)
+	
+	first_integral = cartesian_k_integral(coupling_one, propagator)
+	second_integral = cartesian_k_integral(coupling_two, propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
+
+	prefactor * dims * first_integral * second_integral^(dims - 1)
+end
+
+"""
+	The Dynamical Structure Factor for the Frohlich model with temperature dependence.
+"""
+function frohlich_structure_factor_k_space(t, v, w, α, ω, β)
+	
+	coupling(k) = frohlich_coupling(k, α, ω) * k^2
+
+	propagator = polaron_propagator(im * t, v, w, ω, β)
+	
+	integral = spherical_k_integral(coupling, propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
+
+	prefactor * integral
+end
+
+"""
+	The Dynamical Structure Factor for the Frohlich model at zero temperature.
+"""
+function frohlich_structure_factor_k_space(t, v, w, α, ω)
+	
+	coupling(k) = frohlich_coupling(k, α, ω) * k^2
+
+	propagator = polaron_propagator(im * t, v, w, ω)
+	
+	integral = spherical_k_integral(coupling, propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
+
+	prefactor * integral
+end
+
+"""
+	Memory function for the Holstein model with temperature dependence.
+"""
+function holstein_memory_function_k_space(Ω, v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims)
+	 return general_memory_function(Ω, structure_factor)
+end
+
+"""
+	Memory function for the Holstein model at zero temperature.
+"""
+function holstein_memory_function_k_space(Ω, v, w, α, ω; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω; dims = dims)
+	 return general_memory_function(Ω, structure_factor, limits = [0, 1e3])
+end
+
+"""
+	DC Mobility for the Holstein model.
+"""
+function holstein_mobility_k_space(v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims)
+	 1 / imag(general_memory_function(structure_factor))
+end
+
+"""
+	Memory function for the Frohlich model with temperature dependence.
+"""
+function frohlich_memory_function_k_space(Ω, v, w, α, ω, β)
+	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β)
+	 return general_memory_function(Ω, structure_factor; limits = [0, Inf])
+end
+
+"""
+	Memory function for the Frohlich model at zero temperature.
+"""
+function frohlich_memory_function_k_space(Ω, v, w, α, ω)
+	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω)
+	 return general_memory_function(Ω, structure_factor; limits = [0, 1e3])
+end
+
+"""
+	DC Mobility for the Frohlich model.
+"""
+function frohlich_mobility_k_space(v, w, α, ω, β)
+	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β)
+	 1 / imag(general_memory_function(structure_factor; limits = [0, Inf]))
 end

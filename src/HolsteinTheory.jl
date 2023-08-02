@@ -1,58 +1,87 @@
 # HolsteinTheory.jl
-# A work in progress.
 
-# Compared to Hellwarth's presentation of the Feynman variational approach for the Frohlich
-# Hamiltonian, then only thing that changes with the Holstein Hamiltonian is in the
-# calculation of the 'B' component (the coupled electron-phonon component).
-
-function holstein_B(v, w, α, ω; dims=3)
-
-    G_polaron(τ) = ((v^2 - w^2) / v^3 * (1 - exp(-v * ω * τ)) + w^2 / v^2 * ω * τ + eps(Float64)) * dims / ω
-
-    G_phonon(τ) = exp(-ω * τ)
-
-    integrand(τ) = G_phonon(τ) * erf(π * sqrt(G_polaron(τ)))^dims / G_polaron(τ)^(dims/2)
-
-    integral = quadgk(τ -> integrand(τ), 0, Inf)[1]
-
-    return 2 * dims * ω * α * (2π)^(-dims/2) * integral
+"""
+	Imaginary time polaron Green's function with temperature dependence.
+"""
+function polaron_propagator(τ, v, w, ω, β)
+	(v^2 - w^2) / v^3 / ω * (1 - exp(-v * τ * ω)) * (1 - exp(-v * ω * (β - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * ω * (1 - τ / β)
 end
 
-function holstein_B(v, w, α, ω, β; dims=3)
-
-    G_polaron(τ) = ((v^2 - w^2) / v^3 * (1 - exp(-v * ω * τ)) * (1 - exp(-v * ω * (β - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * ω * τ * (1 - τ / β) + eps(Float64)) * dims / ω
-
-    G_phonon(τ) = exp(-ω * τ) / (1 - exp(-β * ω)) + exp(ω * τ) / (exp(β * ω) - 1)
-
-    integrand(τ) = G_phonon(τ) * erf(π * sqrt(G_polaron(τ)))^dims / G_polaron(τ)^(dims/2)
-
-    integral = quadgk(τ -> integrand(τ), 0, β / 2)[1]
-
-    return 2 * dims * ω * α * (2π)^(-dims/2) * integral
+"""
+	Imaginary time polaron Green's function at zero temperature.
+"""
+function polaron_propagator(τ, v, w, ω)
+	w^2 * τ * ω / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ * ω)) / ω
 end
 
-function holstein_energy(v, w, α, ωβ...; dims=3)
-
-	kinetic_energy = -dims * (A(v, w, ωβ...) + C(v, w, ωβ...)) / 4 - 2 * dims
-
-	potential_energy = -holstein_B(v, w, α, ωβ...; dims=dims)
-
-    total_energy = kinetic_energy + potential_energy
-
-	return total_energy, kinetic_energy, potential_energy
+"""
+	Imaginary time phonon Green's function at zero temperature.
+"""
+function phonon_propagator(τ, ω)
+	exp(-ω * τ)
 end
 
-function holsteinvw(v, w, α, ωβ...; dims=3, upperlimit=Inf)
+"""
+	Imaginary time phonon Green's function with temperature dependence.
+"""
+function phonon_propagator(τ, ω, β)
+	n = 1 / (exp(β * ω) - 1)
+	n * exp(ω * τ) + (1 + n) * exp(-ω * τ)
+end
 
-    # Limits of the optimisation.
-    lower = [0.0, 0.0]
-    upper = [upperlimit, upperlimit]
+"""
+	Integrand for imaginary time integral for the holstein interaction energy at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = 3)
+	coupling = holstein_coupling(1, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w, ω, β)
+	phonon_propagator(τ, ω, β) * (coupling * erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator))^dims
+end
+
+"""
+	Integrand for imaginary time integral for the holstein interaction energy at zero temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy_integrand(τ, v, w, α, ω; dims = 3)
+	coupling = holstein_coupling(1, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w, ω)
+	phonon_propagator(τ, ω) * (coupling * erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator))^dims
+end
+
+"""
+	Electron-phonon interaction energy for the Holstein mode at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy(v, w, α, ω, β; dims = 3)
+	integral, _ = quadgk(τ -> holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = dims), 0, β/2)
+	return integral
+end
+
+"""
+	Electron-phonon interaction energy for the Holstein mode at finite temperature. Here the k-space integral is evaluated analytically.
+"""
+function holstein_interaction_energy(v, w, α, ω; dims = 3)
+	integral, _ = quadgk(τ -> holstein_interaction_energy_integrand(τ, v, w, α, ω; dims = dims), 0, Inf)
+	return integral
+end
+
+"""
+	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
+"""
+function holstein_energy(v, w, α, ωβ...; dims = 3)
+	kinetic_energy = -2 * dims - electron_energy(v, w, ωβ...; dims = dims) 
+	potential_energy = -holstein_interaction_energy(v, w, α, ωβ...; dims = dims)
+	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
+end
+
+"""
+	Optimization code to find the variational apramaters v and w that give the lowest upper-bound to the free energy.
+"""
+function vw_variation(energy, v, w; lower = [0, 0], upper = [Inf, Inf])
 
     Δv = v - w # defines a constraint, so that v>w
     initial = [Δv + eps(Float64), w]
 
     # Feynman 1955 athermal action 
-    f(x) = holstein_energy((x[1] + x[2]), x[2], α, ωβ...; dims=dims)[1]
+    f(x) = energy(x[1] + x[2], x[2])[1]
 
     # Use Optim to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
@@ -65,66 +94,86 @@ function holsteinvw(v, w, α, ωβ...; dims=3, upperlimit=Inf)
 
     # Get v and w values that minimise the free energy.
     Δv, w = Optim.minimizer(solution) # v=Δv+w
-	total_energy, kinetic_energy, potential_energy = holstein_energy(Δv + w, w, α, ωβ...; dims=dims)
+	E, K, P = energy(Δv + w, w)
 
 	if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $total_energy"
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
     end
 
     # Return variational parameters that minimise the free energy.
-    return Δv + w, w, total_energy, kinetic_energy, potential_energy
+    return Δv + w, w, E, K, P
 end
 
-function holstein_memory_function(v, w, α, ω, β, Ω; dims=3)
-
-    n(x) = 1 / (exp(x * β) - 1)
-
-    dim_lattice = 2 * dims # 'z'. Linear / Square / Cubic etc.
-
-    length_scale_squared = dim_lattice / ω
-
-    g_squared = length_scale_squared * α
-
-    fictitious_mass = v^2 / w^2 
-
-    fictitious_radius = (v^2 - w^2) / (2 * v^3) 
-
-    G_phonon(t) = (1 + n(ω)) * exp(-im * ω * t) + n(ω) * exp(im * ω * t)
-
-    G_polaron(t) = ((2 * fictitious_mass)^(-1) * (-im * t * ω + t^2 * ω / β) + fictitious_radius * (1 - exp(im * v * t * ω) + 4 * n(v * ω) * sin(v * t * ω / 2)^2)) * length_scale_squared
-
-    S(t) = dims * length_scale_squared / (2π)^dims * G_phonon(t) * (√π / 2 * erf(π * √G_polaron(t)) / (G_polaron(t))^(3/2) - π * exp(-π^2 * G_polaron(t)) / G_polaron(t)) * (√π * erf(π * √G_polaron(t)) / √G_polaron(t))^(dims-1)
-
-    integrand(t) = (1 - exp(im * Ω * ω * t)) * imag(S(t)) / Ω
-
-    integral = quadgk(t -> integrand(t), 0, 1e4)[1]
-
-    return 2 / 3 * g_squared * integral
+"""
+	General memory function for a given structure factor with frequency dependence.
+"""
+function general_memory_function(Ω, structure_factor; limits = [0, Inf])
+	integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
+	return integral
 end
 
-function holstein_memory_function(v, w, α, ω, β; dims=3)
+"""
+	General memory function for a given structure factor in the DC limit.
+"""
+function general_memory_function(structure_factor; limits = [0, Inf])
+	integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
+	return integral
+end
 
-    n(x) = 1 / (exp(x * β) - 1)
+"""
+	The Dynamical Structure Factor for the Holstein model with temperature dependence. Here the k-space integral is evaulated analytically.
+"""
+function holstein_structure_factor(t, v, w, α, ω, β; dims = 3)
+	
+	coupling = holstein_coupling(1, α, ω; dims = dims)^dims
 
-    dim_lattice = 2 * dims # 'z'. Linear / Square / Cubic etc.
+	propagator = polaron_propagator(im * t, v, w, ω, β)
+	
+	first_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π) / propagator^(3/2) - exp(-π^2 * propagator / 2) / propagator
+	second_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
 
-    length_scale_squared = dim_lattice / ω
+	prefactor * dims * coupling * first_integral * second_integral^(dims - 1)
+end
 
-    g_squared = length_scale_squared * α
+"""
+	The Dynamical Structure Factor for the Holstein model at zero dependence. Here the k-space integral is evaulated analytically.
+"""
+function holstein_structure_factor(t, v, w, α, ω; dims = 3)
+	
+	coupling = holstein_coupling(1, α, ω; dims = dims)^dims
 
-    fictitious_mass = v^2 / w^2 
+	propagator = polaron_propagator(im * t, v, w, ω)
+	
+	first_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π) / propagator^(3/2) - exp(-π^2 * propagator / 2) / propagator
+	second_integral = erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator)
+	
+	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
 
-    fictitious_radius = (v^2 - w^2) / (2 * v^3) 
+	prefactor * dims * coupling * first_integral * second_integral^(dims - 1)
+end
 
-    G_phonon(t) = (1 + n(ω)) * exp(-im * ω * t) + n(ω) * exp(im * ω * t)
+"""
+	Memory function for the Holstein model with temperature dependence. Here the k-space integral is evaulated analytically.
+"""
+function holstein_memory_function(Ω, v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
+	 return general_memory_function(Ω, structure_factor)
+end
 
-    G_polaron(t) = ((2 * fictitious_mass)^(-1) * (-im * t * ω + t^2 * ω / β) + fictitious_radius * (1 - exp(im * v * t * ω) + 4 * n(v * ω) * sin(v * t * ω / 2)^2)) * length_scale_squared 
+"""
+	Memory function for the Holstein model at zero temperature. Here the k-space integral is evaulated analytically.
+"""
+function holstein_memory_function(Ω, v, w, α, ω; dims = 3)
+	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω; dims = dims)
+	 return general_memory_function(Ω, structure_factor, limits = [0, 1e4])
+end
 
-    S(t) = dims * length_scale_squared / (2π)^dims * G_phonon(t) * (√π / 2 * erf(π * √G_polaron(t)) / (G_polaron(t))^(3/2) - π * exp(-π^2 * G_polaron(t)) / G_polaron(t)) * (√π * erf(π * √G_polaron(t)) / √G_polaron(t))^(dims-1)
-
-    integrand(t) = -im * t * imag(S(t))
-
-    integral = quadgk(t -> integrand(t), 0, 1e4)[1]
-
-    return 2 / 3 * g_squared * integral
+"""
+	DC Mobility for the Holstein model. Here the k-space integral is evaulated analytically.
+"""
+function holstein_mobility(v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
+	 1 / imag(general_memory_function(structure_factor))
 end
