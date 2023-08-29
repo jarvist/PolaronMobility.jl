@@ -34,7 +34,7 @@ end
 	Electron-phonon coupling matrix for the Holstein model.
 """
 function holstein_coupling(k, α, ω; dims = 3)
-	(2 * dims * α * ω)^(1/dims)
+	(dims * α * ω)^(1/dims)
 end
 
 """
@@ -117,14 +117,14 @@ end
 """
 function electron_energy(v, w, ω, β; dims = 3)
 	# dims / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) + dims / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
-	(A(v, w, ω, β) + C(v, w, ω, β)) * dims / 3
+	(A(v, w, ω, β) + C(v, w, ω, β)) / 3
 end
 
 """
 	Energy associated with the free electron at zero temperature.
 """
 function electron_energy(v, w, ω; dims = 3)
-	-dims * (v - w) / 2 * ω + (dims / (4 * v)) * (v^2 - w^2) * ω
+	-(v - w) / 2 * ω + (1 / (4 * v)) * (v^2 - w^2) * ω
 end
 
 """
