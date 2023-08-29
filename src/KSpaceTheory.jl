@@ -116,7 +116,8 @@ end
 	Energy associated with the free electron at finite temperature.
 """
 function electron_energy(v, w, ω, β; dims = 3)
-	dims / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) + dims / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
+	# dims / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) + dims / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
+	(A(v, w, ω, β) + C(v, w, ω, β)) * dims / 3
 end
 
 """

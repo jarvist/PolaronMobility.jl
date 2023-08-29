@@ -35,7 +35,7 @@ end
 function holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = 3)
 	coupling = holstein_coupling(1, α, ω; dims = dims)
 	propagator = polaron_propagator(τ, v, w, ω, β)
-	phonon_propagator(τ, ω, β) * (coupling * erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator))^dims
+	phonon_propagator(τ, ω, β) * (coupling * erf(π * sqrt(propagator * dims)) / sqrt(2π * propagator))^dims
 end
 
 """
@@ -44,7 +44,7 @@ end
 function holstein_interaction_energy_integrand(τ, v, w, α, ω; dims = 3)
 	coupling = holstein_coupling(1, α, ω; dims = dims)
 	propagator = polaron_propagator(τ, v, w, ω)
-	phonon_propagator(τ, ω) * (coupling * erf(π * sqrt(propagator / 2)) / sqrt(2π * propagator))^dims
+	phonon_propagator(τ, ω) * (coupling * erf(π * sqrt(propagator * dims / ω)) / sqrt(2π * propagator))^dims
 end
 
 """
@@ -67,9 +67,9 @@ end
 	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
 """
 function holstein_energy(v, w, α, ωβ...; dims = 3)
-	kinetic_energy = -2 * dims - electron_energy(v, w, ωβ...; dims = dims) 
-	potential_energy = -holstein_interaction_energy(v, w, α, ωβ...; dims = dims)
-	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
+	kinetic_energy = -2 * dims - electron_energy(v, w, ωβ...; dims = dims) / dims
+	potential_energy = -holstein_interaction_energy(v, w, α, ωβ...; dims = dims) / 2.0^dims
+	return (kinetic_energy + potential_energy), kinetic_energy, potential_energy
 end
 
 """
@@ -108,7 +108,7 @@ end
 	General memory function for a given structure factor with frequency dependence.
 """
 function general_memory_function(Ω, structure_factor; limits = [0, Inf])
-	integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
+	integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2])
 	return integral
 end
 
@@ -116,7 +116,7 @@ end
 	General memory function for a given structure factor in the DC limit.
 """
 function general_memory_function(structure_factor; limits = [0, Inf])
-	integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
+	integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits[1], limits[2])
 	return integral
 end
 
