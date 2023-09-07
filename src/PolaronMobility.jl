@@ -20,7 +20,7 @@ export frohlichalpha, ϵ_ionic_mode, F, A, B, C, feynmanvw
 export HellwarthBScheme, HellwarthAScheme                 
 
 # Polaron memory functions
-export polaron_memory_function, D, S                      
+export polaron_memory_function, D, S, polaron_memory_function_athermal, polaron_memory_function_thermal                      
 
 # Response functions
 export polaron_complex_impedence, polaron_complex_conductivity, optical_absorption      

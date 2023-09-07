@@ -499,7 +499,7 @@ end
 """
 function frohlich_mobility(v, w, α, ω, β)
 	 structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
-	 1 / imag(memory_function(structure_factor); limits = [0, Inf])
+	 1 / imag(memory_function(structure_factor; limits = [0, Inf]))
 end
 
 # ╔═╡ 7560cf27-f085-4f74-99f0-d33bfa542a9f
@@ -710,13 +710,6 @@ begin
 	vh0, wh0, Eh0, Kh0, Ph0 = optimize(best_holstein_energy_athermal, 5, 2, upper=[100, 100])
 	vf0, wf0, Ef0, Kf0, Pf0 = optimize(best_frohlich_energy_athermal, 5, 2, upper=[100, 100])
 end
-
-# ╔═╡ 36540645-f6b4-4415-95b2-4110cb8eab50
-# ╠═╡ disabled = true
-#=╠═╡
-# Holstein mobility from k-space integral at T = 0 (Took 4000s)
-χh0 = holstein_memory_function.(Ωrange, vh0, wh0, α, ω; dims = d)
-  ╠═╡ =#
 
 # ╔═╡ e31fd984-0a12-4c09-9249-3191d900aaec
 # Saved Holstein Memory at zero temperature (takes a while to generate)
@@ -2237,7 +2230,6 @@ version = "1.4.1+0"
 # ╟─180ca806-a36f-47e9-a287-07b5a9624a0c
 # ╠═c1022521-a44f-4c4e-9fe7-92be7842651d
 # ╠═45b7b0d6-8ab8-4aa4-af9d-1da6dcdd7d26
-# ╠═36540645-f6b4-4415-95b2-4110cb8eab50
 # ╟─e31fd984-0a12-4c09-9249-3191d900aaec
 # ╠═7411b9e8-e515-4e4a-9f24-0d3c36844fb5
 # ╠═3ee52dc5-3665-4d0a-a9a2-c50c9ff8219c

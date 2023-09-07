@@ -33,8 +33,8 @@ end
 """
 	Electron-phonon coupling matrix for the Holstein model.
 """
-function holstein_coupling(k, α, ω; dims = 3)
-	(dims * α * ω)^(1/dims)
+function holstein_coupling(k, α, ω; dims = 1)
+	2 * α * ω * dims
 end
 
 """
@@ -49,8 +49,8 @@ end
 """
 function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = 3)
 	coupling(k) = holstein_coupling(k, α, ω; dims = dims)
-	propagator = polaron_propagator(τ, v, w, ω, β)
-	phonon_propagator(τ, ω, β) * cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1, limits = [-π, π])^dims
+	propagator = polaron_propagator(τ, v, w, β)
+	phonon_propagator(τ, ω, β) * spherical_k_integral(coupling, propagator; rₚ = 1, limits = [0, (2π) * (3 / 4π)^(1/3)])^dims
 end
 
 """
@@ -59,7 +59,7 @@ end
 function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = 3)
 	coupling(k) = holstein_coupling(k, α, ω; dims = dims)
 	propagator = polaron_propagator(τ, v, w, ω)
-	phonon_propagator(τ, ω) * (cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1.0, limits = [-π, π]))^dims
+	phonon_propagator(τ, ω) * (spherical_k_integral(coupling, propagator; rₚ = 1, limits = [0, (2π) * (3 / 4π)^(1/3)]))^dims
 end
 
 """
@@ -116,22 +116,21 @@ end
 	Energy associated with the free electron at finite temperature.
 """
 function electron_energy(v, w, ω, β; dims = 3)
-	# dims / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) + dims / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
-	(A(v, w, ω, β) + C(v, w, ω, β)) / 3
+	-(A(v, w, ω, β) + C(v, w, ω, β)) / 3
 end
 
 """
 	Energy associated with the free electron at zero temperature.
 """
 function electron_energy(v, w, ω; dims = 3)
-	-(v - w) / 2 * ω + (1 / (4 * v)) * (v^2 - w^2) * ω
+	(v - w)^2 / (4 * v) * ω
 end
 
 """
 	Total free energy for the Holstein model.
 """
 function holstein_energy_k_space(v, w, α, ωβ...; dims = 3)
-	kinetic_energy = -2 * dims - electron_energy(v, w, ωβ...; dims = dims) 
+	kinetic_energy = -2 * dims + electron_energy(v, w, ωβ...; dims = dims) 
 	potential_energy = -holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = dims)
 	return kinetic_energy + potential_energy, kinetic_energy, potential_energy
 end

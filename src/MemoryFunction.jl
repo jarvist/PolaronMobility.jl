@@ -30,9 +30,18 @@ Includes conditionals for zero-temperature and DC limits.
 - `ω::Union{Float64, Vector{Float64}}`: phonon mode frequencies (2π THz). Predefined as `ω = 1.0` for a single mode in polaron units.
 - `rtol = 1e-3`: specifies the relative error tolerance for the QuadGK integral.
 
-See R. P. Feynman, R. W. Hellwarth, C. K. Iddings, and P. M. Platzman, Mobility of slow electrons in a polar crystal, PhysicalReview127, 1004 (1962). https://doi.org/10.1103/PhysRev.127.1004.
+# Returns
+- `χ`: The calculated memory function χ(Ω) of the polaron.
 
-See also [`polaron_memory_function_thermal`](@ref), [`polaron_memory_function_athermal`](@ref), [`polaron_memory_function_dc`](@ref).
+# Example
+```julia
+χ = polaron_memory_function(v, w, α, ω, β, Ω)
+```
+
+# Description
+The code snippet is a function called `polaron_memory_function` that calculates the memory function χ(Ω) of a polaron at finite temperatures. It includes conditionals for different cases: zero-temperature and DC limits, zero temperature limit at AC finite frequencies, and finite temperatures and frequencies away from zero limits.
+
+If `Ω` is zero and `β` is infinity, the code returns a complex number with zero real part and infinity imaginary part. If `Ω` is zero and `β` is not infinity, the code calls the `polaron_memory_function_dc` function to calculate the memory function at the DC zero frequency limit. If `Ω` is not zero and `β` is infinity, the code calls the `polaron_memory_function_athermal` function to calculate the memory function at the zero temperature limit with AC finite frequencies. If `Ω` is not zero and `β` is not infinity, the code calls the `polaron_memory_function_thermal` function to calculate the memory function at finite temperatures and frequencies away from zero limits. If none of the above conditions are met, an error message is printed.
 """
 function polaron_memory_function(v, w, α, ω, β, Ω)
 
@@ -58,6 +67,36 @@ function polaron_memory_function(v, w, α, ω, β, Ω)
     end
 end
 
+"""
+    polaron_memory_function(v, w, α::Vector, ω::Vector, β, Ω)
+
+Apply the `polaron_memory_function` to each element of the input vectors and return the sum of the results.
+
+# Arguments
+- `v::Vector`: A vector of values.
+- `w::Vector`: A vector of values.
+- `α::Vector`: A vector of values.
+- `ω::Vector`: A vector of values.
+- `β`: A value.
+- `Ω`: A value.
+
+# Returns
+The sum of the `polaron_memory_function` applied to each element of the input vectors.
+
+# Example
+```julia
+v = [1, 2, 3]
+w = [4, 5, 6]
+α = [0.1, 0.2, 0.3]
+ω = [0.5, 0.6, 0.7]
+β = 1.0
+Ω = 2.0
+
+result = polaron_memory_function(v, w, α, ω, β, Ω)
+
+println(result)  # Output: the sum of the function applied to each element of the input vectors
+```
+"""
 polaron_memory_function(v, w, α::Vector, ω::Vector, β, Ω) = sum(polaron_memory_function.(v, w, α, ω, β, Ω))
 
 """
@@ -90,7 +129,7 @@ function polaron_memory_function_thermal(v, w, α, ω, β, Ω)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w, ω, β))
 
-    integral = quadgk(t -> integrand(t), 0, Inf)[1]
+    integral = quadgk(t -> integrand(t), 0, 1e4, rtol=1e-4)[1]
 
     memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
 
@@ -120,7 +159,7 @@ function polaron_memory_function_athermal(v, w, α, ω, Ω)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w))
 
-    integral = quadgk(t -> integrand(t), 0, 1e3)[1]
+    integral = quadgk(t -> integrand(t), 0, 1e4, rtol=1e-4)[1]
     # integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-eps(Float64))[1]
 
     memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
@@ -151,7 +190,7 @@ function polaron_memory_function_dc(v, w, α, ω, β)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = -im * t * imag(S(t, v, w, ω, β))
 
-    integral = quadgk(t -> integrand(t), 0, Inf)[1]
+    integral = quadgk(t -> integrand(t), 0, 1e4, rtol=1e-4)[1]
 
     memory = 2 * α * ω * integral / (3 * √π)
 
