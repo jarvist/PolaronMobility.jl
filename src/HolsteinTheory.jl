@@ -141,7 +141,7 @@ This example calculates the integrand for the Holstein interaction energy using 
 """
 function holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = 3)
     coupling = holstein_coupling(1, α, ω; dims = dims)
-    propagator = polaron_propagator(τ * ω, v, w, β) * 2 / ω
+    propagator = polaron_propagator(τ * ω, v, w, β * ω) * 2 / ω
     phonon_propagator(τ, ω, β) * coupling * (erf(π * sqrt(propagator)) / 2 / sqrt(π * propagator))^dims
 end
 
@@ -298,7 +298,7 @@ function vw_variation(energy, initial_v, initial_w; lower_bounds = [0, 0], upper
         lower_bounds,
         upper_bounds,
         initial,
-        Fminbox(LBFGS()),
+        Fminbox(BFGS()),
     )
 
     # Get v and w values that minimise the free energy.
@@ -343,7 +343,7 @@ println(result)
 This example demonstrates how to use the `general_memory_function` to calculate the memory function for a given frequency `Ω` and structure factor function `structure_factor`. The `limits` argument is optional and specifies the lower and upper limits of integration. The result is then printed.
 """
 function general_memory_function(Ω, structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2], rtol=1e-4)
+    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2])
     return integral
 end
 
@@ -411,7 +411,7 @@ function holstein_structure_factor(t, v, w, α, ω, β; dims = 3)
 	
 	coupling = holstein_coupling(1, α, ω; dims = dims)
 
-	propagator = polaron_propagator(im * t * ω, v, w, β) * 2 / ω
+	propagator = polaron_propagator(im * t * ω, v, w, β * ω) * 2 / ω
 	
 	first_integral = erf(π * sqrt(propagator)) / 4 / √π / propagator^(3/2) - exp(-π^2 * propagator) / propagator / 2
 	second_integral = erf(π * sqrt(propagator)) / sqrt(π * propagator) / 2
