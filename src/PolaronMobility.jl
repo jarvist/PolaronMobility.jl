@@ -87,3 +87,4 @@ reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims=tuple(findall(size
 export reduce_array
 
 end # module
+

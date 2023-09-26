@@ -18,3 +18,4 @@ function polaron_effective_mass(v, w, α, ω, β)
 end
 
 polaron_effective_mass(v, w, α::Vector, ω::Vector, β) = sum(polaron_effective_mass.(v, w, α, ω, β))
+

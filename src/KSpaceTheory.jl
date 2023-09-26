@@ -259,3 +259,4 @@ function frohlich_mobility_k_space(v, w, α, ω, β)
 	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β)
 	 1 / imag(general_memory_function(structure_factor; limits = [0, Inf]))
 end
+

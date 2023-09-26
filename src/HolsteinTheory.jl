@@ -546,3 +546,4 @@ function holstein_mobility(v, w, α, ω, β; dims = 3)
     structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
     1 / imag(general_memory_function(structure_factor))
 end
+
