@@ -1,5 +1,11 @@
 # Material.jl
 
+"""
+    mutable struct Material
+
+    Structure to contain material-specific data. 
+
+"""
 mutable struct Material
     optical     # Optical dielectric constant
     static      # Static dielectric constant
@@ -15,12 +21,28 @@ mutable struct Material
     end
 end
 
+"""
+    material(ϵ_optical, ϵ_static, m_eff, phonon_freq)
+
+    Construct a 'struct Material' object from traditional Frohlich Hamiltonian parameters. 
+
+    ϵ_ionic and α derived from these parmaters; other material properties filled with bogus values. 
+"""
 function material(ϵ_optical, ϵ_static, m_eff, phonon_freq)
     ϵ_ionic = ϵ_static - ϵ_optical
     α = frohlichalpha(ϵ_optical, ϵ_static, phonon_freq, m_eff)
     return Material(ϵ_optical, ϵ_static, ϵ_ionic, m_eff, α, phonon_freq, phonon_freq, 1, 1)
 end
 
+"""
+    material(ϵ_optic, ϵ_static, m_eff, phonon_freqs, ir_activity, volume)
+
+    Construct a 'struct Material' object from a set of infrared activities and phonon
+    frequencies, for use with the 'multiple phonon branches' extension of the code. 
+
+    effective_freq calculated with the Hellwarth 'B' scheme; ϵ_ionic and α calculated from
+    the infrared activties.  
+"""
 function material(ϵ_optic, ϵ_static, m_eff, phonon_freqs, ir_activity, volume)
     effective_freq = HellwarthBScheme(hcat(phonon_freqs, ir_activity))
     ϵ_ionic = ϵ_ionic_mode.(phonon_freqs, ir_activity, volume)
@@ -43,3 +65,4 @@ function Base.show(io::IO, ::MIME"text/plain", x::Material)
     println(io_limit, "\e[KUnit cell volume   | V₀ = ", x.volume)
     println("\e[K-------------------------------------------")
 end
+
