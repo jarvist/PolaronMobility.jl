@@ -198,3 +198,4 @@ function polaron_memory_function_dc(v, w, α, ω, β)
 end
 
 polaron_memory_function_dc(v, w, α::Vector, ω::Vector, β) = sum(polaron_memory_function_dc.(v, w, α, ω, β))
+

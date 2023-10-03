@@ -596,3 +596,4 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
 end
 
 feynmanvw(αωβ...; upper_limit=1e6) = feynmanvw(3.4, 2.6, αωβ...; upper_limit=upper_limit)
+

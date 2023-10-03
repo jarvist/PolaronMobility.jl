@@ -280,3 +280,4 @@ The Hellwarth polaron mobility.
 See also [`inverse_Hellwarth_mobility`](@ref)
 """
 Hellwarth_mobility(v, w, α, ω, β) = 1 ./ inverse_Hellwarth_mobility(v, w, α, ω, β)
+
