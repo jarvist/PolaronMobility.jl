@@ -1,15 +1,15 @@
 # Material.jl
 
 mutable struct Material
-    optical     # Optical dielectric constant
-    static      # Static dielectric constant
-    ionic       # Ionic dielectric contributions
+    ϵo     # Optical dielectric constant
+    ϵs     # Static dielectric constant
+    ϵi       # Ionic dielectric contributions
     mb          # Effective band mass
     α           # Fröhlich coupling
-    freqs       # Phonon frequencies
-    freq_eff    # Effective frequency
+    f       # Phonon frequencies
+    feff    # Effective frequency
     ir          # Infrared activities
-    volume      # Unit cell volumes
+    V      # Unit cell volumes
     function Material(x...)
         new(reduce_array.(x)...)
     end
@@ -33,13 +33,14 @@ function Base.show(io::IO, ::MIME"text/plain", x::Material)
     println("\e[K------------------------------------------")
     println("\e[K           Material Information           ")
     println("\e[K------------------------------------------")
-    println(io_limit, "\e[KOptic dielectric   | ϵₒ = ", x.optical)
-    println(io_limit, "\e[KStatic dielectric  | ϵₛ = ", x.static)
-    println(io_limit, "\e[KIonic dielectric   | ϵᵢ = ", x.ionic)
+    println(io_limit, "\e[KOptic dielectric   | ϵo = ", x.ϵo)
+    println(io_limit, "\e[KStatic dielectric  | ϵs = ", x.ϵs)
+    println(io_limit, "\e[KIonic dielectric   | ϵi = ", x.ϵi)
     println(io_limit, "\e[KBand mass          | mb = ", x.mb)
     println(io_limit, "\e[KFröhlich coupling  | α = ", x.α)
-    println(io_limit, "\e[KPhonon frequencies | f = ", x.freqs)
-    println(io_limit, "\e[KIR activities      | IR = ", x.ir)
-    println(io_limit, "\e[KUnit cell volume   | V₀ = ", x.volume)
+    println(io_limit, "\e[KPhonon frequencies | f = ", x.f)
+    println(io_limit, "\e[KEff Phonon freq    | feff = ", x.feff)
+    println(io_limit, "\e[KIR activities      | ir = ", x.ir)
+    println(io_limit, "\e[KUnit cell volume   | V = ", x.V)
     println("\e[K-------------------------------------------")
 end

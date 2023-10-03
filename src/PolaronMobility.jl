@@ -81,7 +81,7 @@ Unitful.register(PolaronMobility)
 __init__() = Unitful.register(PolaronMobility)
 
 # QOL function for removing singleton dimensions.
-reduce_array(a) = length(a) == 1 ? only(a) : dropdims(a, dims=tuple(findall(size(a) .== 1)...))
+reduce_array(a) = length(a) == 1 ? only(a) : Array(dropdims(a, dims=tuple(findall(size(a) .== 1)...)))
 
 # Utility functions
 export reduce_array
