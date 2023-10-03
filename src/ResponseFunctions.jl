@@ -251,13 +251,13 @@ function inverse_Hellwarth_mobility(v, w, α, ω, β)
 
         # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
         RHS = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
-        μ = RHS^(-1) 
+        μ = RHS
 
         # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
         # So let's test this:
         K_0 = quadgk(u -> k(u, a, 0, v), 0, Inf)[1] # Inserted b=0 into k(u, a, b, v).
         RHS_0 = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K_0
-        μ_0 = RHS_0^(-1)        
+        μ_0 = RHS_0     
 
         return μ, μ_0
     end

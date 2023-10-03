@@ -219,11 +219,11 @@ end
     addunits!(polaron::Material)
 """
 function addunits!(material::Material)
-    material.freq_eff = material.freq_eff .* ω0_pu
-    material.freqs = material.freqs .* ω0_pu
-    material.ionic = material.ionic .* punit(u"ϵ0")
+    material.feff = material.feff .* ω0_pu
+    material.f = material.f .* ω0_pu
+    material.ϵi = material.ϵi .* punit(u"ϵ0")
     material.mb = material.mb .* m0_pu
-    material.optical = material.optical .* punit(u"ϵ0")
-    material.static = material.static .* punit(u"ϵ0")
+    material.ϵo = material.ϵo .* punit(u"ϵ0")
+    material.ϵs = material.ϵs .* punit(u"ϵ0")
 end
 
