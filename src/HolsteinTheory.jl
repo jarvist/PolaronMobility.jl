@@ -543,7 +543,6 @@ println(result)
 This code calculates the mobility using the given parameters and prints the result.
 """
 function holstein_mobility(v, w, α, ω, β; dims = 3)
-    println("twst")
     structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
     abs(1 / imag(general_memory_function(structure_factor)))
 end
