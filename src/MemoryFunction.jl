@@ -129,7 +129,7 @@ function polaron_memory_function_thermal(v, w, α, ω, β, Ω)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w, ω, β))
 
-    integral = quadgk(t -> integrand(t), 0, 1e4, rtol=1e-4)[1]
+    integral = quadgk(t -> integrand(t), 0, Inf)[1]
 
     memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
 
@@ -159,7 +159,7 @@ function polaron_memory_function_athermal(v, w, α, ω, Ω)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = (1 - exp(im * Ω * t / ω)) * imag(S(t, v, w))
 
-    integral = quadgk(t -> integrand(t), 0, 1e4, rtol=1e-4)[1]
+    integral = quadgk(t -> integrand(t), 0, Inf)[1]
     # integral = quadgk(t -> integrand(t/(1-t))/(1-t)^2, 0, 1-eps(Float64))[1]
 
     memory = 2 * α * ω^2 * integral / (3 * √π * Ω)
@@ -190,7 +190,7 @@ function polaron_memory_function_dc(v, w, α, ω, β)
     # FHIP1962, page 1009, eqn (35a).
     integrand(t) = -im * t * imag(S(t, v, w, ω, β))
 
-    integral = quadgk(t -> integrand(t), 0, 1e4, rtol=1e-4)[1]
+    integral = quadgk(t -> integrand(t), 0, 1e4)[1]
 
     memory = 2 * α * ω * integral / (3 * √π)
 

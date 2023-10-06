@@ -416,9 +416,9 @@ function holstein_structure_factor(t, v, w, α, ω, β; dims = 3)
 	first_integral = erf(π * sqrt(propagator)) / 4 / √π / propagator^(3/2) - exp(-π^2 * propagator) / propagator / 2
 	second_integral = erf(π * sqrt(propagator)) / sqrt(π * propagator) / 2
 	
-	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
+	prefactor = 2 * phonon_propagator(im * t, ω, β)
 
-	prefactor * dims * coupling * first_integral * second_integral^(dims - 1)
+	prefactor * coupling * first_integral * second_integral^(dims - 1)
 end
 
 """
@@ -458,9 +458,9 @@ function holstein_structure_factor(t, v, w, α, ω; dims = 3)
 	first_integral = erf(π * sqrt(propagator)) / 4 / √π / propagator^(3/2) - exp(-π^2 * propagator) / propagator / 2
 	second_integral = erf(π * sqrt(propagator)) / sqrt(π * propagator) / 2
 	
-	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
+	prefactor = 2 * phonon_propagator(im * t, ω)
 
-	prefactor * dims * coupling * first_integral * second_integral^(dims - 1)
+	prefactor * coupling * first_integral * second_integral^(dims - 1)
 end
 
 
@@ -543,7 +543,8 @@ println(result)
 This code calculates the mobility using the given parameters and prints the result.
 """
 function holstein_mobility(v, w, α, ω, β; dims = 3)
+    println("twst")
     structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
-    1 / imag(general_memory_function(structure_factor))
+    abs(1 / imag(general_memory_function(structure_factor)))
 end
 

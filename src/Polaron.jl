@@ -157,7 +157,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
             println(io, "\e[K               Polaron Information: [$(αprocess[]) / $(num_α) ($(round(αprocess[] / (num_α) * 100, digits=1)) %)]")
             println(io, "\e[K-----------------------------------------------------------------------")
 
-            # Different formatting for single vs multipelf frequencies (limits an array to head and tail to limit prints).
+            # Different formatting for single vs multiple frequencies (limits an array to head and tail to limit prints).
             if num_ω == 1
                 println(io, "\e[KPhonon frequencies             | ωeff = ", ωeff, " | ω = ", ω)
             else
