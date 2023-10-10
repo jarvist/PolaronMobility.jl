@@ -28,22 +28,13 @@ D_imag(τ, v, w, ω, β) = (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v 
 D_imag(τ, v, w) = w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) + eps(Float64)
 
 """
-    B(τ, v, w)
-
-Integrand of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
-
-See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
-"""
-B_integrand(τ, v, w) = (abs(D_imag(τ, v, w)))^(-1 / 2) * exp(-τ)
-
-"""
-    B(v, w, α)
+    B(v, w, α, ω)
 
 Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy expression.
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-B(v, w, α, ω) = ω * π^(-1 / 2) * α * quadgk(τ -> B_integrand(τ, v, w), 0, Inf)[1]
+ B(v, w, α, ω) = α * ω / √π * quadgk(τ -> phonon_propagator(τ, ω) / sqrt(polaron_propagator(τ, v, w)), 0, Inf)[1]
 
 B(v, w, α::Vector, ω::Vector) = sum(B.(v, w, α, ω))
 
@@ -63,7 +54,7 @@ C(v, w, ω::Vector) = sum(C.(v, w, ω)) / length(ω)
 # Define Osaka's free-energies (Hellwarth1999 version) as Julia functions.
 
 """
-    A(v, w, β)
+    A(v, w, ω, β)
 
 Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
 
@@ -74,36 +65,18 @@ A(v, w, ω, β) = 3 / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - (v - 
 A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) / length(ω)
 
 """
-    Y(x, v, β)
-
-Hellwarth's Y expression from Eqn. (62d) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression. Contained in denominator of the integrand of Eqn. (62c).
-
-See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-"""
-Y(x, v, ω, β) = 1 / (1 - exp(-v * ω * β)) * (1 + exp(-v * ω * β) - exp(-v * x) - exp(v * (x - ω * β)))
-
-"""
-    f(x, v, w, β)
-
-Integrand of Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
-
-See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-"""
-f(x, v, w, ω, β) = (exp(ω * β - x) + exp(x)) / sqrt(abs(w^2 * x * (1 - x / ω / β) + Y(x, v, ω, β) * (v^2 - w^2) / v))
-
-"""
-    B(v, w, β, α)
+    B(v, w, α, ω, β)
 
 Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-B(v, w, α, ω, β) = α * v / (sqrt(π) * (exp(ω * β) - 1)) * quadgk(x -> f(x * ω * β / 2, v, w, ω, β), 0, 1)[1] * ω^2 * β / 2
+B(v, w, α, ω, β) = α * ω / √π * quadgk(τ -> phonon_propagator(τ, ω, β) / sqrt(polaron_propagator(τ, v, w, β * ω)), 0, β * ω / 2)[1]
 
 B(v, w, α::Vector, ω::Vector, β) = sum(B.(v, w, α, ω, β))
 
 """
-    C(v, w, β)
+    C(v, w, ω, β)
 
 Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
 
