@@ -418,7 +418,7 @@ function holstein_structure_factor(t, v, w, α, ω, β; dims = 3)
 	
 	prefactor = 2 * phonon_propagator(im * t, ω, β)
 
-	prefactor * coupling * first_integral * second_integral^(dims - 1)
+	prefactor * coupling * dims * first_integral * second_integral^(dims - 1)
 end
 
 """
@@ -460,7 +460,7 @@ function holstein_structure_factor(t, v, w, α, ω; dims = 3)
 	
 	prefactor = 2 * phonon_propagator(im * t, ω)
 
-	prefactor * coupling * first_integral * second_integral^(dims - 1)
+	prefactor * coupling * dims * first_integral * second_integral^(dims - 1)
 end
 
 
