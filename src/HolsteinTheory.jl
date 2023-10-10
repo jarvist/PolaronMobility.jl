@@ -106,7 +106,12 @@ This example calculates the value of the phonon propagator for `τ = 0.5`, `ω =
 """
 function phonon_propagator(τ, ω, β)
     n = 1 / (exp(β * ω) - 1)
-    n * exp(ω * τ) + (1 + n) * exp(-ω * τ)
+    result = n * exp(ω * τ) + (1 + n) * exp(-ω * τ)
+    if isnan(result)
+        return phonon_propagator(τ, ω)
+    else
+        return result
+    end
 end
 
 """
@@ -299,15 +304,17 @@ function vw_variation(energy, initial_v, initial_w; lower_bounds = [0, 0], upper
         upper_bounds,
         initial,
         Fminbox(BFGS()),
+        Optim.Options(show_trace = false, g_tol = 1e-12)
     )
 
     # Get v and w values that minimise the free energy.
     Δv, w = Optim.minimizer(solution) # v=Δv+w
     energy_minimized, kinetic_energy, potential_energy = energy(Δv + w, w)
 
-    if !Optim.converged(solution)
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $energy_minimized"
-    end
+    # if !Optim.converged(solution)
+    #     # @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $energy_minimized"
+    #     return vw_variation(energy, Δv .+ w, w; lower_bounds = [0, 0], upper_bounds = [(Δv .+ w) .* 2, w .* 2])
+    # end
 
     # Return variational parameters that minimise the free energy.
     return Δv + w, w, energy_minimized, kinetic_energy, potential_energy

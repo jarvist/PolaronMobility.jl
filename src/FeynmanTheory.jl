@@ -69,7 +69,7 @@ Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-A(v, w, ω, β) = 3 / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - log(sinh(v * ω * β / 2) / sinh(w * ω * β / 2))) * ω
+A(v, w, ω, β) = 3 / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - (v - w) * ω * β / 2 - log(1 - exp(-v * ω * β)) + log(1 - exp(-w * ω * β))) * ω
 
 A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) / length(ω)
 
