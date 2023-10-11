@@ -311,14 +311,15 @@ function vw_variation(energy, initial_v, initial_w; lower_bounds = [0, 0], upper
     Δv, w = Optim.minimizer(solution) # v=Δv+w
     energy_minimized, kinetic_energy, potential_energy = energy(Δv + w, w)
 
-    # if !Optim.converged(solution)
-    #     # @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $energy_minimized"
-    #     return vw_variation(energy, Δv .+ w, w; lower_bounds = [0, 0], upper_bounds = [(Δv .+ w) .* 2, w .* 2])
-    # end
+    if !Optim.converged(solution)
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $energy_minimized"
+    end
 
     # Return variational parameters that minimise the free energy.
     return Δv + w, w, energy_minimized, kinetic_energy, potential_energy
 end
+
+vw_variation(energy) = vw_variation(energy, 5, 3; lower_bounds = [0, 0], upper_bounds = [Inf, Inf])
 
 """
     general_memory_function(Ω, structure_factor; limits = [0, Inf])
@@ -350,6 +351,9 @@ println(result)
 This example demonstrates how to use the `general_memory_function` to calculate the memory function for a given frequency `Ω` and structure factor function `structure_factor`. The `limits` argument is optional and specifies the lower and upper limits of integration. The result is then printed.
 """
 function general_memory_function(Ω, structure_factor; limits = [0, Inf])
+    if iszero(Ω)
+        return general_memory_function(structure_factor; limits = limits)
+    end
     integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2])
     return integral
 end
@@ -554,3 +558,10 @@ function holstein_mobility(v, w, α, ω, β; dims = 3)
     abs(1 / imag(general_memory_function(structure_factor)))
 end
 
+function holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = 3)
+    -im * (Ω - holstein_memory_function(v, w, α, ωβ...; dims = dims))
+end
+
+function holstein_complex_conductivity(Ω, v, w, α, ωβ...; dims = 3)
+    return 1 / holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = dims)
+end

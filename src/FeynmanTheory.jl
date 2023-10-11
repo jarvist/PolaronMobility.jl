@@ -34,7 +34,7 @@ Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy e
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
- B(v, w, α, ω) = α * ω / √π * quadgk(τ -> phonon_propagator(τ, ω) / sqrt(polaron_propagator(τ, v, w)), 0, Inf)[1]
+ B(v, w, α, ω) = α * ω / √π * quadgk(τ -> phonon_propagator(τ / ω, ω) / sqrt(polaron_propagator(τ, v, w)), 0, Inf)[1]
 
 B(v, w, α::Vector, ω::Vector) = sum(B.(v, w, α, ω))
 
@@ -71,7 +71,7 @@ Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-B(v, w, α, ω, β) = α * ω / √π * quadgk(τ -> phonon_propagator(τ, ω, β) / sqrt(polaron_propagator(τ, v, w, β * ω)), 0, β * ω / 2)[1]
+B(v, w, α, ω, β) = α * ω / √π * quadgk(τ -> phonon_propagator(τ / ω, ω, β) / sqrt(polaron_propagator(τ, v, w, β * ω)), 0, β * ω / 2)[1]
 
 B(v, w, α::Vector, ω::Vector, β) = sum(B.(v, w, α, ω, β))
 
@@ -444,11 +444,11 @@ This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn
 
 See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function F(v, w, α, ω, β)
+function frohlich_energy(v, w, α, ω, β)
 
     # Insurance to avoid breaking the integrals with Infinite beta.
     if β == Inf
-        return F(v, w, α, ω)
+        return frohlich_energy(v, w, α, ω)
     end
     Ar = A(v, w, ω, β)
     Br = B(v, w, α, ω, β) 
@@ -470,7 +470,7 @@ Calculates the zero-temperature ground-state energy of the polaron for a materia
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-function F(v, w, α, ω)
+function frohlich_energy(v, w, α, ω)
     Ar = A(v, w, ω)
     Br = B(v, w, α, ω)
     Cr = C(v, w, ω) 
@@ -508,7 +508,7 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
     upper = fill(upper_limit, 2 * N_params)
 
     # The multiple phonon mode free energy function to minimise.
-    f(x) = F([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
+    f(x) = frohlich_energy([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -525,7 +525,7 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
     # Separate the v and w parameters into one-dimensional arrays (vectors).
     Δv = [var_params[2*n-1] for n in 1:N_params]
     w = [var_params[2*n] for n in 1:N_params]
-    E, A, B, C = F(Δv .+ w, w, αωβ...)
+    E, A, B, C = frohlich_energy(Δv .+ w, w, αωβ...)
 
     # if Optim.converged(solution) == false
     #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
@@ -545,7 +545,7 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
     upper = [upper_limit, upper_limit]
 
     # The multiple phonon mode free energy function to minimise.
-    f(x) = F(x[1] .+ x[2], x[2], αωβ...)[1]
+    f(x) = frohlich_energy(x[1] .+ x[2], x[2], αωβ...)[1]
 
     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
     solution = Optim.optimize(
@@ -558,7 +558,7 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
 
     # Extract the v and w parameters that minimised the free energy.
     Δv, w = Optim.minimizer(solution)
-    E, A, B, C = F(Δv .+ w, w, αωβ...)
+    E, A, B, C = frohlich_energy(Δv .+ w, w, αωβ...)
 
     if Optim.converged(solution) == false
         @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"

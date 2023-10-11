@@ -37,7 +37,7 @@ The Complex Impedence and Conductivity of the Polaron.
 """
 
 """
-    polaron_complex_impedence(Ω, β, α, v, w; rtol = 1e-3, T = nothing, verbose = false)
+    frohlich_complex_impedence(Ω, β, α, v, w; rtol = 1e-3, T = nothing, verbose = false)
 
 Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for a given frequency Ω (Eqn. (41) in FHIP 1962). 
 
@@ -54,14 +54,12 @@ Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 
 """
-function polaron_complex_impedence(v, w, α, ω, β, Ω)
-    impedance = -im * Ω + im * polaron_memory_function(v, w, α, ω, β, Ω)
-
-    return impedance
+function frohlich_complex_impedence(Ω, v, w, α, ωβ...)
+    -im * (Ω + frohlich_memory_function(Ω, v, w, α, ωβ...))
 end
 
 """
-    polaron_complex_conductivity(Ω, β, α, v, w; rtol = 1e-3)
+   frohlich_complex_conductivity(Ω, β, α, v, w; rtol = 1e-3)
 
 Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures for a given frequency Ω (equal to 1 / Z(Ω) with Z the complex impedence). 
 
@@ -75,8 +73,8 @@ Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures 
 
 See also [`polaron_complex_impedence`](@ref)
 """
-function polaron_complex_conductivity(v, w, α, ω, β, Ω)
-    return 1 / polaron_complex_impedence(v, w, α, ω, β, Ω)
+function frohlich_complex_conductivity(Ω, v, w, α, ωβ...)
+    return 1 / frohlich_complex_impedence(Ω, v, w, α, ωβ...)
 end
 
 """
@@ -96,11 +94,12 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 
 See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
-function inverse_polaron_mobility(v, w, α, ω, β)
+function inverse_frohlich_mobility(v, w, α, ω, β)
     if β == Inf
-        return 0
+        return zero(β)
     else
-        return -imag(polaron_memory_function_dc(v, w, α, ω, β))
+        structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
+        return abs(imag(general_memory_function(structure_factor; limits = [0, 1e4]))) / ω
     end
 end
 
@@ -109,7 +108,7 @@ end
 
 inverse of the polaron mobility, but for multiple phonon modes.
 """
-inverse_polaron_mobility(v, w, α::Vector, ω::Vector, β) = sum(inverse_polaron_mobility.(v, w, α, ω, β))
+inverse_frohlich_mobility(v, w, α::Vector, ω::Vector, β) = sum(inverse_frohlich_mobility.(v, w, α, ω, β))
 
 """
     polaron_mobility(v, w, α, ω, β)
@@ -118,7 +117,7 @@ The polaron mobility.
 
 See also [`inverse_polaron_mobility`](@ref)
 """
-polaron_mobility(v, w, α, ω, β) = 1 ./ inverse_polaron_mobility(v, w, α, ω, β)
+frohlich_mobility(v, w, α, ω, β) = 1 ./ inverse_frohlich_mobility(v, w, α, ω, β)
 
 """
     inverse_FHIP_mobility_lowT(v, w, α, ω, β)

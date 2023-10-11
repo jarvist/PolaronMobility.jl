@@ -14,19 +14,19 @@ export Polaron, polaron
 export Material, material                                
 
 # Frohlich alpha, energy and minimisation functions.   
-export frohlichalpha, ϵ_ionic_mode, F, A, B, C, feynmanvw
+export frohlichalpha, ϵ_ionic_mode, frohlich_energy, A, B, C, feynmanvw
 
 # Hellwarth effective mode schemes.
 export HellwarthBScheme, HellwarthAScheme                 
 
 # Polaron memory functions
-export polaron_memory_function, D, S, polaron_memory_function_athermal, polaron_memory_function_thermal                      
+export frohlich_memory_function, holstein_memory_function                    
 
-# Response functions
-export polaron_complex_impedence, polaron_complex_conductivity, optical_absorption      
+# Complex Response functions
+export frohlich_complex_impedence, frohlich_complex_conductivity, holstein_complex_conductivity, holstein_complex_impedence
 
 # Mobility functions
-export polaron_mobility, Hellwarth_mobility, Kadanoff_mobility_lowT, FHIP_mobility_lowT 
+export frohlich_mobility, Hellwarth_mobility, Kadanoff_mobility_lowT, FHIP_mobility_lowT 
 
 # Functions to save and load Polaron types to/from .jld format
 export save_polaron, load_polaron
@@ -53,7 +53,7 @@ using LinearAlgebra, Printf, JLD
 import QuadGK.quadgk
 
 # Special function arising from cutoff k-space integrals (c.f. Holstein model).
-import SpecialFunctions.erf
+import SpecialFunctions.erf, SpecialFunctions.gamma
 
 # Using the powerful Julia Optim package to optimise the variational parameters
 using Optim

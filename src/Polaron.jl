@@ -411,7 +411,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
             end
 
             # Calculate and store the DC mobiliies.
-            μ = polaron_mobility(v, w, α, ω, β) / mb
+            μ = frohlich_mobility(v, w, α, ω, β) / mb
             p["μ"][i, j] = μ 
 
             # Print DC mobilities.
@@ -477,7 +477,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
                 end
 
                 # Calculate and store polaron memory functions (akin to self energy).
-                χ = polaron_memory_function(v, w, α, ω, β, Ω)
+                χ = frohlich_memory_function(Ω, v, w, α, ω, β)
                 p["χ"][k, i, j] = χ
 
                 # Print memory function.
@@ -487,7 +487,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
 
                 # Calculate and store polaron complex impedances.
 
-                z = (-im * Ω + im * χ) .* mb
+                z = -(im * Ω + im * χ) .* mb
                 p["z"][k, i, j] = z 
 
                 # Print complex impedances.
@@ -577,7 +577,7 @@ polaron(α::Real, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w
 """
 No frequency input.
 """
-polaron(αrange, Trange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, verbose=false) = polaron(αrange, Trange, 0; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, verbose=verbose)
+polaron(αrange, Trange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, verbose=false) = polaron(αrange, Trange, 1; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, verbose=verbose)
 
 """
 No temperature input => 300 K.
