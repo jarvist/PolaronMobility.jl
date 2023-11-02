@@ -95,12 +95,8 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
 function inverse_frohlich_mobility(v, w, α, ω, β)
-    if β == Inf
-        return zero(β)
-    else
-        structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
-        return abs(imag(general_memory_function(structure_factor; limits = [0, 1e4]))) / ω
-    end
+    structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
+    return abs(imag(general_memory_function(structure_factor; limits = [0, 1e5]))) / ω
 end
 
 """
@@ -246,7 +242,7 @@ function inverse_Hellwarth_mobility(v, w, α, ω, β)
         b = R * ω * β / sinh(ω * β * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
         a = sqrt((ω * β / 2)^2 + R * ω * β * coth(ω * β * v / 2))
         k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u))^(-3 / 2) * cos(u) # integrand in (2)
-        K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
+        K = quadgk(u -> k(u, a, b, v), 0, 1e5)[1] # numerical quadrature integration of (2)
 
         # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
         RHS = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
