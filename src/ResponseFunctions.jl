@@ -96,7 +96,7 @@ See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
 function inverse_frohlich_mobility(v, w, α, ω, β)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
-    return abs(imag(general_memory_function(structure_factor; limits = [0, 1e5]))) / ω
+    return abs(imag(general_memory_function(structure_factor))) / ω
 end
 
 """
