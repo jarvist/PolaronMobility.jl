@@ -79,6 +79,8 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
     num_Ω = length(Ωrange)
     num_ω = length(ω)
 
+    ω = reduce_array(ω)
+    
     # For multiple variational modes, ensure that the number of v and w parameters is the same.
     @assert length(v_guesses) == length(w_guesses) "v and w guesses must be the same length."
     num_vw = length(v_guesses)
