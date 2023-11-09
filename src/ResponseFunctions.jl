@@ -242,7 +242,7 @@ function inverse_Hellwarth_mobility(v, w, α, ω, β)
         b = R * ω * β / sinh(ω * β * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
         a = sqrt((ω * β / 2)^2 + R * ω * β * coth(ω * β * v / 2))
         k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u) + eps(Float64))^(-3 / 2) * cos(u) # integrand in (2)
-        K = quadgk(u -> k(u, a, b, v), 0, Inf)[1] # numerical quadrature integration of (2)
+        K = quadgk(u -> k(u, a, b, v), 0, 1e5)[1] # numerical quadrature integration of (2)
 
         # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
         RHS = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
@@ -250,7 +250,7 @@ function inverse_Hellwarth_mobility(v, w, α, ω, β)
 
         # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
         # So let's test this:
-        K_0 = quadgk(u -> k(u, a, 0, v), 0, Inf)[1] # Inserted b=0 into k(u, a, b, v).
+        K_0 = quadgk(u -> k(u, a, 0, v), 0, 1e5)[1] # Inserted b=0 into k(u, a, b, v).
         RHS_0 = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K_0
         μ_0 = RHS_0     
 
