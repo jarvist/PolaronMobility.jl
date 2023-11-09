@@ -26,7 +26,7 @@ println(result)
 This example calculates the polaron propagator for given values of τ, v, w, and β. The result is then printed.
 """
 function polaron_propagator(τ, v, w, β)
-    (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β - τ))) / (1 - exp(-v * β)) + w^2 / v^2 * τ * (1 - τ / β)
+    (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β - τ))) / (1 - exp(-v * β)) + w^2 / v^2 * τ * (1 - τ / β) + eps(Float64)
 end
 
 """
@@ -53,7 +53,7 @@ println(result)
 This example calculates the polaron propagator for the given values of τ, v, and w. The result is then printed.
 """
 function polaron_propagator(τ, v, w)
-    w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ))
+    w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) + eps(Float64)
 end
 
 """
@@ -146,8 +146,8 @@ This example calculates the integrand for the Holstein interaction energy using 
 """
 function holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = 3)
     coupling = holstein_coupling(1, α, ω; dims = dims)
-    propagator = polaron_propagator(τ * ω, v, w, β * ω) * 2 / ω
-    phonon_propagator(τ, ω, β) * coupling * (erf(π * sqrt(propagator)) / 2 / sqrt(π * propagator))^dims
+    propagator = polaron_propagator(τ, v, w, β * ω) * 2 / ω
+    phonon_propagator(τ / ω, ω, β * ω) * coupling * (erf(π * sqrt(propagator)) / 2 / sqrt(π * propagator))^dims
 end
 
 """
@@ -179,9 +179,11 @@ println(result)
 This example calculates the integrand for the Holstein interaction energy using the given values of `τ`, `v`, `w`, `α`, and `ω`. The result is then printed.
 """
 function holstein_interaction_energy_integrand(τ, v, w, α, ω; dims = 3)
-    coupling = holstein_coupling(1, α, ω; dims = dims)
-    propagator = polaron_propagator(τ * ω, v, w) * 2 / ω
-    phonon_propagator(τ, ω) * coupling * (erf(π * sqrt(propagator)) / 2 / sqrt(π * propagator))^dims
+    coupling = holstein_coupling(1, α, 1; dims = 1)
+    propagator = polaron_propagator(τ / ω, v * ω, w * ω) / 2
+    phonon_propagator(τ / ω, ω) * coupling * (erf(2π * sqrt(propagator * 2 / dims)) / 2 * sqrt(π / propagator) / π√2)^dims
+    return coupling * phonon_propagator(τ / ω, ω) 
+    
 end
 
 """
@@ -351,9 +353,6 @@ println(result)
 This example demonstrates how to use the `general_memory_function` to calculate the memory function for a given frequency `Ω` and structure factor function `structure_factor`. The `limits` argument is optional and specifies the lower and upper limits of integration. The result is then printed.
 """
 function general_memory_function(Ω, structure_factor; limits = [0, Inf])
-    if iszero(Ω)
-        return general_memory_function(structure_factor; limits = limits)
-    end
     integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2])
     return integral
 end
@@ -520,7 +519,7 @@ In this example, the `holstein_memory_function` is called with the parameters `�
 """
 function holstein_memory_function(Ω, v, w, α, ω; dims = 3)
 	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω; dims = dims)
-	 return general_memory_function(Ω, structure_factor, limits = [0, 1e4])
+	 return general_memory_function(Ω, structure_factor, limits = [0, 1e5])
 end
 
 """
@@ -555,7 +554,7 @@ This code calculates the mobility using the given parameters and prints the resu
 """
 function holstein_mobility(v, w, α, ω, β; dims = 3)
     structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
-    abs(1 / imag(general_memory_function(structure_factor)))
+    abs(1 / imag(general_memory_function(structure_factor, limits = [0, 1e5])))
 end
 
 function holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = 3)

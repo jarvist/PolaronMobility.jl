@@ -28,12 +28,12 @@ end
 
 function frohlich_memory_function(Ω, v, w, α, ω, β)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
-    return general_memory_function(Ω / ω, structure_factor; limits = [0, 1e4])
+    return general_memory_function(Ω / ω, structure_factor)
 end
 
 function frohlich_memory_function(Ω, v, w, α, ω)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω)
-    return general_memory_function(Ω / ω, structure_factor; limits = [0, 1e4])
+    return general_memory_function(Ω / ω, structure_factor)
 end
 
 frohlich_memory_function(Ω, v::Vector, w::Vector, α, ωβ...) = sum(frohlich_memory_function.(Ω, v, w, α, ωβ...))
