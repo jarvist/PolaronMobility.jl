@@ -21,8 +21,8 @@ println(result)  # print the result
 Expected Output:
 0.5
 """
-function cartesian_k_integrand(k, coupling, propagator; rₚ = 1)
-    coupling(k) * exp(-k^2 * rₚ^2 * propagator / 2)
+function cartesian_k_integrand(k, coupling, propagator)
+    coupling(k) * exp(-k^2 * propagator / 2)
 end
 
 
@@ -50,8 +50,8 @@ println(result)  # print the result
 Expected Output:
 `0.5`
 """
-function spherical_k_integrand(k, coupling, propagator; rₚ = 1)
-    4π * k^2 * coupling(k) * exp(-k^2 * rₚ^2 * propagator / 2)
+function spherical_k_integrand(k, coupling, propagator; dims = 3)
+    2 * π^(dims/2) / gamma(dims/2) * k^(dims-1) * coupling(k) * exp(-k^2 * propagator / 2)
 end
 
 
@@ -80,8 +80,8 @@ println(result)  # print the result
 Expected Output:
 A scalar value representing the calculated k-space integral over the specified range in cartesian coordinates.
 """
-function cartesian_k_integral(coupling, propagator; rₚ = 1, a = 1, limits = [-π, π])
-    integral, _ = quadgk(k -> cartesian_k_integrand(k, coupling, propagator; rₚ = rₚ), limits[1] / a, limits[2] / a)
+function cartesian_k_integral(coupling, propagator; limits = [-π, π])
+    integral, _ = quadgk(k -> cartesian_k_integrand(k, coupling, propagator), limits[1], limits[2])
     integral * a / 2π
 end
 
@@ -110,9 +110,9 @@ println(result)  # print the result
 Expected Output:
 A scalar value representing the calculated k-space integral over the specified range in spherical coordinates.
 """
-function spherical_k_integral(coupling, propagator; rₚ = 1, limits = [0, Inf])
-    integral, _ = quadgk(k -> spherical_k_integrand(k, coupling, propagator; rₚ = rₚ), limits[1], limits[2])
-    integral / 8π^3
+function spherical_k_integral(coupling, propagator; dims = 3, limits = [0, Inf])
+    integral, _ = quadgk(k -> spherical_k_integrand(k, coupling, propagator; dims = dims), limits[1], limits[2])
+    integral / (2π)^dims
 end
 
 
@@ -164,8 +164,9 @@ println(result)
 Expected Output:
 `6.0`
 """
-function frohlich_coupling(k, α, ω)
-    ω^(3/2) * 2√2 * π * α / k^2
+function frohlich_coupling(k, α, ω; mb = 1, dims = 3)
+    r_p = 1 / sqrt(2)
+    ω^2 * α * r_p * gamma((dims - 1) / 2) * (2√π / k)^(dims - 1)
 end
 
 """
@@ -188,10 +189,11 @@ Calculate the integrand for the Holstein interaction energy in k-space at finite
 # Returns
 A scalar value representing the integrand for the Holstein interaction energy in k-space at finite temperature.
 """
-function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
+function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = 3)
+    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
     coupling(k) = holstein_coupling(k, α, ω; dims = dims)
-    propagator = polaron_propagator(τ, v, w, β)
-    phonon_propagator(τ, ω, β) * cartesian_k_integral(coupling, propagator; rₚ = rₚ, a = a, limits = limits)^dims
+    propagator = polaron_propagator(τ, v, w, β) 
+    phonon_propagator(τ, ω, β) * spherical_k_integral(coupling, propagator; dims = dims, limits = [0, momentum_cutoff]) 
 end
 
 
@@ -214,10 +216,11 @@ Calculate the integrand for the Holstein interaction energy in k-space at zero t
 # Returns
 A scalar value representing the integrand for the Holstein interaction energy in k-space at zero temperature.
 """
-function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-    coupling(k) = holstein_coupling(k, α, ω; dims = dims)
-    propagator = polaron_propagator(τ, v, w)
-    phonon_propagator(τ, ω) * carteisan_k_integral(coupling, propagator; rₚ = rₚ, a = a, limits = limits)^dims
+function holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = 3)
+    momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π)
+    coupling(k) = holstein_coupling(k, α, ω; dims = dims) 
+    propagator = polaron_propagator(τ, v, w) 
+    phonon_propagator(τ, ω) * spherical_k_integral(coupling, propagator; dims = dims, limits = [0, momentum_cutoff]) 
 end
 
 
@@ -239,10 +242,10 @@ Calculate the integrand for the Frohlich interaction energy in k-space at finite
 ## Returns
 A scalar value representing the integrand for the Frohlich interaction energy in k-space at finite temperature.
 """
-function frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
-    coupling(k) = frohlich_coupling(k, α, ω)
+function frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; limits = [0, Inf], dims = 3)
+    coupling(k) = frohlich_coupling(k, α, ω; dims = dims)
     propagator = polaron_propagator(τ, v, w, β)
-    phonon_propagator(τ, ω, β) * spherical_k_integral(coupling, propagator; rₚ = rₚ, limits = limits)
+    phonon_propagator(τ, ω, β) * spherical_k_integral(coupling, propagator; limits = limits, dims = dims)
 end
 
 """
@@ -262,10 +265,10 @@ Calculate the integrand for the Frohlich interaction energy in k-space at finite
 ## Returns
 A scalar value representing the integrand for the Frohlich interaction energy in k-space at zero temperature.
 """
-function frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω; rₚ = 1, limits = [0, Inf])
-	coupling(k) = frohlich_coupling(k, α, ω)
-	propagator = polaron_propagator(τ, v, w, ω)
-	phonon_propagator(τ, ω) * spherical_k_integral(coupling, propagator; rₚ = rₚ, limits = limits)
+function frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω; limits = [0, Inf], dims = 3)
+	coupling(k) = frohlich_coupling(k, α, ω; dims = dims)
+	propagator = polaron_propagator(τ, v, w) 
+	phonon_propagator(τ, ω) * spherical_k_integral(coupling, propagator; limits = limits, dims = dims)
 end
 
 
@@ -289,9 +292,9 @@ Calculate the Holstein polaron interaction energy in k-space at finite temperaur
 ## Returns
 A scalar value representing the Holstein polaron interaction energy in k-space at finite temperature.
 """
-function holstein_interaction_energy_k_space(v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-    interation_energy, _ = quadgk(τ -> holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = dims, rₚ = rₚ, a = a, limits = limits), 0, β/2)
-    return interation_energy
+function holstein_interaction_energy_k_space(v, w, α, ω, β; dims = 3)
+    interaction_energy, _ = quadgk(τ -> holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; dims = dims), 0, β/2)
+    return interaction_energy
 end
 
 
@@ -314,9 +317,9 @@ Calculate the Holstein polaron interaction energy in k-space at zero temperaure.
 ## Returns
 A scalar value representing the Holstein polaron interaction energy in k-space at zero temperature.
 """
-function holstein_interaction_energy_k_space(v, w, α, ω; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-	interation_energy, _ = quadgk(τ -> holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = dims, rₚ = rₚ, a = a, limits = limits), 0, Inf)
-	return interation_energy
+function holstein_interaction_energy_k_space(v, w, α, ω; dims = 3)
+	interaction_energy, _ = quadgk(τ -> holstein_interaction_energy_integrand_k_space(τ, v, w, α, ω; dims = dims), 0, Inf)
+	return interaction_energy 
 end
 
 """
@@ -338,9 +341,9 @@ Calculate the Frohlich polaron interaction energy in k-space at finite temperaur
 ## Returns
 A scalar value representing the Frohlich polaron interaction energy in k-space at finite temperature.
 """
-function frohlich_interaction_energy_k_space(v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
-	interation_energy, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; rₚ = rₚ, limits = limits), 0, β/2)
-	return interation_energy
+function frohlich_interaction_energy_k_space(v, w, α, ω, β; limits = [0, Inf], dims = 3)
+	interaction_energy, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; limits = limits, dims = dims), 0, β/2)
+	return interaction_energy
 end
 
 """
@@ -361,9 +364,9 @@ Calculate the Frohlich polaron interaction energy in k-space at zero temperaure.
 ## Returns
 A scalar value representing the Frohlich polaron interaction energy in k-space at zero temperature.
 """
-function frohlich_interaction_energy_k_space(v, w, α, ω; rₚ = 1, limits = [0, Inf])
-	interation_energy, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω; rₚ = rₚ, limits = limits), 0, Inf)
-	return interation_energy
+function frohlich_interaction_energy_k_space(v, w, α, ω; limits = [0, Inf], dims = 3)
+	interaction_energy, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω; limits = limits, dims = dims), 0, Inf)
+	return interaction_energy
 end
 
 
@@ -393,8 +396,11 @@ println(result)
 Expected Output:
 A scalar value representing the calculated free electron energy at finite temperature.
 """
-function electron_energy(v, w, ω, β)
-    -(A(v, w, ω, β) + C(v, w, ω, β)) / 3
+function electron_energy(v, w, ω, β; dims = 3)
+    if β == Inf
+        return electron_energy(v, w, ω; dims = dims)
+    end
+    -(A(v, w, ω, β) + C(v, w, ω, β)) * dims / 3
 end
 
 
@@ -423,8 +429,8 @@ println(result)
 Expected Output:
 A scalar value representing the calculated free electron energy at finite temperature.
 """
-function electron_energy(v, w, ω)
-	(v - w)^2 / (4 * v) * ω
+function electron_energy(v, w, ω; dims = 3)
+	(v - w)^2 / (4 * v) * ω * dims
 end
 
 
@@ -449,9 +455,9 @@ Calculate the total energy, kinetic energy, and interaction energy of the Holste
 - `kinetic_energy`: The calculated polaron kinetic energy.
 - `interaction_energy`: The calculated polaron interaction energy.
 """
-function holstein_energy_k_space(v, w, α, ωβ...; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-    kinetic_energy = -2 * dims + electron_energy(v, w, ωβ...) 
-    interaction_energy = -holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = dims, rₚ = rₚ, a = a, limits = limits)
+function holstein_energy_k_space(v, w, α, ωβ...; dims = 3)
+    kinetic_energy = electron_energy(v, w, ωβ...; dims = dims) 
+    interaction_energy = -holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = dims) 
     return kinetic_energy + interaction_energy, kinetic_energy, interaction_energy
 end
 
@@ -475,9 +481,9 @@ Calculate the total energy, kinetic energy, and interaction energy of the Frohli
 - `kinetic_energy`: The calculated polaron kinetic energy.
 - `interaction_energy`: The calculated polaron interaction energy.
 """
-function frohlich_energy_k_space(v, w, α, ωβ...; rₚ = 1, limits = [0, Inf])
-	kinetic_energy = electron_energy(v, w, ωβ...) 
-	interaction_energy = -frohlich_interaction_energy_k_space(v, w, α, ωβ...; rₚ = rₚ, limits = limits)
+function frohlich_energy_k_space(v, w, α, ωβ...; limits = [0, Inf], dims = 3)
+	kinetic_energy = electron_energy(v, w, ωβ...; dims = dims)
+	interaction_energy = -frohlich_interaction_energy_k_space(v, w, α, ωβ...; limits = limits, dims = dims)
 	return kinetic_energy + interaction_energy, kinetic_energy, interaction_energy
 end
 
@@ -502,19 +508,19 @@ Calculate the structure factor in k-space for the Holstein lattice polaron model
 ## Returns
 A scalar value representing the calculated structure factor in k-space for the Holstein lattice polaron model at finite temperature.
 """
-function holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
+function holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = 3)
 	
-	coupling_one(k) = holstein_coupling(k, α, ω; dims = dims) * k^2
-	coupling_two(k) = holstein_coupling(k, α, ω; dims = dims)
+    momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π)
+
+	coupling(k) = holstein_coupling(k, α, ω; dims = dims) * k^2
 
 	propagator = polaron_propagator(im * t, v, w, β)
 	
-	first_integral = cartesian_k_integral(coupling_one, propagator; rₚ = rₚ, a = a, limits = limits)
-	second_integral = cartesian_k_integral(coupling_two, propagator; rₚ = rₚ, a = a, limits = limits)
+	integral = spherical_k_integral(coupling_one, propagator; limits = [0, momentum_cutoff])
 	
 	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
 
-	prefactor * dims * first_integral * second_integral^(dims - 1)
+	prefactor * integral 
 end
 
 
@@ -537,19 +543,19 @@ Calculate the structure factor in k-space for the Holstein lattice polaron model
 ## Returns
 A scalar value representing the calculated structure factor in k-space for the Holstein lattice polaron model at zero temperature.
 """
-function holstein_structure_factor_k_space(t, v, w, α, ω; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
+function holstein_structure_factor_k_space(t, v, w, α, ω; dims = 3)
+
+    momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π)
 	
-	coupling_one(k) = holstein_coupling(k, α, ω; dims = dims) * k^2
-	coupling_two(k) = holstein_coupling(k, α, ω; dims = dims)
+	coupling(k) = holstein_coupling(k, α, ω; dims = dims) * k^2
 
 	propagator = polaron_propagator(im * t, v, w)
 	
-	first_integral = cartesian_k_integral(coupling_one, propagator; rₚ = rₚ, a = a, limits = limits)
-	second_integral = cartesian_k_integral(coupling_two, propagator; rₚ = rₚ, a = a, limits = limits)
+	integral = spherical_k_integral(coupling, propagator; limits = [0, momentum_cutoff])
 	
 	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
 
-	prefactor * dims * first_integral * second_integral^(dims - 1)
+	prefactor * integral
 end
 
 
@@ -571,13 +577,13 @@ Calculate the structure factor in k-space for the Frohlich continuum polaron mod
 ## Returns
 A scalar value representing the calculated structure factor in k-space for the Frohlich continuum polaron model at finite temperature.
 """
-function frohlich_structure_factor_k_space(t, v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
+function frohlich_structure_factor_k_space(t, v, w, α, ω, β; limits = [0, Inf], dims = 3)
 	
-	coupling(k) = frohlich_coupling(k, α, ω) * k^2
+	coupling(k) = frohlich_coupling(k, α, ω; dims = dims) * k^2
 
 	propagator = polaron_propagator(im * t, v, w, β)
 	
-	integral = spherical_k_integral(coupling, propagator; rₚ = rₚ, limits = limits)
+	integral = spherical_k_integral(coupling, propagator; limits = limits, dims = dims)
 	
 	prefactor = 2 / 3 * phonon_propagator(im * t, ω, β)
 
@@ -602,13 +608,13 @@ Calculate the structure factor in k-space for the Frohlich continuum polaron mod
 ## Returns
 A scalar value representing the calculated structure factor in k-space for the Frohlich continuum polaron model at zero temperature.
 """
-function frohlich_structure_factor_k_space(t, v, w, α, ω; rₚ = 1, limits = [0, Inf])
+function frohlich_structure_factor_k_space(t, v, w, α, ω; limits = [0, Inf], dims = 3)
 	
-	coupling(k) = frohlich_coupling(k, α, ω) * k^2
+	coupling(k) = frohlich_coupling(k, α, ω; dims = dims) * k^2
 
 	propagator = polaron_propagator(im * t, v, w)
 	
-	integral = spherical_k_integral(coupling, propagator; rₚ = rₚ, limits = limits)
+	integral = spherical_k_integral(coupling, propagator; limits = limits, dims = dims)
 	
 	prefactor = 2 / 3 * phonon_propagator(im * t, ω)
 
@@ -636,8 +642,8 @@ Calculate the memory function for the Holstein model in k-space at finite temper
 ## Returns
 A scalar value representing the memory function of the Holstein model in k-space at finite temperature evaluated at the frequency `Ω`.
 """
-function holstein_memory_function_k_space(Ω, v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims, rₚ = rₚ, a = a, limits = limits)
+function holstein_memory_function_k_space(Ω, v, w, α, ω, β; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims)
 	 return general_memory_function(Ω, structure_factor)
 end
 
@@ -661,8 +667,8 @@ Calculate the memory function for the Holstein model in k-space at zero temperat
 ## Returns
 A scalar value representing the memory function of the Holstein model in k-space at zero temperature evaluated at the frequency `Ω`.
 """
-function holstein_memory_function_k_space(Ω, v, w, α, ω; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω; dims = dims, rₚ = rₚ, a = a, limits = limits)
+function holstein_memory_function_k_space(Ω, v, w, α, ω; dims = 3)
+	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω; dims = dims)
 	 return general_memory_function(Ω, structure_factor, limits = [0, 1e4])
 end
 
@@ -687,8 +693,8 @@ Calculate the DC mobility in k-space for a Holstein polaron system at finite tem
 ## Returns
 The DC mobility in k-space for the Holstein polaron system at finite temperature.
 """
-function holstein_mobility_k_space(v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
-    structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims, rₚ = rₚ, a = a, limits = limits)
+function holstein_mobility_k_space(v, w, α, ω, β; dims = 3)
+    structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims)
     1 / imag(general_memory_function(structure_factor))
 end
 
@@ -711,8 +717,8 @@ Calculate the memory function for the Frohlich model in k-space at finite temper
 ## Returns
 A scalar value representing the memory function of the Frohlich model in k-space at finite temperature evaluated at the frequency `Ω`.
 """
-function frohlich_memory_function_k_space(Ω, v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
-	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β; rₚ = rₚ, limits = limits)
+function frohlich_memory_function_k_space(Ω, v, w, α, ω, β; limits = [0, Inf])
+	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β; limits = limits)
 	 return general_memory_function(Ω, structure_factor; limits = [0, Inf])
 end
 
@@ -734,8 +740,8 @@ Calculate the memory function for the Frohlich model in k-space at zero temperat
 ## Returns
 A scalar value representing the memory function of the Frohlich model in k-space at finite temperature evaluated at the frequency `Ω`.
 """
-function frohlich_memory_function_k_space(Ω, v, w, α, ω; rₚ = 1, limits = [0, Inf])
-	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω; rₚ = rₚ, limits = limits)
+function frohlich_memory_function_k_space(Ω, v, w, α, ω; limits = [0, Inf])
+	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω; limits = limits)
 	 return general_memory_function(Ω, structure_factor; limits = [0, 1e4])
 end
 
@@ -758,8 +764,8 @@ Calculate the DC mobility in k-space for a Frohlich polaron system at finite tem
 ## Returns
 The DC mobility in k-space for the Frohlich polaron system at finite temperature.
 """
-function frohlich_mobility_k_space(v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
-	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β; rₚ = rₚ, limits = limits)
-	 1 / imag(general_memory_function(structure_factor; limits = [0, Inf]))
+function frohlich_mobility_k_space(v, w, α, ω, β; limits = [0, Inf])
+	 structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β; limits = limits)
+	 1 / imag(general_memory_function(structure_factor; limits = [0, 1e5]))
 end
 

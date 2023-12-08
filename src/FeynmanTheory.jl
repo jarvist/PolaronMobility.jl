@@ -34,9 +34,9 @@ Integral of Eqn. (31) in Feynman 1955. Part of the overall ground-state energy e
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
- B(v, w, α, ω) = α * ω / √π * quadgk(τ -> phonon_propagator(τ / ω, ω) / sqrt(polaron_propagator(τ, v, w)), 0, Inf)[1]
+B(v, w, α, ω; dims = 3) = frohlich_coupling(1, α, ω; dims = dims) * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * quadgk(τ -> phonon_propagator(τ / ω, ω) / sqrt(polaron_propagator(τ, v, w)), 0, Inf)[1] / ω
 
-B(v, w, α::Vector, ω::Vector) = sum(B.(v, w, α, ω))
+B(v, w, α::Vector, ω::Vector; dims = 3) = sum(B.(v, w, α, ω; dims = dims))
 
 A(v, w, ω) = -3 * (v - w) / 2 * ω
 
@@ -60,7 +60,8 @@ Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-A(v, w, ω, β) = 3 / β / ω * (log(v / w) - 1 / 2 * log(2π * ω * β) - (v - w) * ω * β / 2 - log(1 - exp(-v * ω * β)) + log(1 - exp(-w * ω * β))) * ω
+A(v, w, ω, β) = 3 / β * (log(v / w) - 1 / 2 * log(2π * β * ω
+) - (v - w) * ω * β / 2 - log(1 - exp(-v * β * ω)) + log(1 - exp(-w * β * ω))) 
 
 A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) / length(ω)
 
@@ -71,7 +72,7 @@ Hellwarth's B expression from Eqn. (62c) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-B(v, w, α, ω, β) = α * ω / √π * quadgk(τ -> phonon_propagator(τ / ω, ω, β) / sqrt(polaron_propagator(τ, v, w, β * ω)), 0, β * ω / 2)[1]
+B(v, w, α, ω, β; dims=3) = frohlich_coupling(1, α, ω; dims = dims) * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * quadgk(τ -> phonon_propagator(τ / ω, ω, β) / sqrt(polaron_propagator(τ, v, w, β * ω)), 0, β * ω / 2)[1] / ω
 
 B(v, w, α::Vector, ω::Vector, β) = sum(B.(v, w, α, ω, β))
 
@@ -82,7 +83,7 @@ Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-C(v, w, ω, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * ω * β / 2) - 2 / (v * ω * β)) * ω
+C(v, w, ω, β) = 3 / 4 * (v^2 - w^2) * ω / v * (coth(v * β * ω / 2) - 2 / (v * β * ω)) 
 
 C(v, w, ω::Vector, β) = sum(C.(v, w, ω, β)) / length(ω)
 
@@ -444,15 +445,15 @@ This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn
 
 See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function frohlich_energy(v, w, α, ω, β)
+function frohlich_energy(v, w, α, ω, β; dims = 3)
 
     # Insurance to avoid breaking the integrals with Infinite beta.
     if β == Inf
-        return frohlich_energy(v, w, α, ω)
+        return frohlich_energy(v, w, α, ω; dims = dims)
     end
-    Ar = A(v, w, ω, β)
+    Ar = A(v, w, ω, β) * dims / 3
     Br = B(v, w, α, ω, β) 
-    Cr = C(v, w, ω, β)   
+    Cr = C(v, w, ω, β) * dims / 3  
     # Free energy in units of meV
     return -(Ar + Br + Cr), Ar, Br, Cr
 end
@@ -470,10 +471,10 @@ Calculates the zero-temperature ground-state energy of the polaron for a materia
 
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
-function frohlich_energy(v, w, α, ω)
-    Ar = A(v, w, ω)
-    Br = B(v, w, α, ω)
-    Cr = C(v, w, ω) 
+function frohlich_energy(v, w, α, ω; dims = 3)
+    Ar = A(v, w, ω) * dims / 3
+    Br = B(v, w, α, ω; dims = dims) 
+    Cr = C(v, w, ω) * dims / 3
     # Free energy in units of meV
     return -(Ar + Br + Cr), Ar, Br, Cr
 end
@@ -535,14 +536,10 @@ function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
     return Δv .+ w, w, E, A, B, C
 end
 
-function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
+function feynmanvw(v::Real, w::Real, αωβ...; upper = [Inf, Inf], lower = [0, 0])
     
     Δv = v .- w
-    initial = [Δv + eps(Float64), w]
-
-    # Limits of the optimisation.
-    lower = [0, 0]
-    upper = [upper_limit, upper_limit]
+    initial = [Δv + eps(Float64), w] 
 
     # The multiple phonon mode free energy function to minimise.
     f(x) = frohlich_energy(x[1] .+ x[2], x[2], αωβ...)[1]
@@ -568,5 +565,5 @@ function feynmanvw(v::Real, w::Real, αωβ...; upper_limit=1e6)
     return Δv .+ w, w, E, A, B, C
 end
 
-feynmanvw(αωβ...; upper_limit=1e6) = feynmanvw(3.4, 2.6, αωβ...; upper_limit=upper_limit)
+feynmanvw(αωβ...) = feynmanvw(3.4, 2.6, αωβ...)
 

@@ -54,8 +54,8 @@ Calculate the complex impedence Z(Ω) of the polaron at finite temperatures for 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 
 """
-function frohlich_complex_impedence(Ω, v, w, α, ωβ...)
-    -im * (Ω + frohlich_memory_function(Ω, v, w, α, ωβ...))
+function frohlich_complex_impedence(Ω, v, w, α, ωβ...; dims = 3)
+    -im * (Ω + frohlich_memory_function(Ω, v, w, α, ωβ...; dims = dims))
 end
 
 """
@@ -73,8 +73,8 @@ Calculate the complex conductivity σ(Ω) of the polaron at finite temperatures 
 
 See also [`polaron_complex_impedence`](@ref)
 """
-function frohlich_complex_conductivity(Ω, v, w, α, ωβ...)
-    return 1 / frohlich_complex_impedence(Ω, v, w, α, ωβ...)
+function frohlich_complex_conductivity(Ω, v, w, α, ωβ...; dims = 3)
+    return 1 / frohlich_complex_impedence(Ω, v, w, α, ωβ...; dims = dims)
 end
 
 """
@@ -94,9 +94,12 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 
 See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
-function inverse_frohlich_mobility(v, w, α, ω, β)
-    structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β)
-    return abs(imag(general_memory_function(structure_factor))) / ω
+function inverse_frohlich_mobility(v, w, α, ω, β; dims = 3)
+    if β == Inf
+        return zero(β)
+    end
+    structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β; dims = dims)
+    return abs(imag(general_memory_function(structure_factor)))
 end
 
 """
@@ -113,7 +116,7 @@ The polaron mobility.
 
 See also [`inverse_polaron_mobility`](@ref)
 """
-frohlich_mobility(v, w, α, ω, β) = 1 ./ inverse_frohlich_mobility(v, w, α, ω, β)
+frohlich_mobility(v, w, α, ω, β; dims = 3) = 1 ./ inverse_frohlich_mobility(v, w, α, ω, β; dims = dims)
 
 """
     inverse_FHIP_mobility_lowT(v, w, α, ω, β)

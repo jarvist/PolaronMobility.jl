@@ -145,9 +145,13 @@ println(result)
 This example calculates the integrand for the Holstein interaction energy using the given values of `τ`, `v`, `w`, `α`, and `ω`. The result is then printed.
 """
 function holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = 3)
+    if β == Inf
+        return holstein_interaction_energy_integrand(τ, v, w, α, ω; dims = dims)
+    end
+    momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π)
     coupling = holstein_coupling(1, α, ω; dims = dims)
-    propagator = polaron_propagator(τ, v, w, β * ω) * 2 / ω
-    phonon_propagator(τ / ω, ω, β * ω) * coupling * (erf(π * sqrt(propagator)) / 2 / sqrt(π * propagator))^dims
+    propagator = polaron_propagator(τ, v, w, β * ω) / 2 
+    phonon_propagator(τ / ω, ω, β) * coupling * P(dims, momentum_cutoff^2 * propagator) / (4π * propagator)^(dims/2)
 end
 
 """
@@ -178,12 +182,12 @@ println(result)
 ```
 This example calculates the integrand for the Holstein interaction energy using the given values of `τ`, `v`, `w`, `α`, and `ω`. The result is then printed.
 """
+
 function holstein_interaction_energy_integrand(τ, v, w, α, ω; dims = 3)
-    coupling = holstein_coupling(1, α, 1; dims = 1)
-    propagator = polaron_propagator(τ / ω, v * ω, w * ω) / 2
-    phonon_propagator(τ / ω, ω) * coupling * (erf(2π * sqrt(propagator * 2 / dims)) / 2 * sqrt(π / propagator) / π√2)^dims
-    return coupling * phonon_propagator(τ / ω, ω) 
-    
+    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
+    coupling = holstein_coupling(1, α, ω; dims = dims) / dims
+    propagator = polaron_propagator(τ, v, w) / 2
+    phonon_propagator(τ / ω, ω) * coupling * P(dims, momentum_cutoff^2 * propagator) / (4π * propagator)^(dims/2) 
 end
 
 """
@@ -215,7 +219,10 @@ println(result)
 This example calculates the electron-phonon interaction energy for given values of `v`, `w`, `α`, `ω`, and `β`. The result is then printed.
 """
 function holstein_interaction_energy(v, w, α, ω, β; dims = 3)
-    integral, _ = quadgk(τ -> holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = dims), 0, β/2)
+    if β == Inf
+        return holstein_interaction_energy(v, w, α, ω; dims = dims)
+    end
+    integral, _ = quadgk(τ -> holstein_interaction_energy_integrand(τ, v, w, α, ω, β; dims = dims), 0, β * ω / 2)
     return integral
 end
 
@@ -254,9 +261,9 @@ end
 	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
 """
 function holstein_energy(v, w, α, ωβ...; dims = 3)
-	kinetic_energy = -2 * dims + electron_energy(v, w, ωβ...)
+	kinetic_energy = electron_energy(v, w, ωβ...; dims = dims)
 	potential_energy = -holstein_interaction_energy(v, w, α, ωβ...; dims = dims)
-	return (kinetic_energy + potential_energy), kinetic_energy, potential_energy
+    return (kinetic_energy + potential_energy), kinetic_energy, potential_energy
 end
 
 
@@ -291,7 +298,7 @@ println(result)
 ```
 This example demonstrates how to use the `vw_variation` function. It defines an energy function `energy(x, y)` that returns an array of energy components. It then calls `vw_variation` with the initial values of `v` and `w`, as well as lower and upper bounds for the optimization. The function optimizes `v` and `w` to minimize the energy and returns the optimized values, as well as the minimized energy, kinetic energy, and potential energy. The result is then printed.
 """
-function vw_variation(energy, initial_v, initial_w; lower_bounds = [0, 0], upper_bounds = [Inf, Inf])
+function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [1e4, 1e4])
 
     Δv = initial_v - initial_w # defines a constraint, so that v>w
     initial = [Δv + eps(Float64), initial_w]
@@ -302,26 +309,26 @@ function vw_variation(energy, initial_v, initial_w; lower_bounds = [0, 0], upper
     # Use a more efficient optimization algorithm or library to optimise v and w to minimise enthalpy.
     solution = Optim.optimize(
         Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower_bounds,
-        upper_bounds,
+        lower,
+        upper,
         initial,
         Fminbox(BFGS()),
-        Optim.Options(show_trace = false, g_tol = 1e-12)
+        # Optim.Options(show_trace = false, g_tol = 1e-12)
     )
 
     # Get v and w values that minimise the free energy.
     Δv, w = Optim.minimizer(solution) # v=Δv+w
-    energy_minimized, kinetic_energy, potential_energy = energy(Δv + w, w)
+    energy_minimized = energy(Δv + w, w)
 
     if !Optim.converged(solution)
         @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $energy_minimized"
     end
 
     # Return variational parameters that minimise the free energy.
-    return Δv + w, w, energy_minimized, kinetic_energy, potential_energy
+    return Δv + w, w, energy_minimized...
 end
 
-vw_variation(energy) = vw_variation(energy, 5, 3; lower_bounds = [0, 0], upper_bounds = [Inf, Inf])
+vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [1e4, 1e4])
 
 """
     general_memory_function(Ω, structure_factor; limits = [0, Inf])
@@ -418,17 +425,14 @@ println(result)
 This example demonstrates how to use the `holstein_structure_factor` function to calculate the structure factor for a given set of parameters. The function is called with the values of `t`, `v`, `w`, `α`, `ω`, and `β` as arguments, and the result is then printed.
 """
 function holstein_structure_factor(t, v, w, α, ω, β; dims = 3)
-	
+    if β == Inf
+        return holstein_structure_factor(t, v, w, α, ω; dims = dims)
+    end
+    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
 	coupling = holstein_coupling(1, α, ω; dims = dims)
-
-	propagator = polaron_propagator(im * t * ω, v, w, β * ω) * 2 / ω
-	
-	first_integral = erf(π * sqrt(propagator)) / 4 / √π / propagator^(3/2) - exp(-π^2 * propagator) / propagator / 2
-	second_integral = erf(π * sqrt(propagator)) / sqrt(π * propagator) / 2
-	
-	prefactor = 2 * phonon_propagator(im * t, ω, β)
-
-	prefactor * coupling * first_integral * second_integral^(dims - 1)
+	propagator = polaron_propagator(im * t, v, w, β * ω) / 2
+	integral = dims / 2 * ball_surface(dims) / (2π)^3 * P_plus_one(dims, propagator * momentum_cutoff^2) / propagator^(dims/2 + 1)
+    phonon_propagator(im * t / ω, ω, β) * coupling * integral * 2 / dims / ω
 end
 
 """
@@ -460,17 +464,11 @@ println(result)
 This example calculates the structure factor for the given values of `t`, `v`, `w`, `α`, and `ω`. The result is then printed.
 """
 function holstein_structure_factor(t, v, w, α, ω; dims = 3)
-	
+	momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
 	coupling = holstein_coupling(1, α, ω; dims = dims)
-
-	propagator = polaron_propagator(im * t * ω, v, w) * 2 / ω
-	
-	first_integral = erf(π * sqrt(propagator)) / 4 / √π / propagator^(3/2) - exp(-π^2 * propagator) / propagator / 2
-	second_integral = erf(π * sqrt(propagator)) / sqrt(π * propagator) / 2
-	
-	prefactor = 2 * phonon_propagator(im * t, ω)
-
-	prefactor * coupling * first_integral * second_integral^(dims - 1)
+	propagator = polaron_propagator(im * t, v, w) / 2
+	integral = dims / 2 * ball_surface(dims) / (2π)^3 * P_plus_one(dims, propagator * momentum_cutoff^2) / propagator^(dims/2 + 1)
+    phonon_propagator(im * t / ω, ω) * coupling * integral * 2 / ω / dims
 end
 
 
@@ -494,8 +492,11 @@ result = holstein_memory_function(Ω, v, w, α, ω, β; dims = 3)
 In this example, the `holstein_memory_function` is called with the input parameters `Ω`, `v`, `w`, `α`, `ω`, and `β`, and the optional parameter `dims` set to 3. The function calculates the memory function using the `general_memory_function` function and returns the result.
 """
 function holstein_memory_function(Ω, v, w, α, ω, β; dims = 3)
-	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
-	 return general_memory_function(Ω, structure_factor)
+    if β == Inf
+        return holstein_memory_function(Ω, v, w, α, ω; dims = dims)
+    end
+	structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
+	return general_memory_function(Ω / ω, structure_factor)
 end
 
 """
@@ -519,7 +520,7 @@ In this example, the `holstein_memory_function` is called with the parameters `�
 """
 function holstein_memory_function(Ω, v, w, α, ω; dims = 3)
 	 structure_factor(t) = holstein_structure_factor(t, v, w, α, ω; dims = dims)
-	 return general_memory_function(Ω, structure_factor, limits = [0, 1e5])
+	 return general_memory_function(Ω / ω, structure_factor, limits = [0, 1e6])
 end
 
 """
@@ -553,8 +554,11 @@ println(result)
 This code calculates the mobility using the given parameters and prints the result.
 """
 function holstein_mobility(v, w, α, ω, β; dims = 3)
+    if β == Inf
+        return Inf
+    end
     structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
-    abs(1 / imag(general_memory_function(structure_factor, limits = [0, 1e5])))
+    abs(1 / imag(general_memory_function(structure_factor)))
 end
 
 function holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = 3)
