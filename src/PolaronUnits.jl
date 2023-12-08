@@ -62,7 +62,7 @@ See also: `Unitful.k`, `Unitful.J`, `Unitful.K`.
 @unit k_pu "k" BoltzmannConstant Unitful.k false
 
 """
-    PolaronUnits.ω_pu
+    PolaronUnits.ω0_pu
 A unit equal to the reduced Planck constant ħ = h / 2π ≈ 1.054,571,8176 × 10^-34 J × s.
 Printed as "ħ".
 `Unitful.ħ` is a quantity (with units `J × s`) whereas `PolaronUnits.ħ_pu` is a unit equal to
@@ -71,6 +71,18 @@ Dimension: 𝐋^2 𝐌 𝐓^-1.
 See also: `Unitful.ħ`, `Unitful.J`, `Unitful.s`.
 """
 @unit ω0_pu "ω₀" PolaronAngularFrequency 1Unitful.THz2π false
+
+"""
+    PolaronUnits.J0_pu
+Transfer integral energy unit
+`Unitful.ħ` is a quantity (with units `J × s`) whereas `PolaronUnits.ħ_pu` is a unit equal to
+`Unitful.ħ`.
+Dimension: 𝐋^2 𝐌 𝐓^-1.
+See also: `Unitful.ħ`, `Unitful.J`, `Unitful.s`.
+"""
+@unit J0_pu "J₀" PolaronTransferIntegral 1Unitful.meV false
+@unit ωh0_pu "ωₕ₀" PolaronAdiabticity 1J0_pu/1ħ_pu false
+@unit mh0_pu "mₕ₀" PolaronHolsteinMass 1ħ_pu^2/1J0_pu/1Unitful.Å^2 false
 
 # Polaron radius is derived from the base polaron units
 """
@@ -84,6 +96,7 @@ Dimension: 𝐋.
 See also: `Unitful.ε0`, `Unitful.ħ`, `Unitful.me`, `Unitful.q`, `Unitful.m`.
 """
 @unit a0_pu "a₀" PolaronRadius √(1ħ_pu/1m0_pu/1ω0_pu) false
+@unit ah0_pu "aₕ₀" PolaronHolsteinRadius √(1ħ_pu/1mh0_pu/1ωh0_pu) false
 
 # Polaron energy is derived from the base polaron units
 """
@@ -97,6 +110,7 @@ Dimension: 𝐋^2 𝐌 𝐓^-2.
 See also: `Unitful.me`, `Unitful.q`, `Unitful.ε0`, `Unitful.ħ`, `Unitful.J`, `Unitful.eV`, [`UnitfulAtomic.Ry`](@ref).
 """
 @unit E0_pu "E₀" PolaronEnergy 1ħ_pu*1ω0_pu false
+@unit Eh0_pu "Eₕ₀" PolaronHolsteinEnergy 1J0_pu false
 
 # Polaron thermodynamic temperature is derived from the base polaron units
 """
@@ -111,8 +125,10 @@ See also: `Unitful.me`, `Unitful.q`, `Unitful.ε0`, `Unitful.ħ`, `Unitful.J`, `
 """
 @unit T0_pu "T₀" PolaronTemperature 1Unitful.K false
 @unit β0_pu "β₀" PolaronBeta 1ħ_pu/1k_pu false
+@unit βh0_pu "βₕ₀" PolaronHolsteinBeta 1J0_pu/1k_pu false
 
 @unit μ0_pu "μ₀" PolaronMobility 1e_pu/1m0_pu/1ω0_pu false
+@unit μh0_pu "μₕ₀" PolaronHolsteinMobility 1e_pu/1mh0_pu/1ωh0_pu false
 @unit t0_pu "t₀" PolaronTime 1Unitful.ns false
 
 """
@@ -173,7 +189,7 @@ pustrip(x) = ustrip(puconvert(x))
 """
     addunits!(polaron::Polaron)
 """
-function addunits!(polaron::Polaron)
+function addunits!(polaron::FrohlichPolaron)
     polaron.ω = polaron.ω .* ω0_pu
     polaron.Fs = polaron.Fs .* E0_pu
     polaron.Fl = polaron.Fl .* E0_pu
@@ -215,28 +231,30 @@ function addunits!(polaron::Polaron)
     polaron.σ = polaron.σ .* punit(u"S")
 end
 
-function addholsteinunits!(polaron::Holstein)
-    polaron.ω = polaron.ω .* ω0_pu
-    polaron.F0 = polaron.F0 .* E0_pu
-    polaron.K0 = polaron.K0 .* E0_pu
-    polaron.P0 = polaron.P0 .* E0_pu
-    polaron.κ0 = polaron.κ0 .* m0_pu * ω0_pu^2
-    polaron.M0 = polaron.M0 .* m0_pu
-    polaron.M0a = polaron.M0a .* m0_pu
-    polaron.M0r = polaron.M0r .* m0_pu
-    polaron.R0 = polaron.R0 .* a0_pu
+function addunits!(polaron::HolsteinPolaron)
+    polaron.ω = polaron.ω .* ωh0_pu
+    polaron.F0 = polaron.F0 .* Eh0_pu
+    polaron.A0 = polaron.A0 .* Eh0_pu
+    polaron.B0 = polaron.B0 .* Eh0_pu
+    polaron.C0 = polaron.C0 .* Eh0_pu
+    polaron.κ0 = polaron.κ0 .* mh0_pu * ωh0_pu^2
+    polaron.M0 = polaron.M0 .* mh0_pu
+    polaron.M0a = polaron.M0a .* mh0_pu
+    polaron.M0r = polaron.M0r .* mh0_pu
+    polaron.R0 = polaron.R0 .* ah0_pu
     polaron.T = polaron.T .* T0_pu
-    polaron.β = polaron.β .* β0_pu
-    polaron.F = polaron.F .* E0_pu
-    polaron.K = polaron.K .* E0_pu
-    polaron.P = polaron.P .* E0_pu
-    polaron.κ = polaron.κ .* m0_pu * ω0_pu^2
-    polaron.M = polaron.M .* m0_pu
-    polaron.Ma = polaron.Ma .* m0_pu
-    polaron.Mr = polaron.Mr .* m0_pu
-    polaron.R = polaron.R .* a0_pu
-    polaron.μ = polaron.μ .* μ0_pu
-    polaron.χ = polaron.χ .* ω0_pu
+    polaron.β = polaron.β .* βh0_pu
+    polaron.F = polaron.F .* Eh0_pu
+    polaron.A = polaron.A .* Eh0_pu
+    polaron.B = polaron.B .* Eh0_pu
+    polaron.C = polaron.C .* Eh0_pu
+    polaron.κ = polaron.κ .* mh0_pu * ωh0_pu^2
+    polaron.M = polaron.M .* mh0_pu
+    polaron.Ma = polaron.Ma .* mh0_pu
+    polaron.Mr = polaron.Mr .* mh0_pu
+    polaron.R = polaron.R .* ah0_pu
+    polaron.μ = polaron.μ .* μh0_pu
+    polaron.χ = polaron.χ .* ωh0_pu
     polaron.z = polaron.z .* punit(u"Ω")
     polaron.σ = polaron.σ .* punit(u"S")
 end

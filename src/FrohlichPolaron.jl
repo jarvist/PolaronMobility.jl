@@ -1,11 +1,12 @@
-# Polaron.jl
+# FrohlichPolaron.jl
+# A do-it-all function for calculating properties of the Frohlich polaron. Data is stored as a struct.
 
 """
     Polaron(x...)
 
 Type for storing the polaron information, `x...`.
 """
-mutable struct Polaron
+mutable struct FrohlichPolaron
     α       # Fröhlich coupling.
     αeff    # Effective Fröhlich coupling summed for multiple modes.
     T       # Temperature.
@@ -54,7 +55,7 @@ mutable struct Polaron
     z       # Complex impedence.
     σ       # Complex conductivity.
 
-    function Polaron(x...)
+    function FrohlichPolaron(x...)
         new(reduce_array.(x)...)
     end
 end
@@ -69,7 +70,7 @@ Outer constructor for the Polaron type. This function evaluates model data for t
 julia> polaron(6, 300, 3, 1.0, 3.6, 2.8)
 ```
 """
-function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.01, w_guesses=2.99, dims=3,verbose=false)
+function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.1, w_guesses=2.9, dims=3, kspace=false, verbose=false)
 
     # v_guesses and w_guesses are initial values for v and w (including many v and w parameters).
     # These guesses are generally not needed unless instabilities are found in the minimisation and better initial values improve stability.
@@ -79,6 +80,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
     num_T = length(Trange)
     num_Ω = length(Ωrange)
     num_ω = length(ω)
+    num_d = length(dims)
 
     ω = reduce_array(ω)
     
@@ -96,45 +98,45 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
         "β"     => Matrix{Float64}(undef, num_T, num_ω), # Betas.
         "Ω"     => Ωrange, # Photon frequencies.
         "d"     => dims, # Number of spatial dimensions.
-        "v0"    => Matrix{Float64}(undef, num_α, num_vw), # Athermal v params.
-        "w0"    => Matrix{Float64}(undef, num_α, num_vw), # Athermal w params.
-        "F0"    => Vector{Float64}(undef, num_α), # Athermal energies.
-        "A0"    => Vector{Float64}(undef, num_α), # Athermal A parameter.
-        "B0"    => Vector{Float64}(undef, num_α), # Athermal B parameter.
-        "C0"    => Vector{Float64}(undef, num_α), # Athermal C parameter.
-        "Fs"    => Vector{Float64}(undef, num_α), # Small alpha (α→0) approximate energy.
-        "Fl"    => Vector{Float64}(undef, num_α), # Large alpha (α→∞) approximate energy.
-        "κ0"    => Matrix{Float64}(undef, num_α, num_vw), # Fictitious spring constant.
-        "M0"    => Matrix{Float64}(undef, num_α, num_vw), # Athermal fictitious mass.
+        "v0"    => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal v params.
+        "w0"    => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal w params.
+        "F0"    => Matrix{Float64}(undef, num_d, num_α), # Athermal energies.
+        "A0"    => Matrix{Float64}(undef, num_d, num_α), # Athermal A parameter.
+        "B0"    => Matrix{Float64}(undef, num_d, num_α), # Athermal B parameter.
+        "C0"    => Matrix{Float64}(undef, num_d, num_α), # Athermal C parameter.
+        "Fs"    => Matrix{Float64}(undef, num_d, num_α), # Small alpha (α→0) approximate energy.
+        "Fl"    => Matrix{Float64}(undef, num_d, num_α), # Large alpha (α→∞) approximate energy.
+        "κ0"    => Array{Float64,3}(undef, num_d, num_α, num_vw), # Fictitious spring constant.
+        "M0"    => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal fictitious mass.
         "Ms"    => Vector{Float64}(undef, num_α), # Small alpha (α→0) approximate fictitious mass.
         "Ml"    => Vector{Float64}(undef, num_α), # Large alpha (α→∞) approximate fictitious mass.
-        "M0a"   => Matrix{Float64}(undef, num_α, num_vw), # Athermal asymptotic approximate fictitious mass (v0/w0).
-        "M0r"   => Matrix{Float64}(undef, num_α, num_vw), # Athermal reduced mass of particle + fictitious particle system.
-        "R0"    => Matrix{Float64}(undef, num_α, num_vw), # Athermal polaron radius (s. d. of a Gaussian wavefunction).
+        "M0a"   => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal asymptotic approximate fictitious mass (v0/w0).
+        "M0r"   => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal reduced mass of particle + fictitious particle system.
+        "R0"    => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal polaron radius (s. d. of a Gaussian wavefunction).
         "Rs"    => Vector{Float64}(undef, num_α), # Small alpha (α→0) approximate polaron radius.
         "Rl"    => Vector{Float64}(undef, num_α), # Large alpha (α→∞) approximate polaron radius.
         "ΩFC"   => Vector{Float64}(undef, num_α), # Large alpha (α → ∞)approximate Franck-Condon peak frequency.
-        "v"     => Array{Float64,3}(undef, num_T, num_α, num_vw), # v params.
-        "w"     => Array{Float64,3}(undef, num_T, num_α, num_vw), # w params.
-        "F"     => Matrix{Float64}(undef, num_T, num_α), # Energies.
-        "A"     => Matrix{Float64}(undef, num_T, num_α), # A parameter.
-        "B"     => Matrix{Float64}(undef, num_T, num_α), # B parameter.
-        "C"     => Matrix{Float64}(undef, num_T, num_α), # C parameter.
-        "κ"     => Array{Float64,3}(undef, num_T, num_α, num_vw), # Spring constants.
-        "M"     => Array{Float64,3}(undef, num_T, num_α, num_vw), # Fictitious masses.
-        "Ma"    => Array{Float64,3}(undef, num_T, num_α, num_vw),  # Thermal asymptotic approximate fictitious mass (v/w).
-        "Mr"    => Array{Float64,3}(undef, num_T, num_α, num_vw),  # Thermal reduced mass of particle + fictitious particle system.
-        "R"     => Array{Float64,3}(undef, num_T, num_α, num_vw), # Polaron radii.
-        "μ"     => Matrix{Float64}(undef, num_T, num_α), # Mobilities.
+        "v"     => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw), # v params.
+        "w"     => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw), # w params.
+        "F"     => Array{Float64,3}(undef, num_T, num_d, num_α), # Energies.
+        "A"     => Array{Float64,3}(undef, num_T, num_d, num_α), # A parameter.
+        "B"     => Array{Float64,3}(undef, num_T, num_d, num_α), # B parameter.
+        "C"     => Array{Float64,3}(undef, num_T, num_d, num_α), # C parameter.
+        "κ"     => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw), # Spring constants.
+        "M"     => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw), # Fictitious masses.
+        "Ma"    => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw),  # Thermal asymptotic approximate fictitious mass (v/w).
+        "Mr"    => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw),  # Thermal reduced mass of particle + fictitious particle system.
+        "R"     => Array{Float64,4}(undef, num_T, num_d, num_α, num_vw), # Polaron radii.
+        "μ"     => Array{Float64,3}(undef, num_T, num_d, num_α), # Mobilities.
         "μFHIP" => Matrix{Float64}(undef, num_T, num_α), # FHIP low-temperature DC mobiltiy approximation.
         "μD"    => Matrix{Float64}(undef, num_T, num_α), # Kadanoff DC mobility, low-temperature approximation using Devreese2016.
         "μK"    => Matrix{Float64}(undef, num_T, num_α), # Kadanoff DC mobility, low-temperature approximation.
         "τ"     => Matrix{Float64}(undef, num_T, num_α), # relaxation time from Kadanoff Boltzmann transport equation.
         "μH"    => Matrix{Float64}(undef, num_T, num_α), # Hellwarth DC mobility.
         "μH0"   => Matrix{Float64}(undef, num_T, num_α), # Hellwarth DC mobility with b=0.
-        "χ"     => Array{ComplexF64,3}(undef, num_Ω, num_T, num_α), # 'Memory function' or self energy.
-        "z"     => Array{ComplexF64,3}(undef, num_Ω, num_T, num_α), # Complex impedences.
-        "σ"     => Array{ComplexF64,3}(undef, num_Ω, num_T, num_α), # Complex conductivities.
+        "χ"     => Array{ComplexF64,4}(undef, num_Ω, num_T, num_d, num_α), # 'Memory function' or self energy.
+        "z"     => Array{ComplexF64,4}(undef, num_Ω, num_T, num_d, num_α), # Complex impedences.
+        "σ"     => Array{ComplexF64,4}(undef, num_Ω, num_T, num_d, num_α), # Complex conductivities.
     )
 
     # Print the phonon frequencies. 
@@ -146,6 +148,8 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
     end
 
     for j in axes(αrange, 1)    # αrange loop.
+
+        dprocess = 1
 
         # Reduce αrange to either a Vector of values per phonon mode, or a single scalar. 
         α = reduce_array(αrange[j, :])
@@ -169,7 +173,8 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
                 println(io, "\e[KPhonon frequencies             | ωeff = ", ωeff, " | ω = ", join(round.(first(ω, 2), digits=2), ", ")..., " ... ", join(round.(last(ω, 2), digits=2), ", ")...)
                 println(io, "\e[KFröhlich coupling              | αeff = ", αeff, " | α = ", join(round.(first(α, 2), digits=3), ", ")..., " ... ", join(round.(last(α, 2), digits=3), ", ")...)
             end
-            println(io, "\e[KNumber of dimensions           | d = ", dims)
+            
+            αprocess += 1   # Increment αrange iteration.
         end
 
         # Small alpha (α → 0) approximate energy.
@@ -235,22 +240,30 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
             println(io, "\e[KLarge α→∞ FC peak freq.        | ΩFC = ", Ω_FC)
         end
 
+        for d in 1:num_d
+            if verbose
+                println(io, "\e[KNumber of dimensions", " [", dprocess, " / ", num_d, "]", "   | d = ", dims[d])
+                dprocess += 1
+            end
+
         # Extract the ground-state, athermal polaron properties (energy (enthalpy) and variational parameters v and w).
         # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
         # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-        athermal_energy(v, w) = frohlich_energy(v, w, α, ω; dims = dims)
+    
+        athermal_energy(v, w) = !kspace ? frohlich_energy(v, w, α, ω; dims = dims[d]) : frohlich_energy_k_space(v, w, α, ω; dims = dims[d])
+        
         v_gs, w_gs, F_gs, A_gs, B_gs, C_gs = vw_variation(athermal_energy, v_guesses, w_guesses)
 
         # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
         v_guesses, w_guesses = v_gs, w_gs
 
         # Store the athermal data.
-        p["v0"][j, :] .= v_gs
-        p["w0"][j, :] .= w_gs
-        p["F0"][j] = F_gs
-        p["A0"][j] = A_gs
-        p["B0"][j] = B_gs
-        p["C0"][j] = C_gs
+        p["v0"][d, j, :] .= v_gs
+        p["w0"][d, j, :] .= w_gs
+        p["F0"][d, j] = F_gs
+        p["A0"][d, j] = A_gs
+        p["B0"][d, j] = B_gs
+        p["C0"][d, j] = C_gs
 
         # Print athermal variational parameter and energy data.
         if verbose
@@ -264,12 +277,11 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
             println(io, "\e[KInteraction energy             | B0 = ", B_gs)
             println(io, "\e[KTrial energy                   | C0 = ", C_gs)
             Tprocess = 1    # Counter for Trange.
-            αprocess += 1   # Increment αrange iteration.
         end
 
         # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
         κ_gs = (v_gs .^ 2 .- w_gs .^ 2)
-        p["κ0"][j, :] .= κ_gs
+        p["κ0"][d, j, :] .= κ_gs
 
         # Print athermal fictitious spring constant.
         if verbose
@@ -278,7 +290,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
 
         # Calculate and store fictitious masses. Athermal.
         M_gs = κ_gs ./ w_gs .^ 2
-        p["M0"][j, :] .= M_gs
+        p["M0"][d, j, :] .= M_gs
 
         # Print athermal fictitious mass.
         if verbose
@@ -287,7 +299,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
 
         # Approximate large coupling asymptotic limit for the polaron mass. Feynman1962. Athermal
         M_asymp_gs = v_gs ./ w_gs
-        p["M0a"][j, :] .= M_asymp_gs
+        p["M0a"][d, j, :] .= M_asymp_gs
 
         # Print athermal asymptotic fictitious mass.
         if verbose
@@ -296,7 +308,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
 
         # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
         M_reduced_gs = (v_gs .^2 .- w_gs .^2) / v_gs .^ 2
-        p["M0r"][j, :] .= M_reduced_gs
+        p["M0r"][d, j, :] .= M_reduced_gs
 
         # Print athermal reduced mass.
         if verbose
@@ -305,7 +317,7 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
 
         # Calculate and store polaron radii. Approximates the polaron wavefunction as a Gaussian and relates the size to the standard deviation. Eqn. (2.4) in Schultz1959. Athermal.
         R_gs = sqrt.(3 .* v_gs ./ (v_gs .^ 2 .- w_gs .^ 2) .^ 2)
-        p["R0"][j, :] .= R_gs
+        p["R0"][d, j, :] .= R_gs
 
         # Print athermal polaron radius.
         if verbose
@@ -315,152 +327,181 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
         for i in eachindex(Trange)  # Temperatures loop.
             T = Trange[i]
 
-            # Print temperature.
+            if !iszero(T)
+
+                # Print temperature.
+                if verbose
+                    println(io, "\e[K-----------------------------------------------------------------------")
+                    println(io, "\e[K         Finite Temperature Information: [$(Tprocess[]) / $(num_T) ($(round(Tprocess[] / (num_T) * 100, digits=1)) %)]")
+                    println(io, "\e[K-----------------------------------------------------------------------")
+                    println(io, "\e[KTemperatures                   | T = ", T)
+                end
+
+                # Calculate the reduced (unitless) thermodynamic betas for each phonon mode.
+                β = 1 ./ T .* β0
+                p["β"][i, :] .= β
+
+                # Print thermodynamic betas.
+                if verbose
+                    println(io, "\e[KReduced thermodynamic          | β = ", β)
+                end
+
+                # Calculate thermal polaron properties (energy (Gibbs free energy) and variational parameters v and w).
+                # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
+                # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
+
+                thermal_energy(v, w) = !kspace ? frohlich_energy(v, w, α, ω, β; dims = dims[d]) : frohlich_energy_k_space(v, w, α, ω, β; dims = dims[d])
+                v, w, F, A, B, C = vw_variation(thermal_energy, v_guesses, w_guesses)
+
+                # Update the guesses to keep them close-ish to the true solutions during loops over temperatures.
+                v_guesses, w_guesses = v, w
+
+                # Store thermal data.
+                p["v"][i, d, j, :] .= v
+                p["w"][i, d, j, :] .= w
+                p["F"][i, d, j] = F
+                p["A"][i, d, j] = A
+                p["B"][i, d, j] = B
+                p["C"][i, d, j] = C
+
+                # Print thermal data.
+                if verbose
+                    println(io, "\e[KVariational parameter          | v = ", v)
+                    println(io, "\e[KVariational parameter          | w = ", w)
+                    println(io, "\e[KFree energy                    | F = ", F)
+                    println(io, "\e[KElectron energy                | A = ", A)
+                    println(io, "\e[KInteraction energy             | B = ", B)
+                    println(io, "\e[KTrial energy                   | C = ", C)
+                end
+
+                # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
+                κ = (v .^ 2 .- w .^ 2)
+                p["κ"][i, d, j, :] .= κ
+
+                # Print spring constants.
+                if verbose
+                    println(io, "\e[KFictitious spring constant     | κ = ", κ)
+                end
+
+                # Calculate and store fictitious masses. Thermal.
+                M = κ ./ w .^ 2
+                p["M"][i, d, j, :] .= M
+
+                # Print masses.
+                if verbose
+                    println(io, "\e[KFictitious mass                | M = ", M)
+                end
+
+                # Approximate large coupling asymptotic limit for the polaron mass. Feynman1962. Thermal
+                M_asymp = v ./ w 
+                p["Ma"][i, d, j, :] .= M_asymp
+
+                # Print asymptotic masses.
+                if verbose
+                    println(io, "\e[KFictitious mass (asymptotic)   | Ma = ", M_asymp)
+                end
+
+                # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
+                M_reduced = (v .^2 .- w .^2) / v .^ 2
+                p["Mr"][i, d, j, :] .= M_reduced
+            
+                # Print redcued masses.
+                if verbose
+                    println(io, "\e[KReduced mass                   | Mr = ", M_reduced)
+                end
+
+                # Calculate and store polaron radii.
+                R = sqrt.(3 .* v ./ (v .^ 2 .- w .^ 2) .^ 2)
+                p["R"][i, d, j, :] .= R
+            
+                # Print polaron radius.
+                if verbose
+                    println(io, "\e[KPolaron radius                 | R = ", R)
+                end
+
+                if verbose
+                    println("\e[K-----------------------------------------------------------------------")
+                    println("\e[K                      DC Mobility Information:                         ")
+                    println("\e[K-----------------------------------------------------------------------")
+                end
+
+                # Calculate and store the DC mobiliies.
+                μ = !kspace ? frohlich_mobility(v, w, α, ω, β; dims = dims[d]) / mb : frohlich_mobility_k_space(v, w, α, ω, β; dims = dims[d]) / mb
+                p["μ"][i, d, j] = μ 
+                
+                # Print DC mobilities.
+                if verbose
+                    println(io, "\e[KFinite temperature mobility    | μ = ", μ)
+                end
+
+                # FHIP low-temperature mobility, final result of Feynman1962.
+                # Eqn. (1.60) in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv).
+                μ_FHIP = FHIP_mobility_lowT(v, w, α, ω, β) / mb
+                p["μFHIP"][i, j] = μ_FHIP
+                
+                # Print low-temperature FHIP mobility.
+                if verbose
+                    println(io, "\e[KFHIP low-temp. mobility        | μFHIP = ", μ_FHIP)
+                end
+
+                # Kadanoff low-temperaure mobility, constructed around Boltzmann equation.
+                # Adds factor of 3 / (2 * β) c.f. FHIP, correcting phonon emission behaviour.
+                # Provide also the Kadanoff mobility that is consistent with the
+                # FHIP, and later statements (Devreese) of the Kadanoff mobility.
+                # It suggests that Kadanoff used the wrong identy for Nbar in Eqn. (23b) for
+                # the Γ₀ function, and should have used a version with the -1 to
+                # account for Bose / phonon statistics!
+                μ_Kadanoff_Devreese, μ_Kadanoff, rel_time = Kadanoff_mobility_lowT(v, w, α, ω, β) ./ mb
+                p["μD"][i, j] = μ_Kadanoff_Devreese
+                p["μK"][i, j] = μ_Kadanoff
+                p["τ"][i, j] = rel_time
+            
+                # Print low-temperature Kadanoff mobility (both original and Devreese-corrected versions).
+                if verbose
+                    println(io, "\e[KDevreese low-temp. mobility    | μD = ", μ_Kadanoff_Devreese)
+                    println(io, "\e[KKadanoff low-temp. mobility    | μK = ", μ_Kadanoff)
+                end
+
+                #C alculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
+                # Directly performs contour integration in Feynman1962, for finite temperature DC mobility.
+                # Eqns. (2) and (1) are going back to the general (pre low-T limit) formulas in Feynman1962.  
+                # To evaluate these, you need to do the explicit contour integration to get the polaron self-energy.
+                # See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
+                μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β) ./ mb
+                p["μH"][i, j] = μ_Hellwarth
+                p["μH0"][i, j] = μ_Hellwarth_b0
+            
+                # Print Hellwarth mobility (both with b and b=0) and Kadanoff relaxation time.
+                if verbose
+                    println(io, "\e[KHellwarth mobility             | μH = ", μ_Hellwarth)
+                    println(io, "\e[KHellwarth mobility (b=0)       | μH0 = ", μ_Hellwarth_b0)
+                    println(io, "\e[KKadanoff relaxation time       | τ = ", rel_time)
+                end
+
+            else
+                # If zero temperature.
+                v, w, β = v_gs, w_gs, Inf
+                p["v"][i, d, j, :] .= v_gs
+                p["w"][i, d, j, :] .= w_gs
+                p["F"][i, d, j] = F_gs
+                p["A"][i, d, j] = A_gs
+                p["B"][i, d, j] = B_gs
+                p["C"][i, d, j] = C_gs
+                p["κ"][i, d, j, :] .= κ_gs
+                p["M"][i, d, j, :] .= M_gs
+                p["μH"][i, j] = Inf
+                p["μH0"][i, j] = Inf
+                p["μD"][i, j] = Inf
+                p["μK"][i, j] = Inf
+                p["τ"][i, j] = 0
+                p["μFHIP"][i, j] = Inf
+                p["μ"][i, d, j] = Inf
+                p["R"][i, d, j, :] .= R_gs
+                p["Mr"][i, d, j, :] .= M_reduced_gs
+                p["Ma"][i, d, j, :] .= M_asymp_gs
+            end # End of zero temperature if statement.
+
             if verbose
-                println(io, "\e[K-----------------------------------------------------------------------")
-                println(io, "\e[K         Finite Temperature Information: [$(Tprocess[]) / $(num_T) ($(round(Tprocess[] / (num_T) * 100, digits=1)) %)]")
-                println(io, "\e[K-----------------------------------------------------------------------")
-                println(io, "\e[KTemperatures                   | T = ", T)
-            end
-
-            # Calculate the reduced (unitless) thermodynamic betas for each phonon mode.
-            β = 1 ./ T .* β0
-            p["β"][i, :] .= β
-
-            # Print thermodynamic betas.
-            if verbose
-                println(io, "\e[KReduced thermodynamic          | β = ", β)
-            end
-
-            # Calculate thermal polaron properties (energy (Gibbs free energy) and variational parameters v and w).
-            # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
-            # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-            thermal_energy(v, w) = frohlich_energy(v, w, α, ω, β; dims = dims) 
-            v, w, F, A, B, C = vw_variation(thermal_energy, v_guesses, w_guesses)
-
-            # Update the guesses to keep them close-ish to the true solutions during loops over temperatures.
-            v_guesses, w_guesses = v, w
-
-            # Store thermal data.
-            p["v"][i, j, :] .= v
-            p["w"][i, j, :] .= w
-            p["F"][i, j] = F
-            p["A"][i, j] = A
-            p["B"][i, j] = B
-            p["C"][i, j] = C
-
-            # Print thermal data.
-            if verbose
-                println(io, "\e[KVariational parameter          | v = ", v)
-                println(io, "\e[KVariational parameter          | w = ", w)
-                println(io, "\e[KFree energy                    | F = ", F)
-                println(io, "\e[KElectron energy                | A = ", A)
-                println(io, "\e[KInteraction energy             | B = ", B)
-                println(io, "\e[KTrial energy                   | C = ", C)
-            end
-
-            # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
-            κ = (v .^ 2 .- w .^ 2)
-            p["κ"][i, j, :] .= κ
-
-            # Print spring constants.
-            if verbose
-                println(io, "\e[KFictitious spring constant     | κ = ", κ)
-            end
-
-            # Calculate and store fictitious masses. Thermal.
-            M = κ ./ w .^ 2
-            p["M"][i, j, :] .= M
-
-            # Print masses.
-            if verbose
-                println(io, "\e[KFictitious mass                | M = ", M)
-            end
-
-            # Approximate large coupling asymptotic limit for the polaron mass. Feynman1962. Thermal
-            M_asymp = v ./ w 
-            p["Ma"][i, j, :] .= M_asymp
-
-            # Print asymptotic masses.
-            if verbose
-                println(io, "\e[KFictitious mass (asymptotic)   | Ma = ", M_asymp)
-            end
-
-            # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-            M_reduced = (v .^2 .- w .^2) / v .^ 2
-            p["Mr"][i, j, :] .= M_reduced
-
-            # Print redcued masses.
-            if verbose
-                println(io, "\e[KReduced mass                   | Mr = ", M_reduced)
-            end
-
-            # Calculate and store polaron radii.
-            R = sqrt.(3 .* v ./ (v .^ 2 .- w .^ 2) .^ 2)
-            p["R"][i, j, :] .= R
-
-            # Print polaron radius.
-            if verbose
-                println(io, "\e[KPolaron radius                 | R = ", R)
-            end
-
-            if verbose
-                println("\e[K-----------------------------------------------------------------------")
-                println("\e[K                      DC Mobility Information:                         ")
-                println("\e[K-----------------------------------------------------------------------")
-            end
-
-            # Calculate and store the DC mobiliies.
-            μ = frohlich_mobility(v, w, α, ω, β; dims = dims) / mb
-            p["μ"][i, j] = μ 
-
-            # Print DC mobilities.
-            if verbose
-                println(io, "\e[KFinite temperature mobility    | μ = ", μ)
-            end
-
-            # FHIP low-temperature mobility, final result of Feynman1962.
-            # Eqn. (1.60) in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv).
-            μ_FHIP = FHIP_mobility_lowT(v, w, α, ω, β) / mb
-            p["μFHIP"][i, j] = μ_FHIP
-
-            # Print low-temperature FHIP mobility.
-            if verbose
-                println(io, "\e[KFHIP low-temp. mobility        | μFHIP = ", μ_FHIP)
-            end
-
-            # Kadanoff low-temperaure mobility, constructed around Boltzmann equation.
-            # Adds factor of 3 / (2 * β) c.f. FHIP, correcting phonon emission behaviour.
-            # Provide also the Kadanoff mobility that is consistent with the
-            # FHIP, and later statements (Devreese) of the Kadanoff mobility.
-            # It suggests that Kadanoff used the wrong identy for Nbar in Eqn. (23b) for
-            # the Γ₀ function, and should have used a version with the -1 to
-            # account for Bose / phonon statistics!
-            μ_Kadanoff_Devreese, μ_Kadanoff, rel_time = Kadanoff_mobility_lowT(v, w, α, ω, β) ./ mb
-            p["μD"][i, j] = μ_Kadanoff_Devreese
-            p["μK"][i, j] = μ_Kadanoff
-            p["τ"][i, j] = rel_time
-
-            # Print low-temperature Kadanoff mobility (both original and Devreese-corrected versions).
-            if verbose
-                println(io, "\e[KDevreese low-temp. mobility    | μD = ", μ_Kadanoff_Devreese)
-                println(io, "\e[KKadanoff low-temp. mobility    | μK = ", μ_Kadanoff)
-            end
-
-            #C alculates the DC mobility using Hellwarth et al. 1999 Eqn. (2).
-            # Directly performs contour integration in Feynman1962, for finite temperature DC mobility.
-            # Eqns. (2) and (1) are going back to the general (pre low-T limit) formulas in Feynman1962.  
-            # To evaluate these, you need to do the explicit contour integration to get the polaron self-energy.
-            # See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-            μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β) ./ mb
-            p["μH"][i, j] = μ_Hellwarth
-            p["μH0"][i, j] = μ_Hellwarth_b0
-
-            # Print Hellwarth mobility (both with b and b=0) and Kadanoff relaxation time.
-            if verbose
-                println(io, "\e[KHellwarth mobility             | μH = ", μ_Hellwarth)
-                println(io, "\e[KHellwarth mobility (b=0)       | μH0 = ", μ_Hellwarth_b0)
-                println(io, "\e[KKadanoff relaxation time       | τ = ", rel_time)
                 Ωprocess = 1    # Counter for Ωrange.
                 Tprocess += 1   # Increment Trange iterator.
             end
@@ -468,50 +509,69 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
             for k in eachindex(Ωrange)  # E-field frequencies loop. 
                 Ω = Ωrange[k] 
 
-                # Print E-field frequency.
+                if !iszero(Ω)
+
+                    # Print E-field frequency.
+                    if verbose
+                        println(io, "\e[K-----------------------------------------------------------------------")
+                        println(io, "\e[K         Frequency Response Information: [$(Ωprocess[]) / $(num_Ω) ($(round(Ωprocess[] / (num_Ω) * 100, digits=1)) %)]")
+                        println(io, "\e[K-----------------------------------------------------------------------")
+                        println(io, "\e[KElectric field frequency       | Ω = ", Ω)
+                    end
+
+                    # Calculate and store polaron memory functions (akin to self energy).
+                    χ = !kspace ? frohlich_memory_function(Ω, v, w, α, ω, β; dims = dims[d]) : frohlich_memory_function_k_space(Ω, v, w, α, ω, β; dims = dims[d])
+                    p["χ"][k, i, d, j] = χ
+
+                    # Print memory function.
+                    if verbose
+                        println(io, "\e[KMemory function                | χ = ", χ)
+                    end
+
+                    # Calculate and store polaron complex impedances.
+
+                    z = -(im * Ω + im * χ) .* mb
+                    p["z"][k, i, d, j] = z 
+
+                    # Print complex impedances.
+                    if verbose
+                        println(io, "\e[KComplex impedance              | z = ", z)
+                    end
+
+                    # Calculate and store polaron complex conductivities.
+                    σ = 1 / z
+                    p["σ"][k, i, d, j] = σ 
+
+                    # Print complex conductivities and show total algorithm progress.
+                    if verbose
+                        println(io, "\e[KComplex conductivity           | σ = ", σ)
+                    end
+
+                else
+
+                    # If zero frequency.
+                    p["χ"][k, i, d, j] = Inf + 0 * im
+                    p["z"][k, i, d, j] = 0 + im * Inf
+                    p["σ"][k, i, d, j] = 0 + 0 * im
+
+                end # End of zero frequency if statement.
+
                 if verbose
                     println(io, "\e[K-----------------------------------------------------------------------")
-                    println(io, "\e[K         Frequency Response Information: [$(Ωprocess[]) / $(num_Ω) ($(round(Ωprocess[] / (num_Ω) * 100, digits=1)) %)]")
-                    println(io, "\e[K-----------------------------------------------------------------------")
-                    println(io, "\e[KElectric field frequency       | Ω = ", Ω)
-                end
-
-                # Calculate and store polaron memory functions (akin to self energy).
-                χ = frohlich_memory_function(Ω, v, w, α, ω, β; dims = dims)
-                p["χ"][k, i, j] = χ
-
-                # Print memory function.
-                if verbose
-                    println(io, "\e[KMemory function                | χ = ", χ)
-                end
-
-                # Calculate and store polaron complex impedances.
-
-                z = -(im * Ω + im * χ) .* mb
-                p["z"][k, i, j] = z 
-
-                # Print complex impedances.
-                if verbose
-                    println(io, "\e[KComplex impedance              | z = ", z)
-                end
-
-                # Calculate and store polaron complex conductivities.
-                σ = 1 / z
-                p["σ"][k, i, j] = σ 
-
-                # Print complex conductivities and show total algorithm progress.
-                if verbose
-                    println(io, "\e[KComplex conductivity           | σ = ", σ)
-                    println(io, "\e[K-----------------------------------------------------------------------")
-                    println(io, "\e[K[Total Progress: $(process[]) / $(num_α * num_T * num_Ω) ($(round(process[] / (num_α * num_T * num_Ω) * 100, digits=1)) %)]")
-                    print(io, "\e[9F")
+                    println(io, "\e[K[Total Progress: $(process[]) / $(num_α * num_T * num_Ω * num_d) ($(round(process[] / (num_α * num_T * num_Ω * num_d) * 100, digits=1)) %)]")
                     Ωprocess += 1   # Increment Ωrange iterator.
                     process += 1    # Increment total iterator.
+                    print(io, "\e[2F")
                 end
+
+                if verbose && !iszero(Ω) print(io, "\e[7F") end
             end
-            if verbose print(io, "\e[26F") end   # Move up 26 lines and erase.
+            if verbose && !iszero(T) print(io, "\e[26F") end   # Move up 26 lines and erase.
         end 
-        if verbose print(io, "\e[27F") end   # Move up 26 lines and erase. 
+        if verbose print(io, "\e[15F") end   # Move up 15 lines and erase. 
+        end # End dimensions loop.
+
+        if verbose print(io, "\e[12F") end   # Move up 12 lines and erase. 
     end
     if verbose print("\e[?25h") end # Show cursor again.
 
@@ -567,28 +627,28 @@ function polaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses
     ]
 
     # Return Polaron type containing all generated data over any coupling strengths, temperatures and frequencies.
-    return Polaron(polaron_data...)
+    return FrohlichPolaron(polaron_data...)
 end
 
 """
 Single alpha parameter. polaron() expects alpha parameters to be in a Vector.
 """
-polaron(α::Real, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, verbose=false) = polaron([α], Trange, Ωrange; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, verbose=verbose)
+frohlichpolaron(α::Real, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron([α], Trange, Ωrange; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
 """
 No frequency input.
 """
-polaron(αrange, Trange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, verbose=false) = polaron(αrange, Trange, 1; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, verbose=verbose)
+frohlichpolaron(αrange, Trange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron(αrange, Trange, 0; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
 """
 No temperature input => 300 K.
 """
-polaron(αrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, verbose=false) = polaron(αrange, 300, 1; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, verbose=verbose)
+frohlichpolaron(αrange; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron(αrange, 0, 0; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
 """
 No input => α = 1
 """
-polaron(; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, verbose=false) = polaron(1, 300, 1; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, verbose=verbose)
+frohlichpolaron(; ω=1, ωeff=1, mb=1, β0=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron(1, 0, 0; ω=ω, ωeff=ωeff, mb=mb, β0=β0, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
 """
     polaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87, verbose=false)
@@ -596,7 +656,7 @@ Material specific constructors that use material specific parameters to paramete
 Material data is inputted through the `Material` type.
 Returns all data in either SI units or other common, suitable units otherwise.
 """
-function polaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87, dims=3, verbose=false)
+function frohlichpolaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false)
 
     # Show material data.
     if verbose
@@ -609,14 +669,14 @@ function polaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87
     mb = material.mb
 
     # Generate polaron data from the arbitrary model constructor.
-    p = polaron(material.α', TΩrange...; ω=phonon_freqs, ωeff=phonon_eff_freq, mb=mb, β0=ħ/kB*1e12*2π, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, verbose=verbose)
+    p = frohlichpolaron(material.α', TΩrange...; ω=phonon_freqs, ωeff=phonon_eff_freq, mb=mb, β0=ħ/kB*1e12*2π, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
     # Return material-specific, unitful Polaron type.
     return p
 end
 
 # Broadcast Polaron data.
-function Base.show(io::IO, ::MIME"text/plain", x::Polaron)
+function Base.show(io::IO, ::MIME"text/plain", x::FrohlichPolaron)
 
     io_lim = IOContext(io, :limit => true, :compact => true)
 
@@ -694,13 +754,13 @@ function Base.show(io::IO, ::MIME"text/plain", x::Polaron)
 end
 
 """
-    save_polaron(p::Polaron, prefix)
+    save_polaron(p::FrohlichPolaron, prefix)
 
 Saves data from 'polaron' into file "prefix".
 This is a .jdl file for storing the polaron data whilst preserving types. Allows for saving multidimensional arrays that sometimes arise in the polaron data.
 Each parameter in the NewPolaron type is saved as a dictionary entry. E.g. NewPolaron.α is saved under JLD.load("prefix.jld")["alpha"].
 """
-function save_polaron(polaron::Polaron, prefix)
+function save_frohlich_polaron(polaron::FrohlichPolaron, prefix)
 
     println("Saving polaron data to $prefix.jld ...")
 
@@ -758,19 +818,17 @@ function save_polaron(polaron::Polaron, prefix)
 end
 
 """
-    load_polaron(p::NewPolaron, prefix)
+    load_polaron(p::FrohlichPolaron, prefix)
 
 Loads data from file "polaron_file_path" into a NewPolaron type.
 """
-function load_polaron(polaron_file_path)
+function load_frohlich_polaron(polaron_file_path)
 
     println("Loading polaron data from $polaron_file_path ...")
 
     data = JLD.load("$polaron_file_path")
 
-    println(typeof(data["alpha"]))
-
-    polaron = Polaron(
+    polaron = FrohlichPolaron(
         data["alpha"],
         data["alpha eff"],
         data["temperature"],

@@ -1,4 +1,5 @@
 # Material.jl
+# Calculates inpit variables for the polaron theories from material data and saves the material as a Material type.
 
 """
     mutable struct Material
