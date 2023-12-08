@@ -215,6 +215,32 @@ function addunits!(polaron::Polaron)
     polaron.σ = polaron.σ .* punit(u"S")
 end
 
+function addholsteinunits!(polaron::Holstein)
+    polaron.ω = polaron.ω .* ω0_pu
+    polaron.F0 = polaron.F0 .* E0_pu
+    polaron.K0 = polaron.K0 .* E0_pu
+    polaron.P0 = polaron.P0 .* E0_pu
+    polaron.κ0 = polaron.κ0 .* m0_pu * ω0_pu^2
+    polaron.M0 = polaron.M0 .* m0_pu
+    polaron.M0a = polaron.M0a .* m0_pu
+    polaron.M0r = polaron.M0r .* m0_pu
+    polaron.R0 = polaron.R0 .* a0_pu
+    polaron.T = polaron.T .* T0_pu
+    polaron.β = polaron.β .* β0_pu
+    polaron.F = polaron.F .* E0_pu
+    polaron.K = polaron.K .* E0_pu
+    polaron.P = polaron.P .* E0_pu
+    polaron.κ = polaron.κ .* m0_pu * ω0_pu^2
+    polaron.M = polaron.M .* m0_pu
+    polaron.Ma = polaron.Ma .* m0_pu
+    polaron.Mr = polaron.Mr .* m0_pu
+    polaron.R = polaron.R .* a0_pu
+    polaron.μ = polaron.μ .* μ0_pu
+    polaron.χ = polaron.χ .* ω0_pu
+    polaron.z = polaron.z .* punit(u"Ω")
+    polaron.σ = polaron.σ .* punit(u"S")
+end
+
 """
     addunits!(polaron::Material)
 """
