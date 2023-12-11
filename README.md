@@ -331,7 +331,7 @@ To calculate properties for a small Holstein-like polaron, use the `holstenpolar
 
 For example:
 ```
-julia> holstein_polaron = holsteinpolaron(1:4, 1:400, 0:0.1:10; dims = [1, 2, 3], verbose = true)
+julia> holstein_polaron = holsteinpolaron(1:3, [0, 300], [0, 1]; dims = [1, 2, 3], verbose = true)
 
 -----------------------------------------------------------------------
                          Polaron Information:                          
