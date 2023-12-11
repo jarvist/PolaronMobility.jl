@@ -151,9 +151,13 @@ println(result)
 This example demonstrates how to use the `general_memory_function` to calculate the memory function for a given frequency `Ω` and structure factor function `structure_factor`. The `limits` argument is optional and specifies the lower and upper limits of integration. The result is then printed.
 """
 function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
+    if iszero(Ω)
+      return polaron_memory_function(structure_factor; limits = limits)
+    end
     integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2])
     return integral
 end
+
 
 """
     general_memory_function(structure_factor; limits = [0, Inf])
@@ -164,7 +168,7 @@ Calculate the integral of a given function `structure_factor` using the `quadgk`
 - `structure_factor`: A function that takes a single argument `t` and returns a value.
 - `limits`: An optional array specifying the lower and upper limits of integration. Default is `[0, Inf]`.
 
-## Returns
+## Returnstyp
 - `integral`: The result of the numerical integration of the function `structure_factor` over the specified limits.
 
 ## Example

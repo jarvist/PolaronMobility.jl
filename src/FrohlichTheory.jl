@@ -130,6 +130,8 @@ function frohlich_coupling(k, α, ω; mb = 1, dims = 3)
     ω^2 * α * r_p * gamma((dims - 1) / 2) * (2√π / k)^(dims - 1)
 end
 
+frohlich_coupling(k, α::Vector, ω::Vector; mb = 1, dims = 3) = sum(frohlich_coupling(k, α[j], ω[j]; mb = mb, dims = dims) for j in eachindex(α))
+
 
 """
     frohlich_interaction_energy(v, w, α, ωβ...)
@@ -146,9 +148,9 @@ function frohlich_interaction_energy(v, w, α, ωβ...; dims = 3)
     return coupling * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * integral
 end
 
-frohlich_interaction_energy(v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_interaction_energy.(v, w, α, ω; dims = dims))
+frohlich_interaction_energy(v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_interaction_energy(v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
 
-frohlich_interaction_energy(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(frohlich_interaction_energy.(v, w, α, ω, β; dims = dims))
+frohlich_interaction_energy(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(frohlich_interaction_energy(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
 
 """
     frohlich_interaction_energy_k_space(v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
@@ -308,10 +310,20 @@ function frohlich_structure_factor_k_space(t, v, w, α, ωβ...; limits = [0, In
 	return 2 / dims * phonon_propagator(im * t, ω, β) * integral
 end
 
+frohlich_structure_factor_k_space(t, v, w, α::Vector, ω::Vector; limits = [0, Inf], dims = 3) = sum(frohlich_structure_factor_k_space(t, v, w, α[j], ω[j]; limits = limits, dims = dims) for j in eachindex(α))
+
+frohlich_structure_factor_k_space(t, v, w, α::Vector, ω::Vector, β; limits = [0, Inf], dims = 3) = sum(frohlich_structure_factor_k_space(t, v, w, α[j], ω[j], β; limits = limits, dims = dims) for j in eachindex(α))
+
 function frohlich_memory_function(Ω, v, w, α, ωβ...; dims = 3)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ωβ...; dims = dims)
-    return polaron_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e5])
+    return polaron_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e4])
 end
+
+frohlich_memory_function(Ω, v::Vector, w::Vector, α, ωβ...; dims = 3) = sum(frohlich_memory_function.(Ω, v, w, α, ωβ...; dims = dims))
+
+frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+
+frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
 
 """
     frohlich_memory_function_k_space(Ω, v, w, α, ω, β; rₚ = 1, limits = [0, Inf])
@@ -335,10 +347,6 @@ function frohlich_memory_function_k_space(Ω, v, w, α, ωβ...; dims = 3, limit
 	structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ωβ...; dims = dims, limits = limits)
 	return polaron_memory_function(Ω, structure_factor)
 end
-
-frohlich_memory_function(Ω, v::Vector, w::Vector, α, ωβ...) = sum(frohlich_memory_function.(Ω, v, w, α, ωβ...))
-
-frohlich_memory_function(Ω, v, w, α::Vector, ωβ...) = sum(frohlich_memory_function.(Ω, v, w, α, ωβ...))
 
 
 """
@@ -404,7 +412,7 @@ function inverse_frohlich_mobility(v, w, α, ω, β; dims = 3)
         return zero(β)
     end
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β; dims = dims)
-    return abs(imag(polaron_memory_function(structure_factor; limits = [0, 1e5])))
+    return abs(imag(polaron_memory_function(structure_factor; limits = [0, 1e4])))
 end
 
 """
@@ -412,7 +420,7 @@ end
 
 inverse of the polaron mobility, but for multiple phonon modes.
 """
-inverse_frohlich_mobility(v, w, α::Vector, ω::Vector, β) = sum(inverse_frohlich_mobility.(v, w, α, ω, β))
+inverse_frohlich_mobility(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(inverse_frohlich_mobility(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
 
 """
     polaron_mobility(v, w, α, ω, β)
@@ -421,7 +429,9 @@ The polaron mobility.
 
 See also [`inverse_polaron_mobility`](@ref)
 """
-frohlich_mobility(v, w, α, ω, β; dims = 3) = 1 ./ inverse_frohlich_mobility(v, w, α, ω, β; dims = dims)
+frohlich_mobility(v, w, α, ω, β; dims = 3) = 1 / inverse_frohlich_mobility(v, w, α, ω, β; dims = dims)
+frohlich_mobility(v, w, α, ω; dims = 3) = reduce_array(repeat([Inf], length(α)))
+
 
 """
     frohlich_mobility_k_space(v, w, α, ω, β; rₚ = 1, limits = [0, Inf])

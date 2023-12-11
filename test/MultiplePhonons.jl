@@ -81,10 +81,12 @@
 
     # Variations
 
-    v_0, w_0, E_0 = feynmanvw(3.1, 3.0, α, ω) # Athermal
+    athermal_energy(v, w) = frohlich_energy(v, w, α, ω)
+    v_0, w_0, E_0, A_0, B_0, C_0 = vw_variation(athermal_energy, 4, 3) # Athermal
 
     β = ħ / (kB * 300) * 1e12
-    v, w, E = feynmanvw(v_0, w_0, α, ω, β) # Thermal
+    thermal_energy(v, w) = frohlich_energy(v, w, α, ω, β)
+    v, w, E = vw_variation(thermal_energy, v_0, w_0) # Thermal
 
     @testset "Multiple mode variations" begin
 
@@ -135,9 +137,9 @@
 
     @testset "Multiple mode impedence" begin
 
-        @test Z_dc ≈ 1093.7387757139788 + 0.0im rtol = 1e-3
+        @test Z_dc ≈ 91.38457766169273 + 0.0im rtol = 1e-3
 
-        @test Z ≈ 920.0324913380497 + 265.9534644423242im rtol = 1e-3
+        @test Z ≈ 76.18909903384355 - 23.457492887508455im rtol = 1e-3
 
         println("\nComplex Impedence:")
         println("DC limit: $Z_dc")
@@ -152,9 +154,9 @@
 
     @testset "Multiple mode conductivity" begin
 
-        @test σ_dc ≈ 0.0009142950969688468 - 0.0im rtol = 1e-3
+        @test σ_dc ≈ 0.0109427654598571 - 0.0im rtol = 1e-3
 
-        @test σ ≈ 0.0010030980034446489 - 0.00028996518242882383im rtol = 1e-3
+        @test σ ≈ 0.011988781430646566 + 0.003691167879729921im rtol = 1e-3
 
         println("\nComplex Conductivity:")
         println("DC limit: $σ_dc")
@@ -174,7 +176,7 @@
 
         MAPIs = material(ϵ_optic, ϵ_static, m_eff, Hellwarth_B_freq)
 
-        singlemode_polaron = polaron(MAPIs, [0, 300], 3, verbose = true)
+        singlemode_polaron = frohlichpolaron(MAPIs, [0, 300], 3, verbose = true)
 
         display(singlemode_polaron)
 
@@ -182,9 +184,9 @@
         @test singlemode_polaron.v ≈ [3.3086321909253815, 19.847527941504232] rtol = 1e-3
         @test singlemode_polaron.w ≈ [2.6634018089397014, 16.948211346396874] rtol = 1e-3
         @test singlemode_polaron.F ≈ [-5.571343967852482, -8.585426348039439] rtol = 1e-3
-        @test singlemode_polaron.χ ≈ [4.094698176165903 + 6.352911164626434im, -5.951342124457914 + 37.38269630836043im] rtol = 1e-3
-        @test singlemode_polaron.z ≈ [0.762349339755172 - 0.8513637811399084im, 4.485923557003251 + 0.35416105493494965im] rtol = 1e-3
-        @test singlemode_polaron.σ ≈ [0.5837298664265945 + 0.6518881047432135im, 0.22153868350702938 - 0.017490350172655114im] rtol = 1e-3
+        @test singlemode_polaron.χ ≈ [1.8185958394302872 + 2.8215456392868816im, -2.6431955087396575 + 16.602938172029397im] rtol = 1e-3
+        @test singlemode_polaron.z ≈ [0.3385854767144258 - 0.5782315007316344im, 1.9923525806435276 - 0.0428165389512411im] rtol = 1e-3
+        @test singlemode_polaron.σ ≈ [0.7541017043762221 + 1.287844252674551im, 0.5016874943626112 + 0.010781486345548893im] rtol = 1e-3
         @test singlemode_polaron.μ ≈ [Inf, 0.4873858565327472] rtol = 1e-3
     end
 
@@ -194,7 +196,7 @@
 
         MAPIm = material(ϵ_optic, ϵ_static, m_eff, phonon_freq, ir_activity, volume)
 
-        multimode_polaron = polaron(MAPIm, [0, 300], 3, verbose = true)
+        multimode_polaron = frohlichpolaron(MAPIm, [0, 300], 3, verbose = true)
 
         display(multimode_polaron)
 
@@ -203,9 +205,9 @@
         @test multimode_polaron.v ≈ [3.292268504574272, 35.19207894065109] rtol = 1e-3
         @test multimode_polaron.w ≈ [2.679193078382525, 32.45420279136673] rtol = 1e-3
         @test multimode_polaron.F ≈ [-4.719036156508013, -10.357755243151143] rtol = 1e-3
-        @test multimode_polaron.χ ≈ [2.6131138519972144 + 4.1506105216423395im, -3.92930949698075 + 26.934268141801986im] rtol = 1e-3
-        @test multimode_polaron.z ≈ [0.49807326259708073 - 0.6735736622396657im, 3.2321121770162384 + 0.11151713963768997im] rtol = 1e-3
-        @test multimode_polaron.σ ≈ [0.7097300582545426 + 0.9598095510033618im, 0.30902732110818754 - 0.010662328852613295im] rtol = 1e-3
+        @test multimode_polaron.χ ≈ [1.0521976989565067 + 2.089861861859462im, -2.1193321531426945 + 14.077489512387219im] rtol = 1e-3
+        @test multimode_polaron.z ≈ [0.2507834234231354 - 0.4862637238747808im, 1.6892987414864662 - 0.10568014162287666im] rtol = 1e-3
+        @test multimode_polaron.σ ≈ [0.8377746271072964 + 1.624427182564005im, 0.5896539523503038 + 0.036887917845742565im] rtol = 1e-3
         @test multimode_polaron.μ ≈ [Inf, 0.5729621483218189] rtol = 1e-3
     end
 

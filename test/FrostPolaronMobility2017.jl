@@ -13,8 +13,8 @@
     MAPIe = material(ϵ_optic, ϵ_static, electron_m_eff, phonon_freq)
     MAPIh = material(ϵ_optic, ϵ_static, hole_m_eff, phonon_freq)
 
-    MAPIe_polaron = polaron(MAPIe, temperature)
-    MAPIh_polaron = polaron(MAPIh, temperature)
+    MAPIe_polaron = frohlichpolaron(MAPIe, temperature)
+    MAPIh_polaron = frohlichpolaron(MAPIh, temperature)
 
     addunits!(MAPIe_polaron)
     addunits!(MAPIh_polaron)
