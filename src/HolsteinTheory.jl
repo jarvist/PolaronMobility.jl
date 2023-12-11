@@ -27,6 +27,8 @@ function holstein_coupling(k, α, ω; dims = 3)
     2 * α * ω * dims
 end
 
+holstein_coupling(k, α::Vector, ω::Vector; dims = 3) = sum(holstein_coupling(k, α[j], ω[j]) for j in eachindex(α))
+
 """
     holstein_interaction_energy(v, w, α, ωβ...; dims = 3)
 
@@ -65,6 +67,9 @@ function holstein_interaction_energy(v, w, α, ωβ...; dims = 3)
     return integral * coupling / (4π)^(dims / 2)
 end
 
+holstein_interaction_energy(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+holstein_interaction_energy(v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_interaction_energy(v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
+
 """
     holstein_interaction_energy_k_space(v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
 
@@ -94,6 +99,9 @@ function holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = 3)
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
     return integral
 end
+
+holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
 
 """
 	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
@@ -221,6 +229,9 @@ function holstein_memory_function(Ω, v, w, α, ωβ...; dims = 3)
 	return polaron_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e5])
 end
 
+holstein_memory_function(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+holstein_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
+
 """
     holstein_memory_function_k_space(Ω, v, w, α, ωβ...; dims = 3)
 
@@ -245,6 +256,9 @@ function holstein_memory_function_k_space(Ω, v, w, α, ωβ...; dims = 3)
 	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ωβ...; dims = dims)
 	 return general_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e5])
 end
+
+holstein_memory_function_k_space(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+holstein_memory_function_k_space(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
 
 """
     holstein_mobility(v, w, α, ω, β; dims = 3)
@@ -276,13 +290,26 @@ println(result)
 ```
 This code calculates the mobility using the given parameters and prints the result.
 """
-function holstein_mobility(v, w, α, ω, β; dims = 3)
+function inverse_holstein_mobility(v, w, α, ω, β; dims = 3)
     if β == Inf
         return Inf
     end
     structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
-    abs(1 / imag(polaron_memory_function(structure_factor)))
+    return abs(imag(polaron_memory_function(structure_factor; limits = [0, 1e4])))
 end
+
+inverse_holstein_mobility(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(inverse_holstein_mobility(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+
+"""
+    polaron_mobility(v, w, α, ω, β)
+
+The polaron mobility.
+
+See also [`inverse_polaron_mobility`](@ref)
+"""
+holstein_mobility(v, w, α, ω, β; dims = 3) = 1 / inverse_holstein_mobility(v, w, α, ω, β; dims = dims)
+holstein_mobility(v, w, α, ω; dims = 3) = reduce_array(repeat([Inf], length(α)))
+
 
 """
     holstein_mobility_k_space(v, w, α, ω, β; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
@@ -304,13 +331,16 @@ Calculate the DC mobility in k-space for a Holstein polaron system at finite tem
 ## Returns
 The DC mobility in k-space for the Holstein polaron system at finite temperature.
 """
-function holstein_mobility_k_space(v, w, α, ω, β; dims = 3)
+function inverse_holstein_mobility_k_space(v, w, α, ω, β; dims = 3)
     if β == Inf
         return Inf
     end
     structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims)
-    1 / imag(general_memory_function(structure_factor))
+    return abs(imag(polaron_memory_function(structure_factor; limits = [0, 1e4])))
 end
+
+inverse_holstein_mobility_k_space(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(inverse_holstein_mobility_k_space(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+
 
 function holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = 3)
     -im * (Ω - holstein_memory_function(v, w, α, ωβ...; dims = dims))
