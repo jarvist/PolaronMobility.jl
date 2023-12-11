@@ -70,8 +70,8 @@ Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1
 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
-function D(τ, v::Vector, w::Vector, ω, β)
-    return τ * (1 - τ / ω / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * ω * β) - exp(-v[i] * τ) - exp(v[i] * (τ - ω * β))) / (v[i] * (1 - exp(-v[i] * ω * β))) - τ * (1 - τ / ω / β)) for i in eachindex(v))
+function polaron_propagator(τ, v::Vector, w::Vector, ω, β)
+    return τ * (1 - τ / ω / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * ω * β) - exp(-v[i] * τ) - exp(v[i] * (τ - ω * β))) / (v[i] * (1 - exp(-v[i] * ω * β))) - τ * (1 - τ / ω / β)) for i in eachindex(v)) + eps(Float64)
 end
 
 """
@@ -84,7 +84,7 @@ Calculates the recoil function at zero-temperature.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function D(τ, v::Vector, w::Vector)
+function polaron_propagator(τ, v::Vector, w::Vector)
     return τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))
 end
 

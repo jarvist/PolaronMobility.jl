@@ -181,45 +181,6 @@ function frohlich_interaction_energy_k_space(v, w, α, ωβ...; limits = [0, Inf
 end
 
 """
-    B(v, w, α, β)
-
-Generalisation of the B function from Eqn. (62c) in Hellwarth et al. 1999. This is the expected value of the exact action <S_j> taken w.r.t trial action, given for the 'jth' phonon mode.
-
-Required for calculating the polaron free energy.
-
-# Arguments
-- `v::Vector{Float64}`: is a vector of the v variational parameters.
-- `w::Vector{Float64}`: is a vector of the w variational parameters.
-- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
-- `β::Union{Float64, Vector{Float64}}`: is the reduced thermodynamic temperature ħωⱼ/(kT) associated with the 'jth' phonon mode.
-
-See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
-"""
-function B(v::Vector, w::Vector, α, ω, β)
-    B_integrand(τ) = cosh(τ - ω * β / 2) / sqrt(abs(D(τ, v, w, ω, β)))
-    return α / (√π * sinh(ω * β / 2)) * quadgk(τ -> B_integrand(τ * ω * β / 2), 0.0, 1.0)[1] * ω^2 * β / 2
-end
-
-B(v::Vector, w::Vector, α::Vector, ω::Vector, β) = sum(B(v, w, α[i], ω[i], β) for i in eachindex(ω))
-
-"""
-    B(v, w, α; rtol = 1e-3)
-
-Calculates `B(v, w, α, β)` but at zero-temperature, `β = Inf`.
-
-# Arguments
-- `v::Vector{Float64}`: is a vector of the v variational parameters.
-- `w::Vector{Float64}`: is a vector of the w variational parameters.
-- `α::Union{Float64, Vector{Float64}}`: is the partial dielectric electron-phonon coupling parameter for the 'jth' phonon mode.  
-"""
-function B(v::Vector, w::Vector, α, ω)
-    B_integrand(τ) = exp(-abs(τ)) / sqrt(abs(D(abs(τ), v, w)))
-    return α / √π * quadgk(τ -> B_integrand(τ), 0, Inf)[1] * ω
-end
-
-B(v::Vector, w::Vector, α::Vector, ω::Vector) = sum(B(v, w, α[i], ω[i]) for i in eachindex(ω))
-
-"""
     F(v, w, α, ω, β)
 
 Calculates the Helmholtz free energy of the polaron for a material with multiple phonon branches. 
