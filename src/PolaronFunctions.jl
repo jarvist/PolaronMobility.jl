@@ -121,6 +121,50 @@ end
 
 vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [1e4, 1e4])
 
+function vw_variation(energy, initial_v::Vector, initial_w::Vector; lower = [0, 0], upper = [1e4, 1e4], warn = false)
+
+  if length(initial_v) != length(initial_w)
+      return error("The number of variational parameters v & w must be equal.")
+  end
+
+  N_params = length(initial_v)
+
+  Δv = initial_v .- initial_w
+  initial = vcat(Δv .+ repeat([eps(Float64)], N_params), initial_w)
+
+  # Limits of the optimisation.
+  lower = vcat(fill(lower, N_params)...)
+  upper = vcat(fill(upper, N_params)...)
+
+  # The multiple phonon mode free energy function to minimise.
+  f(x) = energy([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params])[1]
+
+  # Use a more efficient optimization algorithm or library to optimise v and w to minimise enthalpy.
+  solution = Optim.optimize(
+    Optim.OnceDifferentiable(f, initial; autodiff=:forward),
+    lower,
+    upper,
+    initial,
+    Fminbox(BFGS()),
+    # Optim.Options(show_trace = false, g_tol = 1e-12)
+  )
+
+  # Extract the v and w parameters that minimised the free energy.
+  var_params = Optim.minimizer(solution)
+
+  # Separate the v and w parameters into one-dimensional arrays (vectors).
+  Δv = [var_params[2*n-1] for n in 1:N_params]
+  w = [var_params[2*n] for n in 1:N_params]
+  energy_minimized = energy(Δv .+ w, w)
+
+  if !Optim.converged(solution) && warn
+        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $energy_minimized"
+  end
+
+  # Return the variational parameters that minimised the free energy.
+  return Δv .+ w, w, energy_minimized...
+end
+
 """
     polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
 

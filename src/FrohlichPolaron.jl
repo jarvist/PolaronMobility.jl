@@ -307,7 +307,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-        M_reduced_gs = (v_gs .^2 .- w_gs .^2) / v_gs .^ 2
+        M_reduced_gs = (v_gs .^2 .- w_gs .^2) ./ v_gs .^ 2
         p["M0r"][d, j, :] .= M_reduced_gs
 
         # Print athermal reduced mass.
@@ -402,7 +402,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 end
 
                 # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-                M_reduced = (v .^2 .- w .^2) / v .^ 2
+                M_reduced = (v .^2 .- w .^2) ./ v .^ 2
                 p["Mr"][i, d, j, :] .= M_reduced
             
                 # Print redcued masses.
@@ -436,7 +436,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
 
                 # FHIP low-temperature mobility, final result of Feynman1962.
                 # Eqn. (1.60) in Devreese2016 page 36; 6th Edition of Frohlich polaron notes (ArXiv).
-                μ_FHIP = FHIP_mobility_lowT(v, w, α, ω, β) / mb
+                μ_FHIP = FHIP_mobility_lowT(v[1], w[1], α, ω, β) / mb
                 p["μFHIP"][i, j] = μ_FHIP
                 
                 # Print low-temperature FHIP mobility.
@@ -451,7 +451,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 # It suggests that Kadanoff used the wrong identy for Nbar in Eqn. (23b) for
                 # the Γ₀ function, and should have used a version with the -1 to
                 # account for Bose / phonon statistics!
-                μ_Kadanoff_Devreese, μ_Kadanoff, rel_time = Kadanoff_mobility_lowT(v, w, α, ω, β) ./ mb
+                μ_Kadanoff_Devreese, μ_Kadanoff, rel_time = Kadanoff_mobility_lowT(v[1], w[1], α, ω, β) ./ mb
                 p["μD"][i, j] = μ_Kadanoff_Devreese
                 p["μK"][i, j] = μ_Kadanoff
                 p["τ"][i, j] = rel_time
@@ -467,7 +467,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 # Eqns. (2) and (1) are going back to the general (pre low-T limit) formulas in Feynman1962.  
                 # To evaluate these, you need to do the explicit contour integration to get the polaron self-energy.
                 # See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
-                μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v, w, α, ω, β) ./ mb
+                μ_Hellwarth, μ_Hellwarth_b0 = Hellwarth_mobility(v[1], w[1], α, ω, β) ./ mb
                 p["μH"][i, j] = μ_Hellwarth
                 p["μH0"][i, j] = μ_Hellwarth_b0
             

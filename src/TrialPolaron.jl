@@ -27,7 +27,7 @@ println(result)
 This example calculates the polaron propagator for given values of τ, v, w, and β. The result is then printed.
 """
 function polaron_propagator(τ, v, w, ω, β)
-    (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β * ω - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * (1 - τ / β / ω) + eps(Float64)
+    abs((v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β * ω - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * (1 - τ / β / ω)) + eps(Float64)
 end
 
 """
@@ -54,7 +54,7 @@ println(result)
 This example calculates the polaron propagator for the given values of τ, v, and w. The result is then printed.
 """
 function polaron_propagator(τ, v, w, ω)
-    w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) + eps(Float64)
+    abs(w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ))) + eps(Float64)
 end
 
 """
@@ -71,7 +71,7 @@ Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
 function polaron_propagator(τ, v::Vector, w::Vector, ω, β)
-    return τ * (1 - τ / ω / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * ω * β) - exp(-v[i] * τ) - exp(v[i] * (τ - ω * β))) / (v[i] * (1 - exp(-v[i] * ω * β))) - τ * (1 - τ / ω / β)) for i in eachindex(v)) + eps(Float64)
+    return abs(τ * (1 - τ / ω / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * ω * β) - exp(-v[i] * τ) - exp(v[i] * (τ - ω * β))) / (v[i] * (1 - exp(-v[i] * ω * β))) - τ * (1 - τ / ω / β)) for i in eachindex(v))) + eps(Float64)
 end
 
 """
@@ -84,8 +84,8 @@ Calculates the recoil function at zero-temperature.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function polaron_propagator(τ, v::Vector, w::Vector)
-    return τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))
+function polaron_propagator(τ, v::Vector, w::Vector, ω)
+    return abs(τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))) + eps(Float64)
 end
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
