@@ -327,7 +327,7 @@ Note that whilst the code is capable of finite temperatures, more variational pa
 
 ## The Holstein polaron model
 
-To calculate properties for a small Holstein-like polaron, use the `holstenpolaron()` function. It accepts all the same arguements as for the previous case with Frohlich.
+To calculate properties for a small Holstein-like polaron, use the `holstenpolaron()` function. It accepts all the same arguements as for the previous case with Frohlich, but will use the Holstein model instead and store the information in the `Holstein` type.
 
 For example:
 ```
@@ -388,6 +388,86 @@ Using `addunits!(holstein_polaron)` will then add the specific Holstien polaron 
 ## General electron-phonon matrices and k-space integration
 
 TBC
+
+## Saving and loading polaron data
+
+The `Frohlich` and `Holstein` polaron types can be saved as `.jld` files and loaded back into Julia.
+For example:
+
+```
+julia> save_frohlich_polaron(MAPIe_polaron, "MAPIe_polaron")
+Saving polaron data to MAPIe_polaron.jld ...
+... Polaron data saved.
+```
+
+```
+julia> MAPIe_polaron = load_frohlich_polaron("MAPIe_polaron.jld")
+Loading polaron data from MAPIe_polaron.jld ...
+... Polaron loaded.
+-----------------------------------------------------------------------
+                         Polaron Information:                          
+-----------------------------------------------------------------------
+Phonon frequencies             | ωeff = 2.25 | ω = 2.25
+Fröhlich coupling              | αeff = 2.39394 | α = 2.39394
+Number of spatial dimensions   | d = 3
+Small α→0 energy               | Fs = -2.46469
+Large α→∞ energy               | Fl = -3.43751
+Small α→0 fictitious mass      | Ms = 0.542264
+Large α→∞ fictitious mass      | Ml = 0.0666023
+Small α→0 polaron radius       | Rs = 1.67917
+Large α→∞ polaron radius       | Rl = 9.00108
+Large α→∞ FC peak freq.        | ΩFC = 0.810764
+-----------------------------------------------------------------------
+                     Zero Temperature Information:                     
+-----------------------------------------------------------------------
+Variational parameter          | v0 = 3.30877
+Variational parameter          | w0 = 2.66327
+Energy                         | E0 = -5.56947
+Electron energy                | A0 = -2.17859
+Interaction energy             | B0 = 5.78198
+Trial energy                   | C0 = 1.96608
+Fictitious spring constant     | κ0 = 3.855
+Fictitious mass                | M0 = 0.543495
+Fictitious mass (asymptotic)   | M0a = 1.24237
+Reduced mass                   | M0r = 0.35212
+Polaron radius                 | R0 = 0.817278
+-----------------------------------------------------------------------
+                    Finite Temperature Information:                    
+-----------------------------------------------------------------------
+Temperatures                   | T = 300
+Reduced thermodynamic          | β = 0.159975
+Variational parameter          | v = 19.8612
+Variational parameter          | w = 16.9599
+Free energy                    | F = -8.59191
+Electron energy                | A = -14.5096
+Interaction energy             | B = 16.5498
+Trial energy                   | C = 6.55175
+Fictitious spring constant     | κ = 106.831
+Fictitious mass                | M = 0.371408
+Fictitious mass (asymptotic)   | Ma = 1.17107
+Reduced mass                   | Mr = 0.270822
+Polaron radius                 | R = 0.0722548
+-----------------------------------------------------------------------
+                      DC Mobility Information:                         
+-----------------------------------------------------------------------
+Finite temperature mobility    | μ = 0.487357
+FHIP low-temp. mobility        | μFHIP = 2.93118
+Devreese low-temp. mobility    | μD = 0.703373
+Kadanoff low-temp. mobility    | μK = 0.703373
+Hellwarth mobility             | μH = 1.09655
+Hellwarth mobility (b=0)       | μH0 = 1.09824
+Kadanoff relaxation time       | τ = 0.964611
+-----------------------------------------------------------------------
+                  Frequency Response Information:                      
+-----------------------------------------------------------------------
+Electric field frequency       | Ω = 0
+Memory function                | χ = Inf+0.0im
+Complex impedance              | z = 0.0+Inf*im
+Complex conductivity           | σ = 0.0+0.0im
+-----------------------------------------------------------------------
+```
+
+To do the same for a Holstein polaron use `save_holstein_polaron` and `load_holstein_polaron`.
 
 Further details in the
 [documentation](https://jarvist.github.io/PolaronMobility.jl/).
