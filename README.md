@@ -321,7 +321,7 @@ Polaron radius                 | R0 = [1.48402, 0.672612]
 -----------------------------------------------------------------------
 ```
 
-which gives a (polaron units) ground-state energy of `-5.57292` compared to the previous predicti `-5.56947`.
+which gives a (polaron units) ground-state energy of `-5.57292` compared to the previous prediction `-5.56947`.
 
 Note that whilst the code is capable of finite temperatures, more variational parameters and multiple modes all at once - the resultant energy landscape is difficult to optimise on and find converged results and requires well informed initial guesses to arrive at a correct solution.
 
