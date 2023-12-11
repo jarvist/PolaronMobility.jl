@@ -161,10 +161,16 @@ julia> MAPIe_polaron.μ
 ```
 
 All the values above are given in "polaron" units. We can convert to a specific unit using Unitful.
-For example, to obtain the MAPIe polaron mobility in units of cm^2/V/s:
+For example, to obtain the MAPIe polaron ground-state energy (meV), room-temperature free energy (meV) and mobility (cm^2/V/s):
 ```
+julia> MAPIe_polaron.F0 |> u"meV"
+-23.03349215713356 meV
+
+julia> MAPIe_polaron.F |> u"meV"
+-35.5332946810453 meV
+
 julia> MAPIe_polaron.μ |> u"cm^2/V/s"
-136.42332121123798 cm² s⁻¹ V⁻¹
+136.42332082324646 cm² s⁻¹ V⁻¹
 ```
 
 The `frohlichpolaron` method can generally accept a range of α electron-phonon coupling parameters, a range of temperatures for finite temperature properties such as free energy and mobility, and range of Electric Field frequencies for calculating dynamical properties such as the complex conductivity.
@@ -278,6 +284,18 @@ Hellwarth mobility             | μH = 0.0360092
 Hellwarth mobility (b=0)       | μH0 = 0.0359907
 Kadanoff relaxation time       | τ = 0.0572674
 -----------------------------------------------------------------------
+```
+
+Using Unitful we then get the following energies and mobility:
+```
+julia> MAPIe_polaron.F0 |> u"meV"
+-19.516365044323575 meV
+
+julia> MAPIe_polaron.F |> u"meV"
+-42.83622939936868 meV
+
+julia> MAPIe_polaron.μ |> u"cm^2/V/s"
+160.38638000423998 cm² s⁻¹ V⁻¹
 ```
 
 ## Multiple variational parameters
