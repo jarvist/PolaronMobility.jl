@@ -24,10 +24,10 @@ Expected Output:
 6.0
 """
 function holstein_coupling(k, α, ω; dims = 3)
-    2 * α * ω * dims
+    2 * α * dims / ω
 end
 
-holstein_coupling(k, α::Vector, ω::Vector; dims = 3) = sum(holstein_coupling(k, α[j], ω[j]) for j in eachindex(α))
+holstein_coupling(k, α::Vector, ω::Vector; dims = 3) = sum(holstein_coupling(k, α[j], ω[j]; dims = dims) for j in eachindex(α))
 
 """
     holstein_interaction_energy(v, w, α, ωβ...; dims = 3)
@@ -60,11 +60,11 @@ This example calculates the electron-phonon interaction energy for given values 
 function holstein_interaction_energy(v, w, α, ωβ...; dims = 3)
     momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
     coupling = holstein_coupling(1, α, ωβ[1]; dims = dims)
-    propagator(τ) = polaron_propagator(τ, v, w, ωβ...) / 2
+    propagator(τ) = polaron_propagator(τ, v, w, ωβ...) * 2 / ωβ[1]
     integrand(τ) = phonon_propagator(τ, ωβ...) * P(dims, momentum_cutoff^2 * propagator(τ)) / (propagator(τ))^(dims/2)
-    upper_limit = length(ωβ) == 1 ? Inf : prod(ωβ) / 2
+    upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
-    return integral * coupling / (4π)^(dims / 2)
+    return integral * coupling / (4π)^(dims / 2) * dims
 end
 
 holstein_interaction_energy(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
@@ -93,10 +93,10 @@ A scalar value representing the Holstein polaron interaction energy in k-space a
 function holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = 3)
     momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
     coupling(k) = holstein_coupling(k, α, ωβ[1]; dims = dims)
-    propagator(τ) = polaron_propagator(τ, v, w, ωβ...) 
+    propagator(τ) = polaron_propagator(τ, v, w, ωβ...) * 4
     integrand(τ) = phonon_propagator(τ, ωβ...) * spherical_k_integral(coupling, propagator(τ); dims = dims, limits = [0, momentum_cutoff]) 
-    upper_limit = length(ωβ) == 1 ? Inf : prod(ωβ) / 2
-    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
+    upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
+    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit) * dims
     return integral
 end
 
@@ -109,8 +109,8 @@ holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector; dims = 3) = su
 function holstein_energy(v, w, α, ωβ...; dims = 3)
 	A, C = trial_energy(v, w, ωβ...; dims = dims)
 	B = holstein_interaction_energy(v, w, α, ωβ...; dims = dims)
-    return -(A + B + C) - 2 * dims, A, B, C
-end
+    return -(A + B + C) / dims - 2 * dims, A / dims, B / dims, C / dims
+end 
 
 """
     holstein_energy_k_space(v, w, α, ωβ...; dims = 3, rₚ = 1, a = 1, limits = [-π, π])
@@ -136,7 +136,7 @@ Calculate the total energy, kinetic energy, and interaction energy of the Holste
 function holstein_energy_k_space(v, w, α, ωβ...; dims = 3)
     A, C = trial_energy(v, w, ωβ...; dims = dims) 
     B = holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = dims) 
-    return -(A + B + C) - 2 * dims, A, B, C
+    return -(A + B + C) / dims - 2 * dims, A, B, C
 end
 
 """
@@ -172,9 +172,9 @@ This example demonstrates how to use the `holstein_structure_factor` function to
 function holstein_structure_factor(t, v, w, α, ωβ...; dims = 3)
     momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
 	coupling = holstein_coupling(1, α, ωβ[1]; dims = dims)
-	propagator = polaron_propagator(im * t, v, w, ωβ...) / 2
-	integral = dims / 2 * ball_surface(dims) / (2π)^3 * P_plus_one(dims, propagator * momentum_cutoff^2) / propagator^(dims/2 + 1)
-    return 2 / dims * phonon_propagator(im * t, ωβ...) * coupling * integral 
+	propagator = polaron_propagator(im * t, v, w, ωβ...) * 2 / ωβ[1]
+	integral = dims / 2 * ball_surface(dims) / (2π)^dims * P_plus_one(dims, propagator * momentum_cutoff^2) / propagator^(dims/2 + 1)
+    return 2 / dims * ωβ[1] * phonon_propagator(im * t, ωβ...) * coupling * integral
 end
 
 """
@@ -200,9 +200,9 @@ A scalar value representing the calculated structure factor in k-space for the H
 function holstein_structure_factor_k_space(t, v, w, α, ωβ...; dims = 3)
     momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π)
 	coupling(k) = holstein_coupling(k, α, ωβ[1]; dims = dims) * k^2
-	propagator = polaron_propagator(im * t, v, w, ωβ...)
+	propagator = polaron_propagator(im * t, v, w, ωβ...) * 4 / ωβ[1]
 	integral = spherical_k_integral(coupling_one, propagator; dims = dims, limits = [0, momentum_cutoff])
-	return 2 / dims * phonon_propagator(im * t, ωβ...) * integral
+	return 2 * phonon_propagator(im * t, ωβ...) * integral
 end
 
 """
@@ -226,7 +226,7 @@ In this example, the `holstein_memory_function` is called with the input paramet
 """
 function holstein_memory_function(Ω, v, w, α, ωβ...; dims = 3)
 	structure_factor(t) = holstein_structure_factor(t, v, w, α, ωβ...; dims = dims)
-	return polaron_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e5])
+	return polaron_memory_function(Ω, structure_factor; limits = [0, 1e5])
 end
 
 holstein_memory_function(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
@@ -254,7 +254,7 @@ A scalar value representing the memory function of the Holstein model in k-space
 """
 function holstein_memory_function_k_space(Ω, v, w, α, ωβ...; dims = 3)
 	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ωβ...; dims = dims)
-	 return general_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e5])
+	 return polaron_memory_function(Ω, structure_factor; limits = [0, 1e5])
 end
 
 holstein_memory_function_k_space(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))

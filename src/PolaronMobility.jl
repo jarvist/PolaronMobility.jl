@@ -66,9 +66,10 @@ using Optim
 # Import required Unitful units, for mutability (generating new polaron units)
 using Unitful
 using Unitful: @unit, Dimension, Dimensions, NoDims, NoUnits, Units, dimension, uconvert, ustrip
+using UnitfulAtomic: auconvert
 
 # Unitful functions
-export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu, addunits!
+export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu, addunits!, auconvert!, suconvert!, phuconvert, phunit, phustrip
 
 include("PolaronFunctions.jl")  # General use functions for polaron model.
 include("LegacyFunctions.jl")   # Outdated functions that still have some use.

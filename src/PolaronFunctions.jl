@@ -25,11 +25,11 @@ This example calculates the value of the phonon propagator for `τ = 0.5`, `ω =
 """
 function phonon_propagator(τ, ω, β)
     n = 1 / (exp(β * ω) - 1)
-    result = n * exp(τ) + (1 + n) * exp(-τ)
+    result = n * exp(τ * ω) + (1 + n) * exp(-τ * ω)
     if isnan(result)
         return phonon_propagator(τ, ω)
     else
-        return result / ω
+        return result
     end
 end
 
@@ -55,7 +55,7 @@ This example calculates the value of the phonon propagator for the given values 
 The value of the phonon propagator.
 """
 function phonon_propagator(τ, ω)
-    exp(-τ) / ω
+    exp(-τ * ω)
 end
 
 """
@@ -89,7 +89,7 @@ println(result)
 ```
 This example demonstrates how to use the `vw_variation` function. It defines an energy function `energy(x, y)` that returns an array of energy components. It then calls `vw_variation` with the initial values of `v` and `w`, as well as lower and upper bounds for the optimization. The function optimizes `v` and `w` to minimize the energy and returns the optimized values, as well as the minimized energy, kinetic energy, and potential energy. The result is then printed.
 """
-function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [1e4, 1e4], warn = false)
+function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [1e3, 1e3], warn = false)
 
     Δv = initial_v - initial_w # defines a constraint, so that v>w
     initial = [Δv + eps(Float64), initial_w]
@@ -119,7 +119,7 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [1e4
     return Δv + w, w, energy_minimized...
 end
 
-vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [1e4, 1e4])
+vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [1e3, 1e3])
 
 function vw_variation(energy, initial_v::Vector, initial_w::Vector; lower = [0, 0], upper = [1e4, 1e4], warn = false)
 

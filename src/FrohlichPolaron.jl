@@ -83,6 +83,13 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
     num_d = length(dims)
 
     ω = reduce_array(ω)
+
+    Trange = pustrip.(Trange .* 1u"K")
+    Ωrange = pustrip.(Ωrange .* 1u"THz2π")
+    ω = pustrip.(ω .* 1u"THz2π")
+    ωeff = pustrip.(ωeff .* 1u"THz2π")
+
+    a0 = pustrip.(sqrt(Unitful.ħ / (2 * Unitful.me * mb * ω * u"THz2π")))
     
     # For multiple variational modes, ensure that the number of v and w parameters is the same.
     @assert length(v_guesses) == length(w_guesses) "v and w guesses must be the same length."
@@ -95,7 +102,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         "T"     => Trange, # Temperatures.
         "ω"     => ω, # Phonon frequencies.
         "ωeff"  => ωeff, # Effective Phonon frequency.
-        "β"     => Matrix{Float64}(undef, num_T, num_ω), # Betas.
+        "β"     => Vector{Float64}(undef, num_T), # Betas.
         "Ω"     => Ωrange, # Photon frequencies.
         "d"     => dims, # Number of spatial dimensions.
         "v0"    => Array{Float64,3}(undef, num_d, num_α, num_vw), # Athermal v params.
@@ -173,12 +180,12 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 println(io, "\e[KPhonon frequencies             | ωeff = ", ωeff, " | ω = ", join(round.(first(ω, 2), digits=2), ", ")..., " ... ", join(round.(last(ω, 2), digits=2), ", ")...)
                 println(io, "\e[KFröhlich coupling              | αeff = ", αeff, " | α = ", join(round.(first(α, 2), digits=3), ", ")..., " ... ", join(round.(last(α, 2), digits=3), ", ")...)
             end
-            
+
             αprocess += 1   # Increment αrange iteration.
         end
 
         # Small alpha (α → 0) approximate energy.
-        F_small = (-αeff - αeff^2 / 81)
+        F_small = (-αeff - αeff^2 / 81) * ω
         p["Fs"][j] = F_small
 
         # Print small alpha energy.
@@ -187,7 +194,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Large alpha (α → ∞) approximate energy.
-        F_large = (-αeff^2 / 3π - 3 * log(2) - 3 / 4)
+        F_large = (-αeff^2 / 3π - 3 * log(2) - 3 / 4) * ω 
         p["Fl"][j] = F_large
 
         # Print large alpha energy.
@@ -196,7 +203,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Small coupling (α → 0) polaron mass approximation. Eqn. (46) in Feynman1955.
-        M_small = (αeff / 6 + 0.025 * αeff^2)
+        M_small = (αeff / 6 + 0.025 * αeff^2) * mb
         p["Ms"][j] = M_small
 
         # Print small alpha fictitious mass.
@@ -205,7 +212,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Large coupling (α → ∞) polaron mass approximation. Eqn. (47) In Feynman1955.
-        M_large = 16 * αeff^4 / (81 * π^4) 
+        M_large = 16 * αeff^4 / (81 * π^4) * mb
         p["Ml"][j] = M_large
 
         # Print large alpha fictitious mass.
@@ -214,7 +221,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Small coupling (α → 0) polaron radii approximiation. Eqn. (2.5a) in Schultz1959.
-        R_small = sqrt(3 / (4 / 9 * αeff)) 
+        R_small = sqrt(3 / (4 / 9 * αeff)) * a0
         p["Rs"][j] = R_small
 
         # Print small alpha polaron radius.
@@ -223,7 +230,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Large coupling (α → ∞) polaron radii approximiation. Eqn. (2.5b) in Schultz1959.
-        R_large = 3 * √(π / 2) * αeff
+        R_large = 3 * √(π / 2) * αeff * a0
         p["Rl"][j] = R_large
 
         # Print large alpha polaron radius.
@@ -232,7 +239,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Franck-Condon (FC) frequency in large coupling (α → ∞) limit. RHS of pg. 2371 in Devreese1972.
-        Ω_FC = 4 / 9π * αeff ^2 
+        Ω_FC = 4 / 9π * αeff ^2 * ω
         p["ΩFC"][j] = Ω_FC
 
         # Print large alpha Franck-Condon peak frequency.
@@ -280,7 +287,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
-        κ_gs = (v_gs .^ 2 .- w_gs .^ 2)
+        κ_gs = (v_gs .^ 2 .- w_gs .^ 2) .* mb
         p["κ0"][d, j, :] .= κ_gs
 
         # Print athermal fictitious spring constant.
@@ -298,7 +305,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Approximate large coupling asymptotic limit for the polaron mass. Feynman1962. Athermal
-        M_asymp_gs = v_gs ./ w_gs
+        M_asymp_gs = v_gs ./ w_gs .* mb
         p["M0a"][d, j, :] .= M_asymp_gs
 
         # Print athermal asymptotic fictitious mass.
@@ -307,7 +314,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-        M_reduced_gs = (v_gs .^2 .- w_gs .^2) ./ v_gs .^ 2
+        M_reduced_gs = (v_gs .^2 .- w_gs .^2) ./ v_gs .^ 2 .* mb
         p["M0r"][d, j, :] .= M_reduced_gs
 
         # Print athermal reduced mass.
@@ -316,7 +323,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
         end
 
         # Calculate and store polaron radii. Approximates the polaron wavefunction as a Gaussian and relates the size to the standard deviation. Eqn. (2.4) in Schultz1959. Athermal.
-        R_gs = sqrt.(3 .* v_gs ./ (v_gs .^ 2 .- w_gs .^ 2) .^ 2)
+        R_gs = sqrt.(3 .* v_gs ./ (v_gs .^ 2 .- w_gs .^ 2) .^ 2) .* a0
         p["R0"][d, j, :] .= R_gs
 
         # Print athermal polaron radius.
@@ -338,8 +345,8 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 end
 
                 # Calculate the reduced (unitless) thermodynamic betas for each phonon mode.
-                β = 1 ./ T .* β0
-                p["β"][i, :] .= β
+                β = 1 ./ T
+                p["β"][i] = β
 
                 # Print thermodynamic betas.
                 if verbose
@@ -375,7 +382,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 end
 
                 # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
-                κ = (v .^ 2 .- w .^ 2)
+                κ = (v .^ 2 .- w .^ 2) .* mb
                 p["κ"][i, d, j, :] .= κ
 
                 # Print spring constants.
@@ -393,7 +400,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 end
 
                 # Approximate large coupling asymptotic limit for the polaron mass. Feynman1962. Thermal
-                M_asymp = v ./ w 
+                M_asymp = v ./ w .* mb
                 p["Ma"][i, d, j, :] .= M_asymp
 
                 # Print asymptotic masses.
@@ -402,7 +409,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 end
 
                 # Reduced mass of particle and fictitious mass system. Before eqn. (2.4) in Schultz1959. Athermal.
-                M_reduced = (v .^2 .- w .^2) ./ v .^ 2
+                M_reduced = (v .^2 .- w .^2) ./ v .^ 2 .* mb
                 p["Mr"][i, d, j, :] .= M_reduced
             
                 # Print redcued masses.
@@ -411,7 +418,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                 end
 
                 # Calculate and store polaron radii.
-                R = sqrt.(3 .* v ./ (v .^ 2 .- w .^ 2) .^ 2)
+                R = sqrt.(3 .* v ./ (v .^ 2 .- w .^ 2) .^ 2) .* a0
                 p["R"][i, d, j, :] .= R
             
                 # Print polaron radius.
@@ -481,6 +488,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
             else
                 # If zero temperature.
                 v, w, β = v_gs, w_gs, Inf
+                p["β"][i] = β
                 p["v"][i, d, j, :] .= v_gs
                 p["w"][i, d, j, :] .= w_gs
                 p["F"][i, d, j] = F_gs
@@ -509,52 +517,50 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
             for k in eachindex(Ωrange)  # E-field frequencies loop. 
                 Ω = Ωrange[k] 
 
-                if !iszero(Ω)
+                # Print E-field frequency.
+                if verbose
+                    println(io, "\e[K-----------------------------------------------------------------------")
+                    println(io, "\e[K         Frequency Response Information: [$(Ωprocess[]) / $(num_Ω) ($(round(Ωprocess[] / (num_Ω) * 100, digits=1)) %)]")
+                    println(io, "\e[K-----------------------------------------------------------------------")
+                    println(io, "\e[KElectric field frequency       | Ω = ", Ω)
+                end
 
-                    # Print E-field frequency.
-                    if verbose
-                        println(io, "\e[K-----------------------------------------------------------------------")
-                        println(io, "\e[K         Frequency Response Information: [$(Ωprocess[]) / $(num_Ω) ($(round(Ωprocess[] / (num_Ω) * 100, digits=1)) %)]")
-                        println(io, "\e[K-----------------------------------------------------------------------")
-                        println(io, "\e[KElectric field frequency       | Ω = ", Ω)
-                    end
+                # Calculate and store polaron memory functions (akin to self energy).
+                χ = !kspace ? frohlich_memory_function(Ω, v, w, α, ω, β; dims = dims[d]) : frohlich_memory_function_k_space(Ω, v, w, α, ω, β; dims = dims[d])
+                p["χ"][k, i, d, j] = χ
 
-                    # Calculate and store polaron memory functions (akin to self energy).
-                    χ = !kspace ? frohlich_memory_function(Ω, v, w, α, ω, β; dims = dims[d]) : frohlich_memory_function_k_space(Ω, v, w, α, ω, β; dims = dims[d])
-                    p["χ"][k, i, d, j] = χ
+                # Print memory function.
+                if verbose
+                    println(io, "\e[KMemory function                | χ = ", χ)
+                end
 
-                    # Print memory function.
-                    if verbose
-                        println(io, "\e[KMemory function                | χ = ", χ)
-                    end
+                # Calculate and store polaron complex impedances.
 
-                    # Calculate and store polaron complex impedances.
+                z = -(im * Ω + im * χ) .* mb
+                p["z"][k, i, d, j] = z 
 
-                    z = -(im * Ω + im * χ) .* mb
-                    p["z"][k, i, d, j] = z 
+                # Print complex impedances.
+                if verbose
+                    println(io, "\e[KComplex impedance              | z = ", z)
+                end
 
-                    # Print complex impedances.
-                    if verbose
-                        println(io, "\e[KComplex impedance              | z = ", z)
-                    end
+                # Calculate and store polaron complex conductivities.
+                σ = 1 / z
+                p["σ"][k, i, d, j] = σ 
 
-                    # Calculate and store polaron complex conductivities.
-                    σ = 1 / z
-                    p["σ"][k, i, d, j] = σ 
+                # Print complex conductivities and show total algorithm progress.
+                if verbose
+                    println(io, "\e[KComplex conductivity           | σ = ", σ)
+                end
 
-                    # Print complex conductivities and show total algorithm progress.
-                    if verbose
-                        println(io, "\e[KComplex conductivity           | σ = ", σ)
-                    end
-
-                else
+                if iszero(T) && iszero(Ω)
 
                     # If zero frequency.
                     p["χ"][k, i, d, j] = Inf + 0 * im
                     p["z"][k, i, d, j] = 0 + im * Inf
                     p["σ"][k, i, d, j] = 0 + 0 * im
 
-                end # End of zero frequency if statement.
+                end # End of zero temp if statement.
 
                 if verbose
                     println(io, "\e[K-----------------------------------------------------------------------")
@@ -564,7 +570,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, β0=1, v
                     print(io, "\e[2F")
                 end
 
-                if verbose && !iszero(Ω) print(io, "\e[7F") end
+                if verbose print(io, "\e[7F") end
             end
             if verbose && !iszero(T) print(io, "\e[26F") end   # Move up 26 lines and erase.
         end 
@@ -669,7 +675,7 @@ function frohlichpolaron(material::Material, TΩrange...; v_guesses=3.11, w_gues
     mb = material.mb
 
     # Generate polaron data from the arbitrary model constructor.
-    p = frohlichpolaron(material.α', TΩrange...; ω=phonon_freqs, ωeff=phonon_eff_freq, mb=mb, β0=ħ/kB*1e12*2π, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+    p = frohlichpolaron(material.α', TΩrange...; ω=phonon_freqs, ωeff=phonon_eff_freq, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
     # Return material-specific, unitful Polaron type.
     return p

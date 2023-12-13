@@ -27,7 +27,7 @@ println(result)
 This example calculates the polaron propagator for given values of τ, v, w, and β. The result is then printed.
 """
 function polaron_propagator(τ, v, w, ω, β)
-    (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β * ω - τ))) / (1 - exp(-v * β * ω)) + w^2 / v^2 * τ * (1 - τ / β / ω) + 1e-15
+    ((v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β - τ))) / (1 - exp(-v * β)) + w^2 / v^2 * τ * (1 - τ / β)) * ω + 1e-15
 end
 
 """
@@ -54,7 +54,7 @@ println(result)
 This example calculates the polaron propagator for the given values of τ, v, and w. The result is then printed.
 """
 function polaron_propagator(τ, v, w, ω)
-    w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ)) + 1e-15
+    (w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ))) * ω + 1e-15
 end
 
 """
@@ -71,7 +71,7 @@ Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
 function polaron_propagator(τ, v::Vector, w::Vector, ω, β)
-    return τ * (1 - τ / ω / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * ω * β) - exp(-v[i] * τ) - exp(v[i] * (τ - ω * β))) / (v[i] * (1 - exp(-v[i] * ω * β))) - τ * (1 - τ / ω / β)) for i in eachindex(v)) + 1e-15
+    return τ * ω * (1 - τ / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β)) for i in eachindex(v)) * ω + 1e-15
 end
 
 """
@@ -85,7 +85,7 @@ Calculates the recoil function at zero-temperature.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
 function polaron_propagator(τ, v::Vector, w::Vector, ω)
-    return τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v)) + 1e-15
+    return τ * ω + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v)) * ω + 1e-15
 end
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
@@ -102,14 +102,13 @@ Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-A(v, w, ω, β) = β == Inf ? A(v, w, ω) : 3 / β * (log(v / w) - 1 / 2 * log(2π * β * ω
-) - (v - w) * ω * β / 2 - log(1 - exp(-v * β * ω)) + log(1 - exp(-w * β * ω))) 
+A(v, w, ω, β) = β == Inf ? A(v, w, ω) : 3 / β * (log(v / w) - 1 / 2 * log(2π * β * ω) - (v - w) * β / 2 - log(1 - exp(-v * β)) + log(1 - exp(-w * β))) 
 
-A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) / length(ω)
+A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) 
 
-A(v, w, ω) = -3 * (v - w) / 2 * ω
+A(v, w, ω) = -3 * (v - w) / 2
 
-A(v, w, ω::Vector) = sum(A.(v, w, ω)) / length(ω)
+A(v, w, ω::Vector) = sum(A.(v, w, ω)) 
 
 """
     C(v, w, ω, β)
@@ -118,11 +117,11 @@ Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-C(v, w, ω, β) = 3 / 4 * (v^2 - w^2) * ω / v * (coth(v * β * ω / 2) - 2 / (v * β * ω)) 
+C(v, w, ω, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β)) 
 
 C(v, w, ω::Vector, β) = sum(C.(v, w, ω, β)) / length(ω)
 
-C(v, w, ω) = (3 / (4 * v)) * (v^2 - w^2) * ω
+C(v, w, ω) = (3 / (4 * v)) * (v^2 - w^2)
 
 C(v, w, ω::Vector) = sum(C.(v, w, ω)) / length(ω)
 

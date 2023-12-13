@@ -143,7 +143,7 @@ See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 function frohlich_interaction_energy(v, w, α, ωβ...; dims = 3)
     coupling = frohlich_coupling(1, α, ωβ[1]; dims = dims)
     integrand(τ) =  phonon_propagator(τ, ωβ...) / sqrt(polaron_propagator(τ, v, w, ωβ...))
-    upper_limit = length(ωβ) == 1 ? Inf : prod(ωβ) / 2
+    upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
     return coupling * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * integral
 end
@@ -243,7 +243,7 @@ function frohlich_structure_factor(t, v, w, α, ωβ...; dims = 3)
 	coupling = frohlich_coupling(1, α, ωβ[1]; dims = dims)
 	propagator = polaron_propagator(im * t, v, w, ωβ...) / 2
 	integral = ball_surface(dims) / (2π)^dims * √π / 4 / propagator^(3/2)
-	return 2 / dims * coupling * integral * phonon_propagator(im * t, ωβ...) 
+	return 2 / dims * ωβ[1] * coupling * integral * phonon_propagator(im * t, ωβ...) 
 end
 
 """
@@ -277,12 +277,10 @@ frohlich_structure_factor_k_space(t, v, w, α::Vector, ω::Vector, β; limits = 
 
 function frohlich_memory_function(Ω, v, w, α, ωβ...; dims = 3)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ωβ...; dims = dims)
-    return polaron_memory_function(Ω / ωβ[1], structure_factor; limits = [0, 1e4])
+    return polaron_memory_function(Ω, structure_factor; limits = [0, 1e4])
 end
 
-frohlich_memory_function(Ω, v::Vector, w::Vector, α, ωβ...; dims = 3) = sum(frohlich_memory_function.(Ω, v, w, α, ωβ...; dims = dims))
-
-frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
 
 frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
 
@@ -503,7 +501,7 @@ function inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
         # # Lifetime is:
         # τ = 1 / Γ₀
 
-        return 1 / μ_Devreese2016, 1 / μ_Kadanoff1963, Γ₀
+        return 1 / μ_Devreese2016, 1 / μ_Kadanoff1963, 1/Γ₀
     end
 end
 
