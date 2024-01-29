@@ -89,7 +89,7 @@ println(result)
 ```
 This example demonstrates how to use the `vw_variation` function. It defines an energy function `energy(x, y)` that returns an array of energy components. It then calls `vw_variation` with the initial values of `v` and `w`, as well as lower and upper bounds for the optimization. The function optimizes `v` and `w` to minimize the energy and returns the optimized values, as well as the minimized energy, kinetic energy, and potential energy. The result is then printed.
 """
-function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [1e3, 1e3], warn = false)
+function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf, Inf], warn = false)
 
     Δv = initial_v - initial_w # defines a constraint, so that v>w
     initial = [Δv + eps(Float64), initial_w]
@@ -119,9 +119,9 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [1e3
     return Δv + w, w, energy_minimized...
 end
 
-vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [1e3, 1e3])
+vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [Inf, Inf])
 
-function vw_variation(energy, initial_v::Vector, initial_w::Vector; lower = [0, 0], upper = [1e4, 1e4], warn = false)
+function vw_variation(energy, initial_v::Vector, initial_w::Vector; lower = [0, 0], upper = [Inf, Inf], warn = false)
 
   if length(initial_v) != length(initial_w)
       return error("The number of variational parameters v & w must be equal.")
@@ -198,7 +198,7 @@ function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
       return polaron_memory_function(structure_factor; limits = limits)
     end
-    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits[1], limits[2])
+    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
     return integral
 end
 
@@ -225,11 +225,11 @@ end
 # Call the general_memory_function with the structure_factor function
 result = general_memory_function(structure_factor; limits = [0, 10])
 
-println(result)  # Output: 383.3333333333333
+println(result)  # Output: 383.3333333333333 
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits[1], limits[2])
+    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
     return integral
 end
 

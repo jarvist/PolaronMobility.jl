@@ -26,8 +26,18 @@ println(result)
 ```
 This example calculates the polaron propagator for given values of τ, v, w, and β. The result is then printed.
 """
-function polaron_propagator(τ, v, w, ω, β)
-    ((v^2 - w^2) / v^3 * (1 - exp(-v * τ)) * (1 - exp(-v * (β - τ))) / (1 - exp(-v * β)) + w^2 / v^2 * τ * (1 - τ / β)) * ω + 1e-15
+function polaron_propagator(τ, v, w, β)
+    c = (v^2 - w^2) / v^3
+    result = c * (phonon_propagator(0, v, β) - phonon_propagator(τ, v, β)) + (1 - c * v) * τ * (1 - τ / β)
+    if real(result) <= 0 && iszero(imag(result))
+        return eps(Float64) 
+    else
+        if isnan(result)
+            return phonon_propagator(τ, ω)
+        else
+            return result
+        end
+    end
 end
 
 """
@@ -53,8 +63,14 @@ println(result)
 ```
 This example calculates the polaron propagator for the given values of τ, v, and w. The result is then printed.
 """
-function polaron_propagator(τ, v, w, ω)
-    (w^2 * τ / v^2 + (v^2 - w^2) / v^3 * (1 - exp(-v * τ))) * ω + 1e-15
+function polaron_propagator(τ, v, w)
+    c = (v^2 - w^2) / v^3
+    result = (1 - v * c) * τ + c * (phonon_propagator(0, v) - phonon_propagator(τ, v))
+    if real(result) <= 0 && iszero(imag(result))
+        return eps(Float64) 
+    else
+        return result
+    end
 end
 
 """
@@ -70,8 +86,8 @@ Calculates the recoil function (a generalisation of D(u) in Eqn. (35c) in FHIP 1
 
 See FHIP 1962: https://doi.org/10.1103/PhysRev.127.1004.
 """
-function polaron_propagator(τ, v::Vector, w::Vector, ω, β)
-    return τ * ω * (1 - τ / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β)) for i in eachindex(v)) * ω + 1e-15
+function polaron_propagator(τ, v::Vector, w::Vector, β)
+    return τ * (1 - τ / β) + sum((h_i(i, v, w) / v[i]^2) * ((1 + exp(-v[i] * β) - exp(-v[i] * τ) - exp(v[i] * (τ - β))) / (v[i] * (1 - exp(-v[i] * β))) - τ * (1 - τ / β)) for i in eachindex(v))
 end
 
 """
@@ -84,8 +100,8 @@ Calculates the recoil function at zero-temperature.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function polaron_propagator(τ, v::Vector, w::Vector, ω)
-    return τ * ω + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v)) * ω + 1e-15
+function polaron_propagator(τ, v::Vector, w::Vector)
+    return τ + sum((h_i(i, v, w) / v[i]^2) * ((1 - exp(-v[i] * τ)) / v[i] - τ) for i in eachindex(v))
 end
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
@@ -102,13 +118,10 @@ Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-A(v, w, ω, β) = β == Inf ? A(v, w, ω) : 3 / β * (log(v / w) - 1 / 2 * log(2π * β * ω) - (v - w) * β / 2 - log(1 - exp(-v * β)) + log(1 - exp(-w * β))) 
+A(v, w, β) = β == Inf ? A(v, w) : 3 / β * (log(v / w) - (v - w) * β / 2 - log(1 - exp(-v * β)) + log(1 - exp(-w * β))) 
 
-A(v, w, ω::Vector, β) = sum(A.(v, w, ω, β)) 
+A(v, w) = -3 * (v - w) / 2
 
-A(v, w, ω) = -3 * (v - w) / 2
-
-A(v, w, ω::Vector) = sum(A.(v, w, ω)) 
 
 """
     C(v, w, ω, β)
@@ -117,13 +130,9 @@ Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of t
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
-C(v, w, ω, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β)) 
+C(v, w, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β)) 
 
-C(v, w, ω::Vector, β) = sum(C.(v, w, ω, β)) / length(ω)
-
-C(v, w, ω) = (3 / (4 * v)) * (v^2 - w^2)
-
-C(v, w, ω::Vector) = sum(C.(v, w, ω)) / length(ω)
+C(v, w) = (3 / (4 * v)) * (v^2 - w^2)
 
 # Extending the Feynman theory to multiple phonon branches
 
@@ -188,8 +197,7 @@ Note: Not to be confused with the number of physical phonon branches; many phono
 See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
 function C_ij(i, j, v::Vector, w::Vector)
-    C = w[i] * κ_i(i, v, w) * h_i(j, v, w) / (4 * (v[j]^2 - w[i]^2))
-    return C
+    return w[i] * κ_i(i, v, w) * h_i(j, v, w) / (4 * (v[j]^2 - w[i]^2))
 end
 
 """
@@ -207,15 +215,13 @@ Required for calculating the polaron free energy.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function C(v::Vector, w::Vector, ω, β)
+function C(v::Vector, w::Vector, β)
     # Sum over the contributions from each fictitious mass.
-    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(ω * β * v[j] / 2) - 2 / (ω * β * v[j])) for i in eachindex(v), j in eachindex(w))
+    s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) * (coth(β * v[j] / 2) - 2 / (β * v[j])) for i in eachindex(v), j in eachindex(w))
 
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
-    return 3 * s * ω
+    return 3 * s
 end
-
-C(v::Vector, w::Vector, ω::Vector, β) = sum(C(v, w, ω[i], β) for i in eachindex(ω)) / length(ω)
 
 """
     C(v, w)
@@ -226,14 +232,12 @@ Calculates `C(v, w, β)` but at zero-temperature, `β = Inf`.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function C(v::Vector, w::Vector, ω)
+function C(v::Vector, w::Vector)
     # Sum over the contributions from each fictitious mass.
     s = sum(C_ij(i, j, v, w) / (v[j] * w[i]) for i in eachindex(v), j in eachindex(w))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
-    return 3 * s * ω
+    return 3 * s
 end
-
-C(v::Vector, w::Vector, ω::Vector) = sum(C(v, w, ω[i]) for i in eachindex(ω)) / length(ω)
 
 """
     A(v, w, β)
@@ -249,16 +253,14 @@ Required for calculating the polaron free energy.
 
 See Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function A(v::Vector, w::Vector, ω, β)
+function A(v::Vector, w::Vector, β)
     # Sum over the contributions from each fictitious mass.
-    s = -log(2π * ω * β) / 2 + sum(v[i] == w[i] ? 0 :
-                               log(v[i]) - log(w[i]) - ω * β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * ω * β)) + log(1 - exp(-w[i] * ω * β))
+    s = -log(2π * β) / 2 + sum(v[i] == w[i] ? 0 :
+                               log(v[i]) - log(w[i]) - β / 2 * (v[i] - w[i]) - log(1 - exp(-v[i] * β)) + log(1 - exp(-w[i] * β))
                                for i in eachindex(v))
     # Divide by the number of phonon modes to give an average contribution per phonon mode.
-    3 / β * s * ω
+    3 / β * s
 end
-
-A(v::Vector, w::Vector, ω::Vector, β) = sum(A(v, w, ω[i], β) for i in eachindex(ω)) / length(ω)
 
 """
     A(v, w, n)
@@ -269,12 +271,10 @@ Calculates `A(v, w, β)` but at zero-temperature, `β = Inf`.
 - `v::Vector{Float64}`: is a vector of the v variational parameters.
 - `w::Vector{Float64}`: is a vector of the w variational parameters.
 """
-function A(v::Vector, w::Vector, ω)
+function A(v::Vector, w::Vector)
     s = sum(v .- w)
-    return -3 * s / 2 * ω
+    return -3 * s / 2 
 end
-
-A(v::Vector, w::Vector, ω::Vector) = sum(A(v, w, ω[i]) for i in eachindex(ω)) / length(ω)
 
 """
     trial_energy(v, w, ω, β)
@@ -302,8 +302,8 @@ println(result)
 Expected Output:
 A scalar value representing the calculated free electron energy at finite temperature.
 """
-function trial_energy(v, w, ωβ...; dims = 3)
-    Ar = A(v, w, ωβ...) * dims / 3
-    Cr = C(v, w, ωβ...) * dims / 3 
+function trial_energy(v, w, β...; dims = 3)
+    Ar = A(v, w, β...) * dims / 3
+    Cr = C(v, w, β...) * dims / 3 
     return Ar, Cr
 end
