@@ -15,77 +15,82 @@ Minimises the multiple phonon mode free energy function for a set of vₚ and w�
 
 See also [`F`](@ref).
 """
-function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
 
-    if length(v) != length(w)
-        return error("The number of variational parameters v & w must be equal.")
-    end
+feynmanvw(αωβ...) = vw_variation((v,w)->frohlich_energy(v, w, αωβ...))
 
-    N_params = length(v)
+feynmanvw(α) = feynmanvw(α, 1)
 
-    Δv = v .- w
-    initial = vcat(Δv .+ repeat([eps(Float64)], N_params), w)
+# function feynmanvw(v::Vector, w::Vector, αωβ...; upper_limit=1e6)
 
-    # Limits of the optimisation.
-    lower = fill(0.0, 2 * N_params)
-    upper = fill(upper_limit, 2 * N_params)
+#     if length(v) != length(w)
+#         return error("The number of variational parameters v & w must be equal.")
+#     end
 
-    # The multiple phonon mode free energy function to minimise.
-    f(x) = frohlich_energy([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
+#     N_params = length(v)
 
-    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS())
-    )
+#     Δv = v .- w
+#     initial = vcat(Δv .+ repeat([eps(Float64)], N_params), w)
 
-    # Extract the v and w parameters that minimised the free energy.
-    var_params = Optim.minimizer(solution)
+#     # Limits of the optimisation.
+#     lower = fill(0.0, 2 * N_params)
+#     upper = fill(upper_limit, 2 * N_params)
 
-    # Separate the v and w parameters into one-dimensional arrays (vectors).
-    Δv = [var_params[2*n-1] for n in 1:N_params]
-    w = [var_params[2*n] for n in 1:N_params]
-    E, A, B, C = frohlich_energy(Δv .+ w, w, αωβ...)
+#     # The multiple phonon mode free energy function to minimise.
+#     f(x) = frohlich_energy([x[2*n-1] for n in 1:N_params] .+ [x[2*n] for n in 1:N_params], [x[2*n] for n in 1:N_params], αωβ...)[1]
 
-    # if Optim.converged(solution) == false
-    #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    # end
+#     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+#     solution = Optim.optimize(
+#         Optim.OnceDifferentiable(f, initial; autodiff=:forward),
+#         lower,
+#         upper,
+#         initial,
+#         Fminbox(BFGS())
+#     )
 
-    # Return the variational parameters that minimised the free energy.
-    return Δv .+ w, w, E, A, B, C
-end
+#     # Extract the v and w parameters that minimised the free energy.
+#     var_params = Optim.minimizer(solution)
 
-function feynmanvw(v::Real, w::Real, αωβ...; upper = [Inf, Inf], lower = [0, 0])
+#     # Separate the v and w parameters into one-dimensional arrays (vectors).
+#     Δv = [var_params[2*n-1] for n in 1:N_params]
+#     w = [var_params[2*n] for n in 1:N_params]
+#     E, A, B, C = frohlich_energy(Δv .+ w, w, αωβ...)
+
+#     # if Optim.converged(solution) == false
+#     #     @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+#     # end
+
+#     # Return the variational parameters that minimised the free energy.
+#     return Δv .+ w, w, E, A, B, C
+# end
+
+# function feynmanvw(v::Real, w::Real, αωβ...; upper = [Inf, Inf], lower = [0, 0])
     
-    Δv = v .- w
-    initial = [Δv + eps(Float64), w] 
+#     Δv = v .- w
+#     initial = [Δv + eps(Float64), w] 
 
-    # The multiple phonon mode free energy function to minimise.
-    f(x) = frohlich_energy(x[1] .+ x[2], x[2], αωβ...)[1]
+#     # The multiple phonon mode free energy function to minimise.
+#     f(x) = frohlich_energy(x[1] .+ x[2], x[2], αωβ...)[1]
 
-    # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
-    solution = Optim.optimize(
-        Optim.OnceDifferentiable(f, initial; autodiff=:forward),
-        lower,
-        upper,
-        initial,
-        Fminbox(BFGS())
-    )
+#     # Use Optim to optimise the free energy function w.r.t the set of v and w parameters.
+#     solution = Optim.optimize(
+#         Optim.OnceDifferentiable(f, initial; autodiff=:forward),
+#         lower,
+#         upper,
+#         initial,
+#         Fminbox(BFGS())
+#     )
 
-    # Extract the v and w parameters that minimised the free energy.
-    Δv, w = Optim.minimizer(solution)
-    E, A, B, C = frohlich_energy(Δv .+ w, w, αωβ...)
+#     # Extract the v and w parameters that minimised the free energy.
+#     Δv, w = Optim.minimizer(solution)
+#     E, A, B, C = frohlich_energy(Δv .+ w, w, αωβ...)
 
-    if Optim.converged(solution) == false
-        @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
-    end
+#     if Optim.converged(solution) == false
+#         @warn "Failed to converge. v = $(Δv .+ w), w = $w, E = $E"
+#     end
 
-    # Return the variational parameters that minimised the free energy.
-    return Δv .+ w, w, E, A, B, C
-end
+#     # Return the variational parameters that minimised the free energy.
+#     return Δv .+ w, w, E, A, B, C
+# end
 
-feynmanvw(αωβ...) = feynmanvw(3.4, 2.6, αωβ...)
+# feynmanvw(αωβ...) = feynmanvw(3.4, 2.6, αωβ...)
 

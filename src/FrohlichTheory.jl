@@ -125,8 +125,8 @@ println(result)
 Expected Output:
 `6.0`
 """
-function frohlich_coupling(k, α, ω; mb = 1, dims = 3)
-    r_p = 1 / sqrt(2)
+function frohlich_coupling(k, α, ω; dims = 3)
+    r_p = sqrt(1 / 2)
     ω^2 * α * r_p * gamma((dims - 1) / 2) * (2√π / k)^(dims - 1)
 end
 
@@ -142,7 +142,8 @@ See Feynman 1955: http://dx.doi.org/10.1103/PhysRev.97.660.
 """
 function frohlich_interaction_energy(v, w, α, ωβ...; dims = 3)
     coupling = frohlich_coupling(1, α, ωβ[1]; dims = dims)
-    integrand(τ) =  phonon_propagator(τ, ωβ...) / sqrt(polaron_propagator(τ, v, w, ωβ...))
+    propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
+    integrand(τ) = phonon_propagator(τ, ωβ...) / sqrt(propagator(τ))
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
     return coupling * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * integral
@@ -173,10 +174,10 @@ A scalar value representing the Frohlich polaron interaction energy in k-space a
 """
 function frohlich_interaction_energy_k_space(v, w, α, ωβ...; limits = [0, Inf], dims = 3)
     coupling(k) = frohlich_coupling(k, α, ωβ[1]; dims = dims)
-    propagator(τ) = polaron_propagator(τ, v, w, ωβ...)
+    propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
     integrand(τ) = phonon_propagator(τ, ωβ...) * spherical_k_integral(coupling, propagator(τ); dims = dims, limits = limits)
-    upper_limit = length(ωβ) == 1 ? Inf : prod(ωβ) / 2
-	integral, _ = quadgk(τ -> frohlich_interaction_energy_integrand_k_space(τ, v, w, α, ω, β; limits = limits, dims = dims), 0, upper_limit)
+    upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
+	integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
 	return integral
 end
 
@@ -196,10 +197,10 @@ This generalises the Osaka 1959 (below Eqn. (22)) and Hellwarth. et al 1999 (Eqn
 
 See Osaka, Y. (1959): https://doi.org/10.1143/ptp.22.437 and Hellwarth, R. W., Biaggio, I. (1999): https://doi.org/10.1103/PhysRevB.60.299.
 """
-function frohlich_energy(v, w, α, ωβ...; dims = 3)
-    Ar, Cr = trial_energy(v, w, ωβ...; dims = dims)
-    Br = frohlich_interaction_energy(v, w, α, ωβ...; dims = dims) 
-    return -(Ar + Br + Cr), Ar, Br, Cr
+function frohlich_energy(v, w, α, ωβ...; dims = 3, mb = 1)
+    A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
+    B = frohlich_interaction_energy(v, w, α, ωβ...; dims = dims) 
+    return -(A + B + C), A, B, C
 end
 
 """
@@ -222,7 +223,7 @@ Calculate the total energy, kinetic energy, and interaction energy of the Frohli
 - `interaction_energy`: The calculated polaron interaction energy.
 """
 function frohlich_energy_k_space(v, w, α, ωβ...; limits = [0, Inf], dims = 3)
-	A, C = electron_energy(v, w, ωβ...)
+	A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
 	B = frohlich_interaction_energy_k_space(v, w, α, ωβ...; limits = limits, dims = dims)
 	return -(A + B + C), A, B, C
 end
@@ -240,10 +241,10 @@ The Complex Impedence and Conductivity of the Polaron.
 # [3] F. Peeters and J. Devreese, “Theory of polaron mobility,” inSolid State Physics,pp. 81–133, Elsevier, 1984.
 
 function frohlich_structure_factor(t, v, w, α, ωβ...; dims = 3)
-	coupling = frohlich_coupling(1, α, ωβ[1]; dims = dims)
-	propagator = polaron_propagator(im * t, v, w, ωβ...) / 2
+	coupling = frohlich_coupling(1, α, ωβ[1]; dims = dims) * ωβ[1]
+    propagator = length(ωβ) == 1 ? polaron_propagator(im * t, v, w) * ωβ[1] / 2 : polaron_propagator(im * t, v, w, ωβ[2]) * ωβ[1] / 2
 	integral = ball_surface(dims) / (2π)^dims * √π / 4 / propagator^(3/2)
-	return 2 / dims * ωβ[1] * coupling * integral * phonon_propagator(im * t, ωβ...) 
+	return 2 / dims * coupling * integral * phonon_propagator(im * t, ωβ...) 
 end
 
 """
@@ -265,10 +266,10 @@ Calculate the structure factor in k-space for the Frohlich continuum polaron mod
 A scalar value representing the calculated structure factor in k-space for the Frohlich continuum polaron model at finite temperature.
 """
 function frohlich_structure_factor_k_space(t, v, w, α, ωβ...; limits = [0, Inf], dims = 3)
-	coupling(k) = frohlich_coupling(k, α, ωβ[1]; dims = dims) * k^2
-	propagator = polaron_propagator(im * t, v, w, ωβ...)
+	coupling(k) = frohlich_coupling(k, α, ωβ[1]; dims = dims) * k^2 * ωβ[1]
+	propagator = length(ωβ) == 1 ? polaron_propagator(im * t, v, w) * ωβ[1] : polaron_propagator(im * t, v, w, ωβ[2]) * ωβ[1]
 	integral = spherical_k_integral(coupling, propagator; limits = limits, dims = dims)
-	return 2 / dims * phonon_propagator(im * t, ω, β) * integral
+	return 2 / dims * phonon_propagator(im * t, ωβ...) * integral
 end
 
 frohlich_structure_factor_k_space(t, v, w, α::Vector, ω::Vector; limits = [0, Inf], dims = 3) = sum(frohlich_structure_factor_k_space(t, v, w, α[j], ω[j]; limits = limits, dims = dims) for j in eachindex(α))
@@ -277,7 +278,7 @@ frohlich_structure_factor_k_space(t, v, w, α::Vector, ω::Vector, β; limits = 
 
 function frohlich_memory_function(Ω, v, w, α, ωβ...; dims = 3)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ωβ...; dims = dims)
-    return polaron_memory_function(Ω, structure_factor; limits = [0, 1e4])
+	return polaron_memory_function(Ω, structure_factor)
 end
 
 frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
@@ -290,7 +291,7 @@ frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(f
 Calculate the memory function for the Frohlich model in k-space at finite temperature and frequency.
 
 ## Arguments
-- `Ω`: a scalar value representing the frequency at which the memory function is evaluated.
+- `Ω`: a scalar value representing the frequency at which the memorpy function is evaluated.
 - `v`: a scalar value representing the optimal variational parameter.
 - `w`: a scalar value representing the optimal variational parameter.
 - `α`: a scalar value representing the coupling constant.
@@ -367,11 +368,8 @@ See F. Peeters and J. Devreese 1984: https://doi.org/10.1016/S0081-1947(08)60312
 See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
 function inverse_frohlich_mobility(v, w, α, ω, β; dims = 3)
-    if β == Inf
-        return zero(β)
-    end
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β; dims = dims)
-    return abs(imag(polaron_memory_function(structure_factor; limits = [0, 1e4])))
+    return abs(imag(polaron_memory_function(structure_factor)))
 end
 
 """
@@ -411,9 +409,6 @@ Calculate the DC mobility in k-space for a Frohlich polaron system at finite tem
 The DC mobility in k-space for the Frohlich polaron system at finite temperature.
 """
 function frohlich_mobility_k_space(v, w, α, ω, β; dims = 3, limits = [0, Inf])
-    if β == Inf
-        return Inf
-    end
 	structure_factor(t) = frohlich_structure_factor_k_space(t, v, w, α, ω, β; dims = dims, limits = limits)
 	1 / imag(polaron_memory_function(structure_factor))
 end
@@ -430,7 +425,7 @@ function inverse_FHIP_mobility_lowT(v, w, α, ω, β)
     if β == Inf
         return 0
     else
-        μ = (w / v)^3 * 3 / (4 * ω^2 * α * β) * exp(ω * β) * exp((v^2 - w^2) / (w^2 * v))
+        μ = (w / v)^3 * 3 / (4 * ω^2 * α * β) * exp(ω * β) * exp((v^2 - w^2) * ω / (w^2 * v))
         return 1 / μ
     end
 end
@@ -468,7 +463,7 @@ function inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
     else
 
         # [1.61] in Devreese2016 - Kadanoff's Boltzmann eqn derived mobility.
-        μ_Devreese2016 = (w / v)^3 / (2 * ω * α) * exp(ω * β) * exp((v^2 - w^2) / (w^2 * v))
+        μ_Devreese2016 = (w / v)^3 / (2 * ω^2 * α) * exp(ω * β) * exp((v^2 - w^2) * ω / (w^2 * v))
 
         # From 1963 Kadanoff (particularly on right-hand-side of page 1367), Eqn. (9), 
         # we define equilibrium number of phonons (just from temperature T and phonon ω):
@@ -487,7 +482,7 @@ function inverse_Kadanoff_mobility_lowT(v, w, α, ω, β)
         M = (v^2 - w^2) / w^2
 
         # we get for Γ₀:
-        Γ₀ = 2 * α * N̄ * (M + 1)^(1 / 2) * exp(-M / v) * ω 
+        Γ₀ = 2 * α * N̄ * (M + 1)^(1 / 2) * exp(-M * ω / v) * ω^2
 
         # NB: Kadanoff1963 uses ħ = ω = mb = 1 units. 
         # Factor of omega to get it as a rate relative to phonon frequency
@@ -542,20 +537,20 @@ function inverse_Hellwarth_mobility(v, w, α, ω, β)
     else
 
         R = (v^2 - w^2) / (w^2 * v) # inline, page 300 just after Eqn (2)
-        b = R * ω * β / sinh(ω * β * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
-        a = sqrt((ω * β / 2)^2 + R * ω * β * coth(ω * β * v / 2))
-        k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u) + eps(Float64))^(-3 / 2) * cos(u) # integrand in (2)
-        K = quadgk(u -> k(u, a, b, v), 0, 1e5)[1] # numerical quadrature integration of (2)
+        b = R * β / sinh(β * v / 2) # Feynman1962 version; page 1010, Eqn (47b)
+        a = sqrt((β / 2)^2 + R * β * coth(β * v / 2))
+        k(u, a, b, v) = (u^2 + a^2 - b * cos(v * u) + eps(Float64))^(-3 / 2) * cos(ω * u) # integrand in (2)
+        K = quadgk(u -> k(u, a, b, v), 0, Inf, rtol=1e-3)[1] # numerical quadrature integration of (2)
 
         # Right-hand-side of Eqn 1 in Hellwarth 1999 // Eqn (4) in Baggio1997
-        RHS = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
-        μ = RHS
+        RHS = α / (3 * sqrt(π)) * (β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K
+        μ = RHS * ω^(3/2)
 
         # Hellwarth1999/Biaggio1997, b=0 version... 'Setting b=0 makes less than 0.1% error'
         # So let's test this:
-        K_0 = quadgk(u -> k(u, a, 0, v), 0, 1e5)[1] # Inserted b=0 into k(u, a, b, v).
-        RHS_0 = α / (3 * sqrt(π)) * (ω * β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K_0
-        μ_0 = RHS_0     
+        K_0 = quadgk(u -> k(u, a, 0, v), 0, Inf, rtol=1e-3)[1] # Inserted b=0 into k(u, a, b, v).
+        RHS_0 = α / (3 * sqrt(π)) * (β)^(5 / 2) / sinh(ω * β / 2) * (v^3 / w^3) * K_0
+        μ_0 = RHS_0 * ω^(3/2)
 
         return μ, μ_0
     end
