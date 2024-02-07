@@ -119,7 +119,7 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf
     return Δv + w, w, energy_minimized...
 end
 
-vw_variation(energy) = vw_variation(energy, 5, 3; lower = [0, 0], upper = [Inf, Inf])
+vw_variation(energy) = vw_variation(energy, 3.1, 3; lower = [0, 0], upper = [Inf, Inf])
 
 function vw_variation(energy, initial_v::Vector, initial_w::Vector; lower = [0, 0], upper = [Inf, Inf], warn = false)
 
@@ -198,7 +198,7 @@ function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
       return polaron_memory_function(structure_factor; limits = limits)
     end
-    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
+    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf)
     return integral
 end
 
@@ -229,7 +229,7 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
+    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf)
     return integral
 end
 
@@ -264,8 +264,8 @@ function ball_surface(n)
 end
 
 # n-dimensional spherical integral for polaron theory. 
-function spherical_k_integral(coupling, propagator; dims = 3, limits = [0, Inf])
-  integrand(k) = k^(dims-1) * coupling(k) * exp(-k^2 * propagator / 2)
+function spherical_k_integral(coupling, propagator; dims = 3, radius = 1/sqrt(2), limits = [0, Inf])
+  integrand(k) = k^(dims-1) * coupling(k) * exp(-k^2 * radius^2 * propagator)
   integral, _ = quadgk(k -> integrand(k), limits[1], limits[2])
   return integral * ball_surface(dims) / (2π)^dims
 end
