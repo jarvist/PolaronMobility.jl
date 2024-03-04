@@ -71,7 +71,7 @@ Outer constructor for the Polaron type. This function evaluates model data for t
 julia> polaron(6, 300, 3, 1.0, 3.6, 2.8)
 ```
 """
-function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesses=3.1, w_guesses=2.9, dims=3, kspace=false, verbose=false)
+function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesses=false, w_guesses=false, dims=3, kspace=false, cycleguesses=false, verbose=false)
 
     # v_guesses and w_guesses are initial values for v and w (including many v and w parameters).
     # These guesses are generally not needed unless instabilities are found in the minimisation and better initial values improve stability.
@@ -242,7 +242,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
             println(io, "\e[KLarge α→∞ FC peak freq.        | ΩFC = ", Ω_FC)
         end
 
-        for d in 1:num_d
+        @fastmath @inbounds @simd for d in 1:num_d
             if verbose
                 println(io, "\e[KNumber of dimensions", " [", dprocess, " / ", num_d, "]", "   | d = ", dims[d])
                 dprocess += 1
@@ -251,13 +251,21 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
         # Extract the ground-state, athermal polaron properties (energy (enthalpy) and variational parameters v and w).
         # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
         # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-    
+
+
+        if !cycleguesses && v_guesses == false
+            w_guesses = 2 .+ tanh.((6 .- α) ./ 3)
+            v_guesses = αeff < 7 ? 3 .+ α ./ 4 : 4 .* α .^2 / 9π .- 3/2 * (2 * log(2) + 0.5772) .- 3/4
+        end
+        
         athermal_energy(v, w) = !kspace ? frohlich_energy(v, w, α, ω; dims = dims[d], mb = mb) : frohlich_energy_k_space(v, w, α, ω; dims = dims[d])
         
         v_gs, w_gs, F_gs, A_gs, B_gs, C_gs = vw_variation(athermal_energy, v_guesses, w_guesses)
 
         # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
-        v_guesses, w_guesses = v_gs, w_gs
+        if cycleguesses && v_guesses == false
+            v_guesses, w_guesses = v_gs, w_gs
+        end
 
         # Store the athermal data.
         p["v0"][d, j, :] .= v_gs 
@@ -326,7 +334,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
             println(io, "\e[KPolaron radius                 | R0 = ", R_gs)
         end
 
-        for i in eachindex(Trange)  # Temperatures loop.
+        @fastmath @inbounds @simd for i in eachindex(Trange)  # Temperatures loop.
             T = Trange[i]
 
             if !iszero(T)
@@ -352,11 +360,18 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
                 # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
                 # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
 
+                if !cycleguesses && v_guesses == false
+                    w_guesses = w_gs .- 2π ./ (1 .- exp.(β .* ω))
+                    v_guesses = v_gs .- 2π ./ (1 .- exp.(β .* ω))
+                end
+
                 thermal_energy(v, w) = !kspace ? frohlich_energy(v, w, α, ω, β; dims = dims[d], mb = mb) : frohlich_energy_k_space(v, w, α, ω, β; dims = dims[d])
                 v, w, F, A, B, C = vw_variation(thermal_energy, v_guesses, w_guesses)
 
                 # Update the guesses to keep them close-ish to the true solutions during loops over temperatures.
-                v_guesses, w_guesses = v, w
+                if cycleguesses && v_guesses == false
+                    v_guesses, w_guesses = v, w
+                end
 
                 # Store thermal data.
                 p["v"][i, d, j, :] .= v
@@ -509,7 +524,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
                 Tprocess += 1   # Increment Trange iterator.
             end
 
-            for k in eachindex(Ωrange)  # E-field frequencies loop. 
+            @fastmath @inbounds @simd for k in eachindex(Ωrange)  # E-field frequencies loop. 
                 Ω = Ωrange[k] 
 
                 if !iszero(T) || !iszero(Ω)
@@ -637,22 +652,22 @@ end
 """
 Single alpha parameter. polaron() expects alpha parameters to be in a Vector.
 """
-frohlichpolaron(α::Real, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron([α], Trange, Ωrange; ω=ω, ωeff=ωeff, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+frohlichpolaron(α::Real, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, cycleguesses=false, verbose=false) = frohlichpolaron([α], Trange, Ωrange; ω=ω, ωeff=ωeff, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, cycleguesses=cycleguesses, verbose=verbose)
 
 """
 No frequency input.
 """
-frohlichpolaron(αrange, Trange; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron(αrange, Trange, 0; ω=ω, ωeff=ωeff, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+frohlichpolaron(αrange, Trange; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, cycleguesses=false, verbose=false) = frohlichpolaron(αrange, Trange, 0; ω=ω, ωeff=ωeff, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
 """
 No temperature input => 300 K.
 """
-frohlichpolaron(αrange; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron(αrange, 0, 0; ω=ω, ωeff=ωeff, mb=mb,v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+frohlichpolaron(αrange; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, cycleguesses=false, verbose=false) = frohlichpolaron(αrange, 0, 0; ω=ω, ωeff=ωeff, mb=mb,v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, cycleguesses=cycleguesses, verbose=verbose)
 
 """
 No input => α = 1
 """
-frohlichpolaron(; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false) = frohlichpolaron(1, 0, 0; ω=ω, ωeff=ωeff, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+frohlichpolaron(; ω=1, ωeff=1, mb=1, v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, cycleguesses=false, verbose=false) = frohlichpolaron(1, 0, 0; ω=ω, ωeff=ωeff, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, cycleguesses=cycleguesses, verbose=verbose)
 
 """
     polaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87, verbose=false)
@@ -660,7 +675,7 @@ Material specific constructors that use material specific parameters to paramete
 Material data is inputted through the `Material` type.
 Returns all data in either SI units or other common, suitable units otherwise.
 """
-function frohlichpolaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, verbose=false)
+function frohlichpolaron(material::Material, TΩrange...; v_guesses=3.11, w_guesses=2.87, dims=3, kspace=false, cycleguesses=false, verbose=false)
 
     # Show material data.
     if verbose
@@ -675,7 +690,7 @@ function frohlichpolaron(material::Material, TΩrange...; v_guesses=3.11, w_gues
     TΩrange = length(TΩrange) == 1 ? TΩrange .* pustrip(1u"K") : TΩrange .* (pustrip(1u"K"),1)
 
     # Generate polaron data from the arbitrary model constructor.
-    p = frohlichpolaron(material.α', TΩrange...; ω=phonon_freqs, ωeff=phonon_eff_freq, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+    p = frohlichpolaron(material.α', TΩrange...; ω=phonon_freqs, ωeff=phonon_eff_freq, mb=mb, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, cycleguesses=cycleguesses, verbose=verbose)
 
     # Return material-specific, unitful Polaron type.
     return p

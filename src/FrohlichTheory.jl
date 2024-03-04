@@ -145,7 +145,7 @@ function frohlich_interaction_energy(v, w, α, ωβ...; dims = 3)
     propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
     integrand(τ) = phonon_propagator(τ, ωβ...) / sqrt(propagator(τ))
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
-    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
+    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit; rtol=1e-6)
     return coupling * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * integral
 end
 

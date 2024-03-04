@@ -104,7 +104,7 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf
         upper,
         initial,
         Fminbox(BFGS()),
-        # Optim.Options(show_trace = false, g_tol = 1e-12)
+        # Optim.Options(show_trace = true, g_tol = 1e-6)
     )
 
     # Get v and w values that minimise the free energy.
@@ -119,7 +119,7 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf
     return Δv + w, w, energy_minimized...
 end
 
-vw_variation(energy) = vw_variation(energy, 3.1, 3; lower = [0, 0], upper = [Inf, Inf])
+vw_variation(energy) = vw_variation(energy, 3.5, 2.5; lower = [0, 0], upper = [Inf, Inf])
 
 function vw_variation(energy, initial_v::Vector, initial_w::Vector; lower = [0, 0], upper = [Inf, Inf], warn = false)
 
@@ -229,7 +229,7 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf)
+    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf, rtol=1e-4)
     return integral
 end
 
