@@ -229,7 +229,7 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf, rtol=1e-4)
+    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf)
     return integral
 end
 
