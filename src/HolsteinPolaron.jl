@@ -149,7 +149,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
             end
         end
 
-        @fastmath @inbounds @simd for d in 1:num_d
+        for d in 1:num_d
             if verbose
                 println(io, "\e[KNumber of dimensions", " [", dprocess, " / ", num_d, "]", "   | d = ", dims[d])
                 dprocess += 1
@@ -231,7 +231,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
             println(io, "\e[KPolaron radius                 | R0 = ", R_gs)
         end
 
-        @fastmath @inbounds @simd for i in eachindex(Trange)  # Temperatures loop.
+        for i in eachindex(Trange)  # Temperatures loop.
             T = Trange[i]
 
             if !iszero(T)
@@ -363,7 +363,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 Tprocess += 1   # Increment Trange iterator.
             end
 
-            @fastmath @inbounds @simd for k in eachindex(Ωrange)  # E-field frequencies loop. 
+            for k in eachindex(Ωrange)  # E-field frequencies loop. 
                 Ω = Ωrange[k] 
 
                 if !iszero(T) || !iszero(Ω)
