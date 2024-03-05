@@ -198,7 +198,7 @@ function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
       return polaron_memory_function(structure_factor; limits = limits)
     end
-    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf)
+    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-5)
     return integral
 end
 
@@ -229,7 +229,7 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf)
+    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf, rtol=1e-5)
     return integral
 end
 
@@ -266,6 +266,6 @@ end
 # n-dimensional spherical integral for polaron theory. 
 function spherical_k_integral(coupling, propagator; dims = 3, radius = 1/sqrt(2), limits = [0, Inf])
   integrand(k) = k^(dims-1) * coupling(k) * exp(-k^2 * radius^2 * propagator)
-  integral, _ = quadgk(k -> integrand(k), limits[1], limits[2])
+  integral, _ = quadgk(k -> integrand(k), limits[1], limits[2], rtol=1e-2)
   return integral * ball_surface(dims) / (2π)^dims
 end
