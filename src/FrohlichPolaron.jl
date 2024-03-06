@@ -263,7 +263,7 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
         v_gs, w_gs, F_gs, A_gs, B_gs, C_gs = vw_variation(athermal_energy, v_guesses, w_guesses)
 
         # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
-        if cycleguesses && v_guesses == false
+        if cycleguesses && (v_guesses == false)
             v_guesses, w_guesses = v_gs, w_gs
         end
 
@@ -360,16 +360,17 @@ function frohlichpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, mb=1, v_guesse
                 # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
                 # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
 
-                if !cycleguesses && v_guesses == false
-                    w_guesses = w_gs .- 2π ./ (1 .- exp.(β .* ω))
-                    v_guesses = v_gs .- 2π ./ (1 .- exp.(β .* ω))
+                if !cycleguesses && (v_guesses == false)
+                    w_guesses = w_gs
+                    v_guesses = v_gs
                 end
 
                 thermal_energy(v, w) = !kspace ? frohlich_energy(v, w, α, ω, β; dims = dims[d], mb = mb) : frohlich_energy_k_space(v, w, α, ω, β; dims = dims[d])
                 v, w, F, A, B, C = vw_variation(thermal_energy, v_guesses, w_guesses)
 
                 # Update the guesses to keep them close-ish to the true solutions during loops over temperatures.
-                if cycleguesses && v_guesses == false
+                if cycleguesses && (v_guesses == false)
+                    println("true")
                     v_guesses, w_guesses = v, w
                 end
 

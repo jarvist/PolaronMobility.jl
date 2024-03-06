@@ -27,9 +27,9 @@ function phonon_propagator(τ, ω, β)
     n = 1 / (exp(β * ω) - 1)
     result = n * exp(τ * ω) + (1 + n) * exp(-τ * ω)
     if isnan(result)
-        return phonon_propagator(τ, ω)
+      return phonon_propagator(τ, ω)
     else
-        return result
+      return result
     end
 end
 
@@ -104,7 +104,7 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf
         upper,
         initial,
         Fminbox(BFGS()),
-        # Optim.Options(show_trace = true, g_tol = 1e-6)
+        # Optim.Options(g_tol = 1e-6)
     )
 
     # Get v and w values that minimise the free energy.
@@ -196,9 +196,9 @@ This example demonstrates how to use the `general_memory_function` to calculate 
 """
 function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
-      return polaron_memory_function(structure_factor; limits = limits)
+      Ω = 0.01
     end
-    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-5)
+    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
     return integral
 end
 
@@ -229,8 +229,9 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-    integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), eps(Float64), Inf, rtol=1e-5)
-    return integral
+  polaron_memory_function(0.01, structure_factor; limits = [0, Inf])
+  # integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), 0, Inf, rtol=1e-3)
+  # return integral
 end
 
 # Utility / general use functions
@@ -266,6 +267,6 @@ end
 # n-dimensional spherical integral for polaron theory. 
 function spherical_k_integral(coupling, propagator; dims = 3, radius = 1/sqrt(2), limits = [0, Inf])
   integrand(k) = k^(dims-1) * coupling(k) * exp(-k^2 * radius^2 * propagator)
-  integral, _ = quadgk(k -> integrand(k), limits[1], limits[2], rtol=1e-2)
+  integral, _ = quadgk(k -> integrand(k), limits[1], limits[2])
   return integral * ball_surface(dims) / (2π)^dims
 end

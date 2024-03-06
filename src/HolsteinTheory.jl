@@ -95,7 +95,7 @@ function holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = 3)
     propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
     integrand(τ) = phonon_propagator(τ, ωβ...) * spherical_k_integral(coupling, propagator(τ); dims = dims, limits = [0, momentum_cutoff], radius = polaron_radius)
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
-	integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
+    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
 	return integral 
 end
 

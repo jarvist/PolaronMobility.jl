@@ -523,7 +523,7 @@ function holsteinpolaron(material::Material, TΩrange...; v_guesses=3.11, w_gues
     TΩrange = length(TΩrange) == 1 ? TΩrange .* pustrip(1u"K") : TΩrange .* (pustrip(1u"K"),1)
 
     # Generate Holstein polaron data from the arbitrary model constructor.
-    p = holsteinpolaron(material.α', TΩrange...; ω=ω, ωeff=ωeff, γ=γ, mb=mb, J=J, a=a, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
+    p = holsteinpolaron(material.α', TΩrange...; ω=γ, ωeff=γ, γ=γ, mb=mb, J=J, a=a, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)
 
     # Return material-specific, unitful Holstein type.
     return p
