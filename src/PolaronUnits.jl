@@ -306,7 +306,7 @@ function addunits!(polaron::HolsteinPolaron; unit="pu")
     polaron.σ = phustrip.(polaron.σ ./ polaron.mb) .* phunit(u"S")
     polaron.T = phustrip.(polaron.T) .* phunit(1Unitful.K)
     polaron.β = phustrip.(polaron.β ./ Unitful.ħ) .* phunit(1 / 1Unitful.meV)
-    polaron.Ω = phustrip.(polaron.Ω) .* phunit(1Unitful.THz)
+    polaron.Ω = phustrip.(polaron.Ω .* polaron.J ./ 2π) .* phunit(1Unitful.THz)
     polaron.ω = phustrip.(polaron.ω .* polaron.J ./ 2π) .* phunit(1Unitful.THz)
     polaron.ωeff = phustrip.(polaron.ωeff .* polaron.J ./ 2π) .* phunit(1Unitful.THz)
     if unit == "su"
