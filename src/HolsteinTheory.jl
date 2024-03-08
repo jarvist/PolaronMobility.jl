@@ -202,7 +202,7 @@ function holstein_structure_factor_k_space(t, v, w, α, ωβ...; dims = 3)
 	coupling(k) = holstein_coupling(1, α, ωβ[1]; dims = dims) * k^2 * ωβ[1]
 	propagator = length(ωβ) == 1 ? polaron_propagator(im * t, v, w) * ωβ[1] : polaron_propagator(im * t, v, w, ωβ[2]) * ωβ[1]
 	integral = spherical_k_integral(coupling, propagator; dims = dims, limits = [0, momentum_cutoff], radius = polaron_radius)
-	return 2 / dims * integral * phonon_propagator(im * t, ωβ...)
+	return 2 * integral * phonon_propagator(im * t, ωβ...)
 end
 
 """
