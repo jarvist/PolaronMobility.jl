@@ -119,7 +119,7 @@ function save_material(material::Material, prefix)
         "adiabaticity", material.γ,
         "transfer integral", material.J,
         "lattice constant", material.a,
-        "dimensionless coupling", material.g.
+        "dimensionless coupling", material.g,
         "lattice dimension", material.z
     )
 
