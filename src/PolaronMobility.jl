@@ -11,7 +11,7 @@ module PolaronMobility
 export FrohlichPolaron, frohlichpolaron                                  
 
  # Type to hold material specific data.
-export Material, material             
+export Material, material, save_material, load_material            
 
 # Type to hold Holstein polaron data.
 export HolsteinPolaron, holsteinpolaron

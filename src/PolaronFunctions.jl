@@ -25,12 +25,8 @@ This example calculates the value of the phonon propagator for `τ = 0.5`, `ω =
 """
 function phonon_propagator(τ, ω, β)
     n = 1 / (exp(β * ω) - 1)
-    result = n * exp(τ * ω) + (1 + n) * exp(-τ * ω)
-    if isnan(result)
-      return phonon_propagator(τ, ω)
-    else
-      return result
-    end
+    result = n > eps() ? n * exp(τ * ω) + (1 + n) * exp(-τ * ω) : exp(-τ * ω)
+    return result
 end
 
 """
@@ -89,7 +85,7 @@ println(result)
 ```
 This example demonstrates how to use the `vw_variation` function. It defines an energy function `energy(x, y)` that returns an array of energy components. It then calls `vw_variation` with the initial values of `v` and `w`, as well as lower and upper bounds for the optimization. The function optimizes `v` and `w` to minimize the energy and returns the optimized values, as well as the minimized energy, kinetic energy, and potential energy. The result is then printed.
 """
-function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf, Inf], warn = false)
+function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf, Inf], warn = true)
 
     Δv = initial_v - initial_w # defines a constraint, so that v>w
     initial = [Δv + eps(Float64), initial_w]
@@ -104,7 +100,7 @@ function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf
         upper,
         initial,
         Fminbox(BFGS()),
-        # Optim.Options(g_tol = 1e-6)
+        Optim.Options(g_tol = eps())
     )
 
     # Get v and w values that minimise the free energy.
@@ -196,7 +192,7 @@ This example demonstrates how to use the `general_memory_function` to calculate 
 """
 function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
-      Ω = 0.01
+      Ω = eps()
     end
     integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
     return integral
@@ -229,9 +225,7 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-  polaron_memory_function(0.01, structure_factor; limits = [0, Inf])
-  # integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), 0, Inf, rtol=1e-3)
-  # return integral
+  polaron_memory_function(eps(), structure_factor; limits = [0, Inf])
 end
 
 # Utility / general use functions

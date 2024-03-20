@@ -684,8 +684,8 @@ function frohlichpolaron(material::Material, TΩrange...; v_guesses=3.11, w_gues
     end
     
     # Extract material data from Material type.
-    phonon_freqs = material.f
-    phonon_eff_freq = material.feff
+    phonon_freqs = material.f .* pustrip(1u"THz2π")
+    phonon_eff_freq = material.feff .* pustrip(1u"THz2π")
     mb = material.mb
 
     TΩrange = length(TΩrange) == 1 ? TΩrange .* pustrip(1u"K") : TΩrange .* (pustrip(1u"K"),1)

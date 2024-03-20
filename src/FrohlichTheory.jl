@@ -146,7 +146,7 @@ function frohlich_interaction_energy(v, w, α, ωβ...; dims = 3)
     integrand(τ) = phonon_propagator(τ, ωβ...) / sqrt(propagator(τ))
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
-    return coupling * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * integral
+    return coupling * ball_surface(dims) / (2π)^dims * sqrt(π / 2) * integral 
 end
 
 frohlich_interaction_energy(v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_interaction_energy(v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
