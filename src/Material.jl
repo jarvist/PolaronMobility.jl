@@ -106,27 +106,6 @@ function save_material(material::Material, prefix)
 
     println("Saving material data to $prefix.jld ...")
 
-    α       # Unitless electron-phonon coupling (Unitless)
-    mb      # Effective band mass (me)
-    f       # Phonon frequencies (THz2π)
-    feff    # Effective frequency (THz2π)
-
-    # Frohlich specific properties for calculating electron-phonon coupling α
-    ϵo      # Optical dielectric constant
-    ϵs      # Static dielectric constant
-    ϵi      # Ionic dielectric contributions
-
-    # Frohlich specific properties for calculating multiple phonon electron-phonon coupling αⱼ
-    ir      # Infrared activities
-    V       # Unit cell volumes
-
-    # Holstein specific properties
-    γ       # Adiabaticity (Unitless)
-    J       # Transfer integral (meV)
-    a       # Lattice constant (Angstroms)
-    g       # Electron-phonon coupling energy (Unitless)
-    z       # Lattice dimensionality (Unitless)
-
     JLD.save("$prefix.jld",
         "alpha", material.α,
         "band mass", material.mb,
