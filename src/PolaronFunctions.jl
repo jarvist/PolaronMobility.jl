@@ -88,7 +88,7 @@ This example demonstrates how to use the `vw_variation` function. It defines an 
 function vw_variation(energy, initial_v, initial_w; lower = [0, 0], upper = [Inf, Inf], warn = true)
 
     Δv = initial_v - initial_w # defines a constraint, so that v>w
-    initial = [Δv + eps(Float64), initial_w]
+    initial = [Δv + eps(), initial_w]
 
     # Feynman 1955 athermal action 
     f(x) = energy(x[1] + x[2], x[2])[1]
@@ -192,9 +192,9 @@ This example demonstrates how to use the `general_memory_function` to calculate 
 """
 function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
-      Ω = eps()
+      return polaron_memory_function(structure_factor; limits = limits)
     end
-    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), 0, Inf, rtol=1e-4)
+    @fastmath integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits..., rtol=1e-4)
     return integral
 end
 
@@ -225,7 +225,8 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-  polaron_memory_function(eps(), structure_factor; limits = [0, Inf])
+  @fastmath integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits..., rtol=1e-5)
+  return integral
 end
 
 # Utility / general use functions

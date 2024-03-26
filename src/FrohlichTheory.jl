@@ -278,7 +278,7 @@ frohlich_structure_factor_k_space(t, v, w, α::Vector, ω::Vector, β; limits = 
 
 function frohlich_memory_function(Ω, v, w, α, ωβ...; dims = 3)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ωβ...; dims = dims)
-	return polaron_memory_function(Ω, structure_factor)
+	return polaron_memory_function(Ω, structure_factor, limits = [0, 1e4])
 end
 
 frohlich_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(frohlich_memory_function(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
@@ -369,7 +369,7 @@ See also [`polaron_mobility`](@ref), [`polaron_complex_conductivity`](@ref)
 """
 function inverse_frohlich_mobility(v, w, α, ω, β; dims = 3)
     structure_factor(t) = frohlich_structure_factor(t, v, w, α, ω, β; dims = dims)
-    return abs(imag(polaron_memory_function(structure_factor)))
+    return abs(imag(polaron_memory_function(structure_factor, limits = [0, 1e4])))
 end
 
 """

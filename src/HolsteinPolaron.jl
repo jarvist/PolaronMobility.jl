@@ -158,7 +158,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
         # Extract the ground-state, athermal polaron properties (energy (enthalpy) and variational parameters v and w).
         # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
         # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-        athermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω; dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω; a = a, dims = dims[d])
+        athermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω; a = a, dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω; a = a, dims = dims[d])
         v_gs, w_gs, F_gs, A_gs, B_gs, C_gs = vw_variation(athermal_energy, v_guesses, w_guesses)
  
         # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
@@ -256,7 +256,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 # Calculate thermal polaron properties (energy (Gibbs free energy) and variational parameters v and w).
                 # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
                 # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-                thermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω, β; dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω, β; a = a, dims = dims[d])
+                thermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω, β; a = a, dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω, β; a = a, dims = dims[d])
                 v, w, F, A, B, C = vw_variation(thermal_energy, v_guesses, w_guesses)
 
                 # Update the guesses to keep them close-ish to the true solutions during loops over temperatures.
@@ -332,7 +332,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 end
 
                 # Calculate and store the DC mobiliies.
-                μ = !kspace ? holstein_mobility(v, w, α, J, ω, β; dims = dims[d]) : holstein_mobility_k_space(v, w, α, J, ω, β; a = a, dims = dims[d])
+                μ = !kspace ? holstein_mobility(v, w, α, J, ω, β; a = a, dims = dims[d]) : holstein_mobility_k_space(v, w, α, J, ω, β; a = a, dims = dims[d])
                 p["μ"][i, d, j] = μ 
 
                 # Print DC mobilities.
@@ -377,7 +377,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 end
 
                 # Calculate and store polaron memory functions (akin to self energy).
-                χ = !kspace ? holstein_memory_function(Ω, v, w, α, J, ω, β; dims = dims[d]) : holstein_memory_function_k_space(Ω, v, w, α, J, ω, β; a = a, dims = dims[d])
+                χ = !kspace ? holstein_memory_function(Ω, v, w, α, J, ω, β; a = a, dims = dims[d]) : holstein_memory_function_k_space(Ω, v, w, α, J, ω, β; a = a, dims = dims[d])
                 p["χ"][k, i, d, j] = χ
 
                 # Print memory function.
