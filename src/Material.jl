@@ -73,7 +73,7 @@ function material(transfer_integral, coupling_energy, phonon_freq, lattice_const
     phonon_energy = ħ * phonon_freq * 1e12 * 2π
     dimensionless_coupling = coupling_energy / phonon_energy
     adiabaticity = phonon_energy / transfer_integral
-    α = dimensionless_coupling
+    α = dimensionless_coupling * 2 / lattice_dimensionality
     band_mass = ħ^2 / transfer_integral / lattice_constant^2 / 2 / me
     
     return Material(α, band_mass, phonon_freq, phonon_freq, 1, 1, 1, 1, lattice_constant^(lattice_dimensionality/2), adiabaticity, transfer_integral / eV * 1000, lattice_constant * 1e10, dimensionless_coupling, lattice_dimensionality)
