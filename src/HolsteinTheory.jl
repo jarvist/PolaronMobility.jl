@@ -92,12 +92,12 @@ A scalar value representing the Holstein polaron interaction energy in k-space a
 function holstein_interaction_energy_k_space(v, w, α, J, ωβ...; a = 1, dims = 3)
     momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π) / a
     polaron_radius = a * sqrt(J / ωβ[1])
-    coupling(k) = holstein_coupling(k, α, J, ωβ[1]; dims = dims)
+    coupling(k) = holstein_coupling(k, α, J, ωβ[1]; dims = dims) 
     propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
     integrand(τ) = phonon_propagator(τ, ωβ...) * spherical_k_integral(coupling, propagator(τ); dims = dims, limits = [0, momentum_cutoff], radius = polaron_radius)
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
-	return integral * a^3
+	return integral 
 end
 
 holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], J, ω[j], β; dims = dims) for j in eachindex(α))
@@ -107,7 +107,7 @@ holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector; dims = 3) = su
 	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
 """
 function holstein_energy(v, w, α, J, ωβ...; a = 1, dims = 3)
-	A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = 1) : trial_energy(v, w, ωβ[2]; dims = 1)
+	A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
 	B = holstein_interaction_energy(v, w, α, J, ωβ...; a = a, dims = dims)
     return -(A + B + C), A, B, C
 end 
@@ -134,7 +134,7 @@ Calculate the total energy, kinetic energy, and interaction energy of the Holste
 - `interaction_energy`: The calculated polaron interaction energy.
 """
 function holstein_energy_k_space(v, w, α, J, ωβ...; a = 1, dims = 3)
-    A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = 1) : trial_energy(v, w, ωβ[2]; dims = 1)
+    A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
     B = holstein_interaction_energy_k_space(v, w, α, J, ωβ...; a = 1, dims = dims)
     return -(A + B + C), A, B, C
 end
