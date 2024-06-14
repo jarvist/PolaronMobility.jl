@@ -58,18 +58,20 @@
 
     # Ionic dielectric and decomposed alpha
 
-    ω = 2π .* phonon_freq
+    ω = phonon_freq .* 2π
     ϵ_ionic = [ϵ_ionic_mode(i, j, volume) for (i, j) in zip(phonon_freq, ir_activity)]
 
     α = [frohlichalpha(ϵ_optic, i, sum(ϵ_ionic), j, m_eff) for (i, j) in zip(ϵ_ionic, phonon_freq)]
 
+    Hellwarth_B_freq = HellwarthBScheme(hcat(phonon_freq, ir_activity))
+
     @testset "Ionic dielectric and decomposed alphas" begin
 
-        @test ϵ_ionic ≈ [0.2999680470756664, 0.0247387647244569, 0.2543132184018061, 0.16621617310133838, 2.3083204422506296, 3.0707979601813267, 3.2026782087486407, 0.892674135624958, 0.8861579096771846, 0.7209278375756829, 0.40199759805819046, 0.6183279038315278, 0.7666391525823296, 0.1555444994147378, 1.1627710200840813] rtol = 1e-3
+        @test ϵ_ionic ≈ [0.299961772906185, 0.024738247285335784, 0.2543078991544757, 0.16621269650291148, 2.3082721611293127, 3.07073373098414, 3.2026112211275524, 0.8926554643402222, 0.8861393746866522, 0.7209127585581645, 0.40198918982576065, 0.6183149708071556, 0.7666231174611848, 0.1555412460263828, 1.1627466994188664] rtol = 1e-3
 
-        @test α ≈ [0.03401013445306177, 0.002850969846883158, 0.03075081562607006, 0.02275292381052607, 0.33591418423943553, 0.46526818717696034, 0.5046331098089347, 0.14223560721522646, 0.16083871312929882, 0.1622911897190622, 0.09123913334086006, 0.14070972715961402, 0.18159786148348117, 0.039500396977008016, 0.3487735470060312] rtol = 1e-3
+        @test α ≈ [0.03400925262932455, 0.002850895926184945, 0.030750018310811124, 0.0227523338667158, 0.33590547456785985, 0.4652561235806758, 0.5046200255485525, 0.14223191929288398, 0.1608345428607191, 0.16228698179028636, 0.09123676766854395, 0.1407060788006921, 0.1815931529662271, 0.03949937280029587, 0.34876450391350566] rtol = 1e-3
 
-        @test sum(α) ≈ 2.663366500992453 rtol = 1e-3
+        @test sum(α) ≈ 2.6632974445232787 rtol = 1e-3
 
         println('\n', "Ionic dielectric and alphas:")
         println("-------------------------------")
@@ -81,20 +83,18 @@
 
     # Variations
 
-    athermal_energy(v, w) = frohlich_energy(v, w, α, ω)
-    v_0, w_0, E_0, A_0, B_0, C_0 = vw_variation(athermal_energy, 4, 3) # Athermal
+    v_0, w_0, E_0, A_0, B_0, C_0 = feynmanvw(α, ω) # Athermal
 
     β = ħ / (kB * 300) * 1e12
-    thermal_energy(v, w) = frohlich_energy(v, w, α, ω, β)
-    v, w, E = vw_variation(thermal_energy, v_0, w_0) # Thermal
+    v, w, E, A, B, C = feynmanvw(α, ω, β) # Thermal
 
     @testset "Multiple mode variations" begin
 
-        @test v_0[1] ≈ 3.292283619446986 rtol = 1e-3
-        @test w_0[1] ≈ 2.679188425097246 rtol = 1e-3
+        @test v_0[1] / Hellwarth_B_freq ≈ 16.283245452806543 rtol = 1e-3
+        @test w_0[1] / Hellwarth_B_freq ≈ 12.93471218329606 rtol = 1e-3
 
-        @test v[1] ≈ 35.19211042393129 rtol = 1e-3
-        @test w[1] ≈ 32.454157668863225 rtol = 1e-3
+        @test v[1] / Hellwarth_B_freq ≈ 123.90465526352604 rtol = 1e-3
+        @test w[1] / Hellwarth_B_freq ≈ 106.7711782241155 rtol = 1e-3
 
         println("\nVariational parameters:")
         println("Athermal v = $(v_0[1]) | athermal w = $(w_0[1])")
@@ -109,9 +109,9 @@
 
     @testset "Multiple mode energies" begin
 
-        @test E_0 ≈ -19.51150570496287 rtol = 1e-3
+        @test E_0 ≈ -19.54914965269833 rtol = 1e-3
 
-        @test E ≈ -42.79764110613318 rtol = 1e-3
+        @test E ≈ -63.315841394023664 rtol = 1e-3
 
         println("\nPolaron energies")
         println("0K energy: $E_0 meV")
@@ -124,7 +124,7 @@
 
     @testset "Multiple mode mobility" begin
 
-        @test μ ≈ 160.39270615550004 rtol = 1e-3
+        @test μ ≈ 145.35917679067404  rtol = 1e-3
 
         println("\nMobility at 300K: $μ")
     end
@@ -137,9 +137,9 @@
 
     @testset "Multiple mode impedence" begin
 
-        @test Z_dc ≈ 91.38457766169273 + 0.0im rtol = 1e-3
+        @test Z_dc ≈ 100.83185205569625 + 0.0im  rtol = 1e-3
 
-        @test Z ≈ 76.18909903384355 - 23.457492887508455im rtol = 1e-3
+        @test Z ≈ 82.51429805705051 - 18.759832224634735im rtol = 1e-3
 
         println("\nComplex Impedence:")
         println("DC limit: $Z_dc")
@@ -154,9 +154,9 @@
 
     @testset "Multiple mode conductivity" begin
 
-        @test σ_dc ≈ 0.0109427654598571 - 0.0im rtol = 1e-3
+        @test σ_dc ≈ 0.009917501063529335 - 0.0im rtol = 1e-3
 
-        @test σ ≈ 0.011988781430646566 + 0.003691167879729921im rtol = 1e-3
+        @test σ ≈ 0.011523473106500403 + 0.0026198904579370222im rtol = 1e-3
 
         println("\nComplex Conductivity:")
         println("DC limit: $σ_dc")
@@ -164,8 +164,6 @@
     end
 
     # Single Mode Tests
-
-    Hellwarth_B_freq = HellwarthBScheme(hcat(phonon_freq, ir_activity))
 
     @testset "Hellwarth effective frequency" begin
 
@@ -181,13 +179,13 @@
         display(singlemode_polaron)
 
         @test singlemode_polaron.α ≈ 2.393156008589176 rtol = 1e-3
-        @test singlemode_polaron.v ≈ [3.3086321909253815, 19.847527941504232] rtol = 1e-3
-        @test singlemode_polaron.w ≈ [2.6634018089397014, 16.948211346396874] rtol = 1e-3
-        @test singlemode_polaron.F ≈ [-5.571343967852482, -8.585426348039439] rtol = 1e-3
+        @test singlemode_polaron.v ≈ [7.449619526820557, 44.68801621691182] rtol = 1e-3
+        @test singlemode_polaron.w ≈ [5.996837775164936, 38.160005552975356] rtol = 1e-3
+        @test singlemode_polaron.F ≈ [-5.5702304614638845, -16.23756639407282] rtol = 1e-3
         @test singlemode_polaron.χ ≈ [1.8185958394302872 + 2.8215456392868816im, -2.6431955087396575 + 16.602938172029397im] rtol = 1e-3
-        @test singlemode_polaron.z ≈ [0.3385854767144258 - 0.5782315007316344im, 1.9923525806435276 - 0.0428165389512411im] rtol = 1e-3
-        @test singlemode_polaron.σ ≈ [0.7541017043762221 + 1.287844252674551im, 0.5016874943626112 + 0.010781486345548893im] rtol = 1e-3
-        @test singlemode_polaron.μ ≈ [Inf, 0.4873858565327472] rtol = 1e-3
+        @test singlemode_polaron.z ≈ [2.821550935533812 - 4.818576894764461im, 16.60369379393479 - 0.356819708523505im] rtol = 1e-3
+        @test singlemode_polaron.σ ≈ [0.09049281752137871 + 0.15454145950697004im, 0.06019975971109561 + 0.0012937157827582215im] rtol = 1e-3
+        @test singlemode_polaron.μ ≈ [Inf, 0.058486537513714805] rtol = 1e-3
     end
 
     # Multimode Tests
@@ -202,13 +200,13 @@
 
         @test multimode_polaron.α ≈ [0.03401013640864639, 0.0028509700108140822, 0.030750817394243672, 0.02275292511882046, 0.33591420355451984, 0.46526821392990697, 0.5046331388253664, 0.14223561539378177, 0.16083872237753374, 0.16229119905081466, 0.0912391385871153, 0.14070973525043112, 0.18159787192536828, 0.03950039924828304, 0.3487735670605295] rtol = 1e-3
         @test sum(multimode_polaron.α) ≈ 2.663366654136176 rtol = 1e-3
-        @test multimode_polaron.v ≈ [3.292268504574272, 35.19207894065109] rtol = 1e-3
-        @test multimode_polaron.w ≈ [2.679193078382525, 32.45420279136673] rtol = 1e-3
-        @test multimode_polaron.F ≈ [-4.719036156508013, -10.357755243151143] rtol = 1e-3
-        @test multimode_polaron.χ ≈ [1.0521976989565067 + 2.089861861859462im, -2.1193321531426945 + 14.077489512387219im] rtol = 1e-3
-        @test multimode_polaron.z ≈ [0.2507834234231354 - 0.4862637238747808im, 1.6892987414864662 - 0.10568014162287666im] rtol = 1e-3
-        @test multimode_polaron.σ ≈ [0.8377746271072964 + 1.624427182564005im, 0.5896539523503038 + 0.036887917845742565im] rtol = 1e-3
-        @test multimode_polaron.μ ≈ [Inf, 0.5729621483218189] rtol = 1e-3
+        @test multimode_polaron.v ≈ [5.835086623282841, 44.40143374273715] rtol = 1e-3
+        @test multimode_polaron.w ≈ [4.635142386961883, 38.26163944180995] rtol = 1e-3
+        @test multimode_polaron.F ≈ [-4.728298068562315, -15.318577804140983]  rtol = 1e-3
+        @test multimode_polaron.χ ≈ [1.0083819418968094 + 2.262844921017003im, -2.5135009156247414 + 15.484273072268337im] rtol = 1e-3
+        @test multimode_polaron.z ≈ [2.262844921017003 - 4.008381941896809im, 15.484273072268337 - 0.4864990843752586im] rtol = 1e-3
+        @test multimode_polaron.σ ≈ [0.10680047179649949 + 0.18918533857934283im, 0.0645179673929453 + 0.002027084637162277im] rtol = 1e-3
+        @test multimode_polaron.μ ≈ [Inf, 0.062313430372364004] rtol = 1e-3
     end
 
     print('\n')

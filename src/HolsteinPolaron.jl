@@ -155,14 +155,18 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 dprocess += 1
             end
 
+        # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
+        if j > 1
+            v_guesses = reduce_array(p["v0"][d, j-1, :])
+            w_guesses = reduce_array(p["w0"][d, j-1, :])
+        end
+
         # Extract the ground-state, athermal polaron properties (energy (enthalpy) and variational parameters v and w).
         # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
         # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
         athermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω; a = a, dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω; a = a, dims = dims[d])
         v_gs, w_gs, F_gs, A_gs, B_gs, C_gs = vw_variation(athermal_energy, v_guesses, w_guesses)
  
-        # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
-        v_guesses, w_guesses = v_gs, w_gs
 
         # Store the athermal data.
         p["v0"][d, j, :] .= v_gs 

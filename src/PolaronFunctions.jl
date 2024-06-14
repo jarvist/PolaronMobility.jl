@@ -194,7 +194,7 @@ function polaron_memory_function(Ω, structure_factor; limits = [0, Inf])
     if iszero(Ω)
       return polaron_memory_function(structure_factor; limits = limits)
     end
-    @fastmath integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits..., rtol=1e-4)
+    integral, _ = quadgk(t -> (1 - exp(im * Ω * t)) / Ω * imag(structure_factor(t)), limits..., rtol=1e-4)
     return integral
 end
 
@@ -225,7 +225,7 @@ println(result)  # Output: 383.3333333333333
 ```
 """
 function polaron_memory_function(structure_factor; limits = [0, Inf])
-  @fastmath integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits..., rtol=1e-5)
+  integral, _ = quadgk(t -> -im * t * imag(structure_factor(t)), limits..., rtol=1e-5)
   return integral
 end
 

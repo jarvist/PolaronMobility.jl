@@ -24,7 +24,7 @@ Expected Output:
 6.0
 """
 function holstein_coupling(k, α, J, ω; dims = 3)
-    α * ω * J * dims
+    2 * α * ω * J * dims
 end
 
 holstein_coupling(k, α::Vector, ω::Vector; dims = 3) = sum(holstein_coupling(k, α[j], ω[j]; dims = dims) for j in eachindex(α))
@@ -59,13 +59,12 @@ This example calculates the electron-phonon interaction energy for given values 
 """
 function holstein_interaction_energy(v, w, α, J, ωβ...; a = 1, dims = 3)
     coupling = holstein_coupling(1, α, J, ωβ[1]; dims = dims)
-    polaron_radius = a * sqrt(J / ωβ[1])
-	propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] * polaron_radius^2 : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1] * polaron_radius^2
-    q_integral(τ) = (a / 2π) * sqrt(π / propagator(τ)) * erf(π / a * sqrt(propagator(τ)))
+	propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) : polaron_propagator(τ, v, w, ωβ[2])
+    q_integral(τ) = (a / 2π) * sqrt(π / propagator(τ)) * erf(π * sqrt(propagator(τ)))
 	integrand(τ) = phonon_propagator(τ, ωβ...) * q_integral(τ)^dims
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
-    return integral * coupling
+    return integral * coupling / 2
 end
 
 holstein_interaction_energy(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
@@ -109,7 +108,7 @@ holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector; dims = 3) = su
 function holstein_energy(v, w, α, J, ωβ...; a = 1, dims = 3)
 	A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
 	B = holstein_interaction_energy(v, w, α, J, ωβ...; a = a, dims = dims)
-    return -(A + B + C), A, B, C
+    return -2 * dims -(A + B + C), A, B, C
 end 
 
 """
