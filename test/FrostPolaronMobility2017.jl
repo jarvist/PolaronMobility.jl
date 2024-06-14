@@ -23,13 +23,13 @@
     @test ustrip(MAPIe_polaron.μ |> u"cm^2/V/s") ≈ 136.42 rtol=0.02
 
     # Test variational parameters
-    @test MAPIe_polaron.v ≈ 19.86 rtol=0.02
-    @test MAPIe_polaron.w ≈ 16.96 rtol=0.02
+    @test ustrip(MAPIe_polaron.v) / phonon_freq ≈ 19.86 rtol=0.02
+    @test ustrip(MAPIe_polaron.w) / phonon_freq ≈ 16.96 rtol=0.02
 
     # Same for the MAPI holes @ 300 K
     @test ustrip(MAPIh_polaron.μ |> u"cm^2/V/s") ≈ 94.15 rtol=0.02
-    @test MAPIh_polaron.v ≈ 20.09  rtol=0.02
-    @test MAPIh_polaron.w ≈ 16.81  rtol=0.02
+    @test ustrip(MAPIh_polaron.v) / phonon_freq ≈ 20.09  rtol=0.02
+    @test ustrip(MAPIh_polaron.w) / phonon_freq ≈ 16.81  rtol=0.02
 
 end
 

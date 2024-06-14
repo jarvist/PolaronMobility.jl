@@ -23,8 +23,8 @@ println(result)
 Expected Output:
 6.0
 """
-function holstein_coupling(k, α, ω; dims = 3)
-    2 * α * dims * ω
+function holstein_coupling(k, α, J, ω; dims = 3)
+    2 * α * ω * J * dims
 end
 
 holstein_coupling(k, α::Vector, ω::Vector; dims = 3) = sum(holstein_coupling(k, α[j], ω[j]; dims = dims) for j in eachindex(α))
@@ -57,15 +57,14 @@ println(result)
 ```
 This example calculates the electron-phonon interaction energy for given values of `v`, `w`, `α`, `ω`, and `β`. The result is then printed.
 """
-function holstein_interaction_energy(v, w, α, ωβ...; dims = 3)
-    polaron_radius = 1 / sqrt(2)
-    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
-    coupling = holstein_coupling(1, α, ωβ[1]; dims = dims) * ωβ[1]
-    propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
-    integrand(τ) = phonon_propagator(τ, ωβ...) * P(dims, momentum_cutoff^2 * polaron_radius^2 * propagator(τ)) / (propagator(τ))^(dims/2)
+function holstein_interaction_energy(v, w, α, J, ωβ...; a = 1, dims = 3)
+    coupling = holstein_coupling(1, α, J, ωβ[1]; dims = dims)
+	propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) : polaron_propagator(τ, v, w, ωβ[2])
+    q_integral(τ) = (a / 2π) * sqrt(π / propagator(τ)) * erf(π * sqrt(propagator(τ)))
+	integrand(τ) = phonon_propagator(τ, ωβ...) * q_integral(τ)^dims
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
     integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
-    return integral * coupling / (4π * polaron_radius^2)^(dims / 2) 
+    return integral * coupling / 2
 end
 
 holstein_interaction_energy(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
@@ -88,26 +87,28 @@ Calculate the Holstein polaron interaction energy in k-space at finite temperaur
 ## Returns
 A scalar value representing the Holstein polaron interaction energy in k-space at finite temperature.
 """
-function holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = 3)
-    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
-    coupling(k) = holstein_coupling(k, α, ωβ[1]; dims = dims) * ωβ[1]
+
+function holstein_interaction_energy_k_space(v, w, α, J, ωβ...; a = 1, dims = 3)
+    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π) / a
+    polaron_radius = a * sqrt(J / ωβ[1])
+    coupling(k) = holstein_coupling(k, α, J, ωβ[1]; dims = dims) 
     propagator(τ) = length(ωβ) == 1 ? polaron_propagator(τ, v, w) * ωβ[1] : polaron_propagator(τ, v, w, ωβ[2]) * ωβ[1]
-    integrand(τ) = phonon_propagator(τ, ωβ...) * spherical_k_integral(coupling, propagator(τ); dims = dims, limits = [0, momentum_cutoff]) 
+    integrand(τ) = phonon_propagator(τ, ωβ...) * spherical_k_integral(coupling, propagator(τ); dims = dims, limits = [0, momentum_cutoff], radius = polaron_radius)
     upper_limit = length(ωβ) == 1 ? Inf : ωβ[2] / 2
-    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit) 
-    return integral 
+    integral, _ = quadgk(τ -> integrand(τ), 0, upper_limit)
+	return integral 
 end
 
-holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
-holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
+holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], J, ω[j], β; dims = dims) for j in eachindex(α))
+holstein_interaction_energy_k_space(v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_interaction_energy_k_space(v, w, α[j], J, ω[j]; dims = dims) for j in eachindex(α))
 
 """
 	Total free energy for the Holstein model. Here the k-space integral is evaluated analytically.
 """
-function holstein_energy(v, w, α, ωβ...; dims = 3)
+function holstein_energy(v, w, α, J, ωβ...; a = 1, dims = 3)
 	A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
-	B = holstein_interaction_energy(v, w, α, ωβ...; dims = dims)
-    return -(A + B + C), A, B, C
+	B = holstein_interaction_energy(v, w, α, J, ωβ...; a = a, dims = dims)
+    return -2 * dims -(A + B + C), A, B, C
 end 
 
 """
@@ -131,9 +132,9 @@ Calculate the total energy, kinetic energy, and interaction energy of the Holste
 - `kinetic_energy`: The calculated polaron kinetic energy.
 - `interaction_energy`: The calculated polaron interaction energy.
 """
-function holstein_energy_k_space(v, w, α, ωβ...; dims = 3)
+function holstein_energy_k_space(v, w, α, J, ωβ...; a = 1, dims = 3)
     A, C = length(ωβ) == 1 ? trial_energy(v, w; dims = dims) : trial_energy(v, w, ωβ[2]; dims = dims)
-    B = holstein_interaction_energy_k_space(v, w, α, ωβ...; dims = dims) 
+    B = holstein_interaction_energy_k_space(v, w, α, J, ωβ...; a = 1, dims = dims)
     return -(A + B + C), A, B, C
 end
 
@@ -167,11 +168,11 @@ println(result)
 ```
 This example demonstrates how to use the `holstein_structure_factor` function to calculate the structure factor for a given set of parameters. The function is called with the values of `t`, `v`, `w`, `α`, `ω`, and `β` as arguments, and the result is then printed.
 """
-function holstein_structure_factor(t, v, w, α, ωβ...; dims = 3)
-    momentum_cutoff = gamma(dims / 2 + 1)^(1 / dims) * (2√π)
-	coupling = holstein_coupling(1, α, ωβ[1]; dims = dims) * ωβ[1]
-	propagator = length(ωβ) == 1 ? polaron_propagator(im * t, v, w) * ωβ[1] : polaron_propagator(im * t, v, w, ωβ[2]) * ωβ[1] 
-	integral = P(dims + 2, propagator * momentum_cutoff^2 / 2) * (propagator)^(-dims/2 - 1) * 2^(1 - dims / 2) * π^(-dims / 2) * dims / 2
+function holstein_structure_factor(t, v, w, α, J, ωβ...; a = 1, dims = 3)
+	coupling = holstein_coupling(1, α, J, ωβ[1]; dims = dims)
+    polaron_radius = a * sqrt(J / ωβ[1])
+	propagator = length(ωβ) == 1 ? polaron_propagator(im * t, v, w) * ωβ[1] * polaron_radius^2 : polaron_propagator(im * t, v, w, ωβ[2]) * ωβ[1] * polaron_radius^2
+	integral = (a / 2π)^dims * (√π / 2 * erf(π / a * sqrt(propagator)) / propagator^(3/2) - π / a * exp(-π^2 / a^2 * propagator) / propagator) * (√π * erf(π / a * sqrt(propagator)) / sqrt(propagator))^(dims - 1)
     return 2 / dims * coupling * integral * phonon_propagator(im * t, ωβ...) 
 end
 
@@ -195,12 +196,13 @@ Calculate the structure factor in k-space for the Holstein lattice polaron model
 ## Returns
 A scalar value representing the calculated structure factor in k-space for the Holstein lattice polaron model at finite temperature.
 """
-function holstein_structure_factor_k_space(t, v, w, α, ωβ...; dims = 3)
-    momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π)
-	coupling(k) = holstein_coupling(1, α, ωβ[1]; dims = dims) * k^2 * ωβ[1]
+function holstein_structure_factor_k_space(t, v, w, α, J, ωβ...; a = 1, dims = 3)
+    momentum_cutoff = gamma(dims / 2 + 1)^(1/ dims) * (2√π) / a
+    polaron_radius = a * sqrt(J / ωβ[1])
+	coupling(k) = holstein_coupling(1, α, J, ωβ[1]; dims = dims) * k^2 * ωβ[1]
 	propagator = length(ωβ) == 1 ? polaron_propagator(im * t, v, w) * ωβ[1] : polaron_propagator(im * t, v, w, ωβ[2]) * ωβ[1]
-	integral = spherical_k_integral(coupling, propagator; dims = dims, limits = [0, momentum_cutoff])
-	return 2 / dims * integral * phonon_propagator(im * t, ωβ...)
+	integral = spherical_k_integral(coupling, propagator; dims = dims, limits = [0, momentum_cutoff], radius = polaron_radius)
+	return 2 / dims * integral * phonon_propagator(im * t, ωβ...) * a^dims
 end
 
 """
@@ -222,13 +224,13 @@ result = holstein_memory_function(Ω, v, w, α, ω, β; dims = 3)
 ```
 In this example, the `holstein_memory_function` is called with the input parameters `Ω`, `v`, `w`, `α`, `ω`, and `β`, and the optional parameter `dims` set to 3. The function calculates the memory function using the `general_memory_function` function and returns the result.
 """
-function holstein_memory_function(Ω, v, w, α, ωβ...; dims = 3)
-	structure_factor(t) = holstein_structure_factor(t, v, w, α, ωβ...; dims = dims)
-	return polaron_memory_function(Ω, structure_factor)
+function holstein_memory_function(Ω, v, w, α, J, ωβ...; a = 1, dims = 3)
+	structure_factor(t) = holstein_structure_factor(t, v, w, α, J, ωβ...; a = a, dims = dims)
+	return polaron_memory_function(Ω, structure_factor, limits = [0, 1e4])
 end
 
-holstein_memory_function(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
-holstein_memory_function(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
+holstein_memory_function(Ω, v, w, α::Vector, J, ω::Vector, β; a = 1, dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], J, ω[j], β; a = a, dims = dims) for j in eachindex(α))
+holstein_memory_function(Ω, v, w, α::Vector, J,  ω::Vector; a = 1, dims = 3) = sum(holstein_memory_function(Ω, v, w, α[j], J, ω[j]; a = a, dims = dims) for j in eachindex(α))
 
 """
     holstein_memory_function_k_space(Ω, v, w, α, ωβ...; dims = 3)
@@ -250,13 +252,13 @@ Calculate the memory function for the Holstein model in k-space at finite temper
 ## Returns
 A scalar value representing the memory function of the Holstein model in k-space at finite temperature evaluated at the frequency `Ω`.
 """
-function holstein_memory_function_k_space(Ω, v, w, α, ωβ...; dims = 3)
-	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ωβ...; dims = dims)
-	 return polaron_memory_function(Ω, structure_factor)
+function holstein_memory_function_k_space(Ω, v, w, α, J, ωβ...; a = 1, dims = 3)
+	 structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, J, ωβ...; a = a, dims = dims)
+	 return polaron_memory_function(Ω, structure_factor, limits = [0, 1e4])
 end
 
-holstein_memory_function_k_space(Ω, v, w, α::Vector, ω::Vector, β; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
-holstein_memory_function_k_space(Ω, v, w, α::Vector, ω::Vector; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], ω[j]; dims = dims) for j in eachindex(α))
+# holstein_memory_function_k_space(Ω, v, w, α::Vector, J, ω::Vector, β; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], J, ω[j], β; dims = dims) for j in eachindex(α))
+# holstein_memory_function_k_space(Ω, v, w, α::Vector, J, ω::Vector; dims = 3) = sum(holstein_memory_function_k_space(Ω, v, w, α[j], J, ω[j]; dims = dims) for j in eachindex(α))
 
 """
     holstein_mobility(v, w, α, ω, β; dims = 3)
@@ -288,12 +290,12 @@ println(result)
 ```
 This code calculates the mobility using the given parameters and prints the result.
 """
-function inverse_holstein_mobility(v, w, α, ω, β; dims = 3)
-    structure_factor(t) = holstein_structure_factor(t, v, w, α, ω, β; dims = dims)
-    return abs(imag(polaron_memory_function(structure_factor)))
+function inverse_holstein_mobility(v, w, α, J, ω, β; a = 1, dims = 3)
+    structure_factor(t) = holstein_structure_factor(t, v, w, α, J, ω, β; a = a, dims = dims)
+    return abs(imag(polaron_memory_function(structure_factor, limits = [0, 1e4])))
 end
 
-inverse_holstein_mobility(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(inverse_holstein_mobility(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+inverse_holstein_mobility(v, w, α::Vector, J, ω::Vector, β; a = 1, dims = 3) = sum(inverse_holstein_mobility(v, w, α[j], J,  ω[j], β; a = a, dims = dims) for j in eachindex(α))
 
 """
     polaron_mobility(v, w, α, ω, β)
@@ -302,8 +304,8 @@ The polaron mobility.
 
 See also [`inverse_polaron_mobility`](@ref)
 """
-holstein_mobility(v, w, α, ω, β; dims = 3) = 1 / inverse_holstein_mobility(v, w, α, ω, β; dims = dims)
-holstein_mobility(v, w, α, ω; dims = 3) = reduce_array(repeat([Inf], length(α)))
+holstein_mobility(v, w, α, J, ω, β; a = 1, dims = 3) = 1 / inverse_holstein_mobility(v, w, α, J, ω, β; a = a, dims = dims)
+holstein_mobility(v, w, α, J, ω; a = 1, dims = 3) = reduce_array(repeat([Inf], length(α)))
 
 
 """
@@ -326,22 +328,22 @@ Calculate the DC mobility in k-space for a Holstein polaron system at finite tem
 ## Returns
 The DC mobility in k-space for the Holstein polaron system at finite temperature.
 """
-function inverse_holstein_mobility_k_space(v, w, α, ω, β; dims = 3)
-    structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, ω, β; dims = dims)
-    return abs(imag(polaron_memory_function(structure_factor)))
+function inverse_holstein_mobility_k_space(v, w, α, J, ω, β; a = 1, dims = 3)
+    structure_factor(t) = holstein_structure_factor_k_space(t, v, w, α, J, ω, β; a = a, dims = dims)
+    return abs(imag(polaron_memory_function(structure_factor, limits = [0, 1e4])))
 end
 
-inverse_holstein_mobility_k_space(v, w, α::Vector, ω::Vector, β; dims = 3) = sum(inverse_holstein_mobility_k_space(v, w, α[j], ω[j], β; dims = dims) for j in eachindex(α))
+# inverse_holstein_mobility_k_space(v, w, α::Vector, J, ω::Vector, β; dims = 3) = sum(inverse_holstein_mobility_k_space(v, w, α[j], J, ω[j], β; dims = dims) for j in eachindex(α))
 
-holstein_mobility_k_space(v, w, α, ω, β; dims = 3) = 1 / inverse_holstein_mobility_k_space(v, w, α, ω, β; dims = dims)
+holstein_mobility_k_space(v, w, α, J, ω, β; a = 1, dims = 3) = 1 / inverse_holstein_mobility_k_space(v, w, α, J, ω, β; a = a, dims = dims)
 
-holstein_mobility_k_space(v, w, α, ω; dims = 3) = reduce_array(repeat([Inf], length(α)))
+holstein_mobility_k_space(v, w, α, J, ω; a = 1, dims = 3) = reduce_array(repeat([Inf], length(α)))
 
-function holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = 3)
-    -im * (Ω - holstein_memory_function(v, w, α, ωβ...; dims = dims))
+function holstein_complex_impedence(Ω, v, w, α, J, ωβ...; a = 1, dims = 3)
+    -im * (Ω - holstein_memory_function(v, w, α, J, ωβ...; a = a, dims = dims))
 end
 
-function holstein_complex_conductivity(Ω, v, w, α, ωβ...; dims = 3)
-    return 1 / holstein_complex_impedence(Ω, v, w, α, ωβ...; dims = dims)
+function holstein_complex_conductivity(Ω, v, w, α, J, ωβ...; a = 1, dims = 3)
+    return 1 / holstein_complex_impedence(Ω, v, w, α, J, ωβ...; a = a, dims = dims)
 end
 

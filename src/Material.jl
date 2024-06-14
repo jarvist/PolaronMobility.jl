@@ -73,10 +73,10 @@ function material(transfer_integral, coupling_energy, phonon_freq, lattice_const
     phonon_energy = ħ * phonon_freq * 1e12 * 2π
     dimensionless_coupling = coupling_energy / phonon_energy
     adiabaticity = phonon_energy / transfer_integral
-    α = dimensionless_coupling^2 * adiabaticity ./ lattice_dimensionality
+    α = dimensionless_coupling * 2 / lattice_dimensionality
     band_mass = ħ^2 / transfer_integral / lattice_constant^2 / 2 / me
     
-    return Material(α, band_mass, phonon_freq, phonon_freq, 1, 1, 1, 1, 1, adiabaticity, transfer_integral / eV * 1000, lattice_constant * 1e10, dimensionless_coupling, lattice_dimensionality)
+    return Material(α, band_mass, phonon_freq, phonon_freq, 1, 1, 1, 1, lattice_constant^(lattice_dimensionality/2), adiabaticity, transfer_integral / eV * 1000, lattice_constant * 1e10, dimensionless_coupling, lattice_dimensionality)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", x::Material)
@@ -102,3 +102,53 @@ function Base.show(io::IO, ::MIME"text/plain", x::Material)
     println("\e[K-------------------------------------------")
 end
 
+function save_material(material::Material, prefix)
+
+    println("Saving material data to $prefix.jld ...")
+
+    JLD.save("$prefix.jld",
+        "alpha", material.α,
+        "band mass", material.mb,
+        "phonon freq", material.f,
+        "phonon freq eff", material.feff,
+        "optical dielectric", material.ϵo,
+        "static dielectric", material.ϵs,
+        "ionic dielectric", material.ϵi,
+        "infrared activity", material.ir,
+        "unitcell volume", material.V,
+        "adiabaticity", material.γ,
+        "transfer integral", material.J,
+        "lattice constant", material.a,
+        "dimensionless coupling", material.g,
+        "lattice dimension", material.z
+    )
+
+    println("... Material data saved.")
+end
+
+function load_material(material_file_path)
+
+    println("Loading material data from $material_file_path ...")
+
+    data = JLD.load("$material_file_path")
+
+    material = Material(
+        data["alpha"],
+        data["band mass"],
+        data["phonon freq"],
+        data["phonon freq eff"],
+        data["optical dielectric"],
+        data["static dielectric"],
+        data["ionic dielectric"],
+        data["infrared activity"],
+        data["unitcell volume"],
+        data["adiabaticity"],
+        data["transfer integral"],
+        data["lattice constant"],
+        data["dimensionless coupling"],
+        data["lattice dimension"]
+    )
+    println("... Material loaded.")
+
+    return material
+end

@@ -62,8 +62,6 @@ See also: `Unitful.k`, `Unitful.J`, `Unitful.K`.
 """
 @unit k_pu "k" BoltzmannConstant 1Unitful.k false
 
-@unit J0_pu "J₀" PolaronTransferIntegral 1Unitful.meV false
-
 """
     PolaronUnits.ω0_pu
 A unit equal to the reduced Planck constant ħ = h / 2π ≈ 1.054,571,8176 × 10^-34 J × s.
@@ -74,17 +72,6 @@ Dimension: 𝐋^2 𝐌 𝐓^-1.
 See also: `Unitful.ħ`, `Unitful.J`, `Unitful.s`.
 """
 @unit ω0_pu "ω₀" PolaronAngularFrequency 1Unitful.THz2π false
-@unit ωh0_pu "ωₕ₀" PolaronAdiabticity 1J0_pu/1ħ_pu false
-
-"""
-    PolaronUnits.J0_pu
-Transfer integral energy unit
-`Unitful.ħ` is a quantity (with units `J × s`) whereas `PolaronUnits.ħ_pu` is a unit equal to
-`Unitful.ħ`.
-Dimension: 𝐋^2 𝐌 𝐓^-1.
-See also: `Unitful.ħ`, `Unitful.J`, `Unitful.s`.
-"""
-@unit mh0_pu "mₕ₀" PolaronHolsteinMass 1ħ_pu^2/1J0_pu/1Unitful.Å^2 false
 
 # Polaron radius is derived from the base polaron units
 """
@@ -98,7 +85,6 @@ Dimension: 𝐋.
 See also: `Unitful.ε0`, `Unitful.ħ`, `Unitful.me`, `Unitful.q`, `Unitful.m`.
 """
 @unit a0_pu "a₀" PolaronRadius √(1ħ_pu/1m0_pu/1ω0_pu) false
-@unit ah0_pu "aₕ₀" PolaronHolsteinRadius √(1ħ_pu/1mh0_pu/1ωh0_pu) false
 
 # Polaron energy is derived from the base polaron units
 """
@@ -112,62 +98,6 @@ Dimension: 𝐋^2 𝐌 𝐓^-2.
 See also: `Unitful.me`, `Unitful.q`, `Unitful.ε0`, `Unitful.ħ`, `Unitful.J`, `Unitful.eV`, [`UnitfulAtomic.Ry`](@ref).
 """
 @unit E0_pu "E₀" PolaronEnergy 1ħ_pu*1ω0_pu false
-@unit Eh0_pu "Eₕ₀" PolaronHolsteinEnergy 1J0_pu false
-
-"""
-    punit(x::Unitful.Quantity)
-    punit(x::Unitful.Units)
-    punit(x::Unitful.Dimensions)
-Returns the appropriate polaron unit (a `Unitful.Units` object) for the dimension of `x`.
-"""
-phunit(x) = phunit(dimension(x))
-
-# `punit` for `Dimension` types
-phunit(x::Dimension{:Length})      = (ah0_pu)^x.power
-phunit(x::Dimension{:Mass})        = (mh0_pu)^x.power
-phunit(x::Dimension{:Time})        = (ħ_pu/Eh0_pu)^x.power
-phunit(x::Dimension{:Current})     = (e_pu*Eh0_pu/ħ_pu)^x.power
-phunit(x::Dimension{:Temperature}) = (Eh0_pu/k_pu)^x.power
-
-# For dimensions not specified above, there is no polaron unit.
-phunit(::Dimension{D}) where D = throw(ArgumentError("No polaron unit defined for dimension $D."))
-
-# `punit` for `Dimensions` types
-@generated phunit(::Dimensions{N}) where N = prod(phunit, N)
-phunit(::typeof(NoDims)) = NoUnits
-
-# Simplifications for some derived dimensions, so that e.g. `punit(u"J")` returns `E₀`
-# instead of `a₀^2 mₑ E₀^2 ħ^-2`. The following units/dimensions are considered:
-#   * Energy: E₀
-#   * Momentum: ħ/a₀
-#   * Action/angular momentum: ħ
-#   * Force: E₀/a₀
-#   * E-field: E₀/(e*a₀)
-#   * B-field: ħ/(e*a₀^2)
-#   * Voltage/electric potential: E₀/e
-for unit in (:(Eh0_pu), :(e_pu), :(ωh0_pu), :(mh0_pu), :(ħ_pu/ah0_pu), :(ħ_pu), :(Eh0_pu/ah0_pu),
-    :(Eh0_pu/(e_pu*ah0_pu)), :(ħ_pu/(e_pu*ah0_pu^2)), :(Eh0_pu/e_pu), :(e_pu^2/(ah0_pu*Eh0_pu)))
-    @eval phunit(::typeof(dimension($unit))) = $unit
-end
-
-"""
-    puconvert(x::Unitful.Quantity)
-Convert a quantity to the appropriate polaron unit.
-"""
-phuconvert(x) = uconvert(phunit(x), x)
-
-"""
-    puconvert(u::Unitful.Units, x::Number)
-Interpret `x` as a quantity given in polaron units and convert it to the unit `u`.
-"""
-phuconvert(u::Units, x::Number) = uconvert(u, x*phunit(u))
-
-"""
-    pustrip(x::Unitful.Quantity)
-Returns the value of the quantity converted to polaron units as a number type (i.e., with the
-units removed). This is equivalent to `Unitful.ustrip(puconvert(x))`.
-"""
-phustrip(x) = ustrip(phuconvert(x))
 
 """
     punit(x::Unitful.Quantity)
@@ -232,31 +162,31 @@ function addunits!(polaron::FrohlichPolaron; unit="pu")
     polaron.Fl = pustrip.(polaron.Fl .* polaron.ωeff) .* punit(1Unitful.meV)
     polaron.Ms = pustrip.(polaron.Ms .* polaron.mb) .* punit(1Unitful.me)
     polaron.Ml = pustrip.(polaron.Ml .* polaron.mb) .* punit(1Unitful.me)
-    polaron.Rs = pustrip.(polaron.Rs ./ sqrt.(2 .* polaron.mb .* polaron.ωeff.* 2π)) .* punit(1Unitful.Å)
-    polaron.Rl = pustrip.(polaron.Rl ./ sqrt.(2 .* polaron.mb .* polaron.ωeff .* 2π)) .* punit(1Unitful.Å)
-    polaron.ΩFC = pustrip.(polaron.ΩFC) .* punit(1Unitful.THz)
+    polaron.Rs = pustrip.(polaron.Rs ./ sqrt(2 * polaron.ωeff * polaron.mb)) .* punit(1Unitful.Å)
+    polaron.Rl = pustrip.(polaron.Rl ./ sqrt(2 * polaron.ωeff * polaron.mb)) .* punit(1Unitful.Å)
+    polaron.ΩFC = pustrip.(polaron.ΩFC) .* punit(1Unitful.THz2π)
     polaron.F0 = pustrip.(polaron.F0) .* punit(1Unitful.meV)
     polaron.A0 = pustrip.(polaron.A0) .* punit(1Unitful.meV)
     polaron.B0 = pustrip.(polaron.B0) .* punit(1Unitful.meV)
     polaron.C0 = pustrip.(polaron.C0) .* punit(1Unitful.meV)
-    polaron.v0 = pustrip.(polaron.v0 ./ 2π) .* punit(1Unitful.THz)
-    polaron.w0 = pustrip.(polaron.w0 ./ 2π) .* punit(1Unitful.THz)
-    polaron.κ0 = pustrip.(polaron.κ0 .* polaron.mb  ./ 4π^2) .* punit(1u"μN/m")
+    polaron.v0 = pustrip.(polaron.v0) .* punit(1Unitful.THz2π)
+    polaron.w0 = pustrip.(polaron.w0) .* punit(1Unitful.THz2π)
+    polaron.κ0 = pustrip.(polaron.κ0 .* polaron.mb) .* punit(1u"μN/m")
     polaron.M0 = pustrip.(polaron.M0 .* polaron.mb) .* punit(1Unitful.me)
     polaron.M0a = pustrip.(polaron.M0a .* polaron.mb) .* punit(1Unitful.me)
     polaron.M0r = pustrip.(polaron.M0r .* polaron.mb) .* punit(1Unitful.me)
-    polaron.R0 = pustrip.(polaron.R0 ./ sqrt.(2 .* polaron.mb .* 2π)) .* punit(1Unitful.Å)
+    polaron.R0 = pustrip.(polaron.R0 ./ sqrt(2 * polaron.ωeff * polaron.mb)) .* punit(1Unitful.Å)
     polaron.F = pustrip.(polaron.F) .* punit(1Unitful.meV)
     polaron.A = pustrip.(polaron.A) .* punit(1Unitful.meV)
     polaron.B = pustrip.(polaron.B) .* punit(1Unitful.meV)
     polaron.C = pustrip.(polaron.C) .* punit(1Unitful.meV)
-    polaron.v = pustrip.(polaron.v ./ 2π) .* punit(1Unitful.THz)
-    polaron.w = pustrip.(polaron.w ./ 2π) .* punit(1Unitful.THz)
-    polaron.κ = pustrip.(polaron.κ .* polaron.mb) .* punit(1u"μN/m")
+    polaron.v = pustrip.(polaron.v) .* punit(1Unitful.THz2π)
+    polaron.w = pustrip.(polaron.w) .* punit(1Unitful.THz2π)
+    polaron.κ = pustrip.(polaron.κ .* polaron.mb) .* punit(1u"N/m")
     polaron.M = pustrip.(polaron.M .* polaron.mb) .* punit(1Unitful.me)
     polaron.Ma = pustrip.(polaron.Ma .* polaron.mb) .* punit(1Unitful.me)
     polaron.Mr = pustrip.(polaron.Mr .* polaron.mb) .* punit(1Unitful.me)
-    polaron.R = pustrip.(polaron.R ./ sqrt.(2 .* polaron.mb .* 2π)) .* punit(1Unitful.Å)
+    polaron.R = pustrip.(polaron.R ./ sqrt(2 * polaron.ωeff * polaron.mb)) .* punit(1Unitful.Å)
     polaron.μ = pustrip.(polaron.μ ./ polaron.mb) .* punit(1u"cm^2/V/s")
     polaron.μFHIP = pustrip.(polaron.μFHIP ./ polaron.mb) .* punit(1u"cm^2/V/s")
     polaron.μD = pustrip.(polaron.μD ./ polaron.mb) .* punit(1u"cm^2/V/s")
@@ -264,56 +194,54 @@ function addunits!(polaron::FrohlichPolaron; unit="pu")
     polaron.μH = pustrip.(polaron.μH ./ polaron.mb) .* punit(1u"cm^2/V/s")
     polaron.μH0 = pustrip.(polaron.μH0 ./ polaron.mb) .* punit(1u"cm^2/V/s")
     polaron.τ = pustrip.(polaron.τ) .* punit(1u"ns")
-    polaron.χ = pustrip.(polaron.χ .* polaron.mb ./ 2π) .* punit(u"Ω") .* punit(1Unitful.THz)
+    polaron.χ = pustrip.(polaron.χ .* polaron.mb) .* punit(u"Ω") .* punit(1Unitful.THz2π)
     polaron.z = pustrip.(polaron.z .* polaron.mb) .* punit(u"Ω")
     polaron.σ = pustrip.(polaron.σ ./ polaron.mb) .* punit(u"S")
     polaron.T = pustrip.(polaron.T) .* punit(1Unitful.K)
     polaron.β = pustrip.(polaron.β ./ Unitful.ħ) .* punit(1 / 1Unitful.meV)
-    polaron.Ω = pustrip.(polaron.Ω ./ 2π) .* punit(1Unitful.THz)
-    polaron.ω = pustrip.(polaron.ω ./ 2π) .* punit(1Unitful.THz)
-    polaron.ωeff = pustrip.(polaron.ωeff ./ 2π) .* punit(1Unitful.THz)
-    if unit == "au"
-        auconvert!(polaron)
-    elseif unit == "su"
+    polaron.Ω = pustrip.(polaron.Ω) .* punit(1Unitful.THz2π)
+    polaron.ω = pustrip.(polaron.ω) .* punit(1Unitful.THz2π)
+    polaron.ωeff = pustrip.(polaron.ωeff) .* punit(1Unitful.THz2π)
+    if unit == "su"
         suconvert!(polaron)
     end
 end
 
 function addunits!(polaron::HolsteinPolaron; unit="pu")
-    polaron.F0 = phustrip.(polaron.F0 .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.A0 = phustrip.(polaron.A0 .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.B0 = phustrip.(polaron.B0 .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.C0 = phustrip.(polaron.C0 .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.v0 = pustrip.(polaron.v0 ./ 2π) .* phunit(1Unitful.THz)
-    polaron.w0 = pustrip.(polaron.w0 ./ 2π) .* phunit(1Unitful.THz)
-    polaron.κ0 = phustrip.(polaron.κ0 .* polaron.mb) .* phunit(1u"μN/m")
-    polaron.M0 = phustrip.(polaron.M0 .* polaron.mb) .* phunit(1Unitful.me)
-    polaron.M0a = phustrip.(polaron.M0a .* polaron.mb) .* phunit(1Unitful.me)
-    polaron.M0r = phustrip.(polaron.M0r .* polaron.mb) .* phunit(1Unitful.me)
-    polaron.R0 = phustrip.(polaron.R0 .* polaron.a ./ sqrt(2 * polaron.γ)) .* phunit(1Unitful.Å)
-    polaron.F = phustrip.(polaron.F .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.A = phustrip.(polaron.A .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.B = phustrip.(polaron.B .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.C = phustrip.(polaron.C .* polaron.J) .* phunit(1Unitful.meV)
-    polaron.v = pustrip.(polaron.v ./ 2π) .* phunit(1Unitful.THz)
-    polaron.w = pustrip.(polaron.w ./ 2π) .* phunit(1Unitful.THz)
-    polaron.κ = phustrip.(polaron.κ .* polaron.mb) .* phunit(1u"μN/m")
-    polaron.M = phustrip.(polaron.M .* polaron.mb) .* phunit(1Unitful.me)
-    polaron.Ma = phustrip.(polaron.Ma .* polaron.mb) .* phunit(1Unitful.me)
-    polaron.Mr = phustrip.(polaron.Mr .* polaron.mb) .* phunit(1Unitful.me)
-    polaron.R = phustrip.(polaron.R .* polaron.a ./ sqrt(2 * polaron.γ)) .* phunit(1Unitful.Å)
-    polaron.μ = phustrip.(polaron.μ .* polaron.a^2 ./ polaron.γ) .* phunit(1u"cm^2/V/s")
-    polaron.Ω = phustrip.(polaron.Ω) .* phunit(1Unitful.THz)
-    polaron.χ = phustrip.(polaron.χ .* polaron.mb ./ 2π) .* phunit(u"Ω") .* phunit(1Unitful.THz)
-    polaron.z = phustrip.(polaron.z .* polaron.mb) .* phunit(u"Ω")
-    polaron.σ = phustrip.(polaron.σ ./ polaron.mb) .* phunit(u"S")
-    polaron.T = phustrip.(polaron.T) .* phunit(1Unitful.K)
-    polaron.β = phustrip.(polaron.β ./ Unitful.ħ) .* phunit(1 / 1Unitful.meV)
-    polaron.ω = phustrip.(polaron.ω .* polaron.J ./ Unitful.ħ ./ 2π) .* phunit(1Unitful.THz)
-    polaron.ωeff = phustrip.(polaron.ωeff .* polaron.J ./ Unitful.ħ ./ 2π) .* phunit(1Unitful.THz)
-    if unit == "au"
-        auconvert!(polaron)
-    elseif unit == "su"
+    polaron.F0 = pustrip.(polaron.F0) .* punit(1Unitful.meV)
+    polaron.A0 = pustrip.(polaron.A0) .* punit(1Unitful.meV)
+    polaron.B0 = pustrip.(polaron.B0) .* punit(1Unitful.meV)
+    polaron.C0 = pustrip.(polaron.C0) .* punit(1Unitful.meV)
+    polaron.v0 = pustrip.(polaron.v0) .* punit(1Unitful.THz2π)
+    polaron.w0 = pustrip.(polaron.w0) .* punit(1Unitful.THz2π)
+    polaron.κ0 = pustrip.(polaron.κ0 .* polaron.mb) .* punit(1u"N/m")
+    polaron.M0 = pustrip.(polaron.M0 .* polaron.mb) .* punit(1Unitful.me)
+    polaron.M0a = pustrip.(polaron.M0a .* polaron.mb) .* punit(1Unitful.me)
+    polaron.M0r = pustrip.(polaron.M0r .* polaron.mb) .* punit(1Unitful.me)
+    polaron.R0 = pustrip.(polaron.R0 ./ sqrt(2 * polaron.ωeff * polaron.mb)) .* punit(1Unitful.Å)
+    polaron.F = pustrip.(polaron.F) .* punit(1Unitful.meV)
+    polaron.A = pustrip.(polaron.A) .* punit(1Unitful.meV)
+    polaron.B = pustrip.(polaron.B) .* punit(1Unitful.meV)
+    polaron.C = pustrip.(polaron.C) .* punit(1Unitful.meV)
+    polaron.v = pustrip.(polaron.v) .* punit(1Unitful.THz2π)
+    polaron.w = pustrip.(polaron.w) .* punit(1Unitful.THz2π)
+    polaron.κ = pustrip.(polaron.κ .* polaron.mb) .* punit(1u"N/m")
+    polaron.M = pustrip.(polaron.M .* polaron.mb) .* punit(1Unitful.me)
+    polaron.Ma = pustrip.(polaron.Ma .* polaron.mb) .* punit(1Unitful.me)
+    polaron.Mr = pustrip.(polaron.Mr .* polaron.mb) .* punit(1Unitful.me)
+    polaron.R = pustrip.(polaron.R ./ sqrt(2 * polaron.ωeff * polaron.mb)) .* punit(1Unitful.Å)
+    polaron.μ = pustrip.(polaron.μ ./ polaron.a.^2) .* punit(1u"cm^2/V/s")
+    polaron.χ = pustrip.(polaron.χ .* polaron.mb) .* punit(u"Ω") .* punit(1Unitful.THz2π)
+    polaron.z = pustrip.(polaron.z .* polaron.mb) .* punit(u"Ω")
+    polaron.σ = pustrip.(polaron.σ ./ polaron.mb) .* punit(u"S")
+    polaron.T = pustrip.(polaron.T) .* punit(1Unitful.K)
+    polaron.β = pustrip.(polaron.β ./ Unitful.ħ) .* punit(1 / 1Unitful.meV)
+    polaron.Ω = pustrip.(polaron.Ω) .* punit(1Unitful.THz2π)
+    polaron.ω = pustrip.(polaron.ω) .* punit(1Unitful.THz2π)
+    polaron.ωeff = pustrip.(polaron.ωeff) .* punit(1Unitful.THz2π)
+    polaron.J = pustrip.(polaron.J) .* punit(1Unitful.meV) 
+    polaron.a = pustrip.(polaron.a) .* punit(1Unitful.Å) 
+    if unit == "su"
         suconvert!(polaron)
     end
 end
@@ -330,99 +258,27 @@ function addunits!(material::Material)
     material.ϵs = material.ϵs .* punit(u"ϵ0")
 end
 
-function auconvert!(polaron::FrohlichPolaron)
-    polaron.ω = auconvert.(polaron.ω .* ω0_pu)
-    polaron.ωeff = auconvert.(polaron.ωeff .* ω0_pu)
-    polaron.Fs = auconvert.(polaron.Fs .* E0_pu)
-    polaron.Fl = auconvert.(polaron.Fl .* E0_pu)
-    polaron.Ms = auconvert.(polaron.Ms .* m0_pu)
-    polaron.Ml = auconvert.(polaron.Ml .* m0_pu)
-    polaron.Rs = auconvert.(polaron.Rs .* a0_pu)
-    polaron.Rl = auconvert.(polaron.Rl .* a0_pu)
-    polaron.ΩFC = auconvert.(polaron.ΩFC .* ω0_pu)
-    polaron.F0 = auconvert.(polaron.F0 .* E0_pu)
-    polaron.A0 = auconvert.(polaron.A0 .* E0_pu)
-    polaron.B0 = auconvert.(polaron.B0 .* E0_pu)
-    polaron.C0 = auconvert.(polaron.C0 .* E0_pu)
-    polaron.κ0 = auconvert.(polaron.κ0 .* m0_pu * ω0_pu^2)
-    polaron.M0 = auconvert.(polaron.M0 .* m0_pu)
-    polaron.M0a = auconvert.(polaron.M0a .* m0_pu)
-    polaron.M0r = auconvert.(polaron.M0r .* m0_pu)
-    polaron.R0 = auconvert.(polaron.R0 .* a0_pu)
-    polaron.T = auconvert.(polaron.T .* T0_pu)
-    polaron.β = auconvert.(polaron.β .* β0_pu)
-    polaron.F = auconvert.(polaron.F .* E0_pu)
-    polaron.A = auconvert.(polaron.A .* E0_pu)
-    polaron.B = auconvert.(polaron.B .* E0_pu)
-    polaron.C = auconvert.(polaron.C .* E0_pu)
-    polaron.κ = auconvert.(polaron.κ .* m0_pu * ω0_pu^2)
-    polaron.M = auconvert.(polaron.M .* m0_pu)
-    polaron.Ma = auconvert.(polaron.Ma .* m0_pu)
-    polaron.Mr = auconvert.(polaron.Mr .* m0_pu)
-    polaron.R = auconvert.(polaron.R .* a0_pu)
-    polaron.μ = auconvert.(polaron.μ .* μ0_pu)
-    polaron.μFHIP = auconvert.(polaron.μFHIP .* μ0_pu)
-    polaron.μD = auconvert.(polaron.μD .* μ0_pu)
-    polaron.μK = auconvert.(polaron.μK .* μ0_pu)
-    polaron.μH = auconvert.(polaron.μH .* μ0_pu)
-    polaron.μH0 = auconvert.(polaron.μH0 .* μ0_pu)
-    polaron.τ = auconvert.(polaron.τ .* t0_pu)
-    polaron.Ω = auconvert.(polaron.Ω .* ω0_pu)
-    polaron.χ = auconvert.(polaron.χ .* ω0_pu)
-    polaron.z = auconvert.(polaron.z .* punit(u"kΩ"))
-    polaron.σ = auconvert.(polaron.σ .* punit(u"mS"))
-end
-
-function auconvert!(polaron::HolsteinPolaron)
-    polaron.ω = auconvert.(polaron.ω .* ω0_pu)
-    polaron.ωeff = auconvert.(polaron.ωeff .* ω0_pu)
-    polaron.F0 = auconvert.(polaron.F0 .* E0_pu)
-    polaron.A0 = auconvert.(polaron.A0 .* E0_pu)
-    polaron.B0 = auconvert.(polaron.B0 .* E0_pu)
-    polaron.C0 = auconvert.(polaron.C0 .* E0_pu)
-    polaron.κ0 = auconvert.(polaron.κ0 .* m0_pu * ω0_pu^2)
-    polaron.M0 = auconvert.(polaron.M0 .* m0_pu)
-    polaron.M0a = auconvert.(polaron.M0a .* m0_pu)
-    polaron.M0r = auconvert.(polaron.M0r .* m0_pu)
-    polaron.R0 = auconvert.(polaron.R0 .* a0_pu)
-    polaron.T = auconvert.(polaron.T .* T0_pu)
-    polaron.β = auconvert.(polaron.β .* β0_pu)
-    polaron.F = auconvert.(polaron.F .* E0_pu)
-    polaron.A = auconvert.(polaron.A .* E0_pu)
-    polaron.B = auconvert.(polaron.B .* E0_pu)
-    polaron.C = auconvert.(polaron.C .* E0_pu)
-    polaron.κ = auconvert.(polaron.κ .* m0_pu * ω0_pu^2)
-    polaron.M = auconvert.(polaron.M .* m0_pu)
-    polaron.Ma = auconvert.(polaron.Ma .* m0_pu)
-    polaron.Mr = auconvert.(polaron.Mr .* m0_pu)
-    polaron.R = auconvert.(polaron.R .* a0_pu)
-    polaron.μ = auconvert.(polaron.μ .* μ0_pu)
-    polaron.Ω = auconvert.(polaron.Ω .* ω0_pu)
-    polaron.χ = auconvert.(polaron.χ .* ω0_pu)
-    polaron.z = auconvert.(polaron.z .* punit(u"kΩ"))
-    polaron.σ = auconvert.(polaron.σ .* punit(u"mS"))
-end
 
 function suconvert!(polaron::FrohlichPolaron)
-    polaron.ω = polaron.ω .|> Unitful.THz
-    polaron.ωeff = polaron.ωeff .|> Unitful.THz
+    polaron.ω = polaron.ω .|> Unitful.THz2π
+    polaron.ωeff = polaron.ωeff .|> Unitful.THz2π
     polaron.Fs = polaron.Fs .|> Unitful.meV
     polaron.Fl = polaron.Fl .|> Unitful.meV
-    polaron.Ms = auconvert.(polaron.Ms)
-    polaron.Ml = auconvert.(polaron.Ml)
-    polaron.Rs = polaron.Rs  .|> Unitful.Å
-    polaron.Rl = polaron.Rl  .|> Unitful.Å
-    polaron.ΩFC = polaron.ΩFC .|> Unitful.THz
+    polaron.Ms = polaron.Ms .|> Unitful.kg
+    polaron.Ml = polaron.Ml .|> Unitful.kg
+    polaron.Rs = polaron.Rs .|> Unitful.Å
+    polaron.Rl = polaron.Rl .|> Unitful.Å
+    polaron.ΩFC = polaron.ΩFC .|> Unitful.THz2π
     polaron.F0 = polaron.F0 .|> Unitful.meV
     polaron.A0 = polaron.A0 .|> Unitful.meV
     polaron.B0 = polaron.B0 .|> Unitful.meV
     polaron.C0 = polaron.C0 .|> Unitful.meV
-    polaron.v0 = polaron.v0 .|> Unitful.THz
-    polaron.w0 = polaron.w0 .|> Unitful.THz
-    polaron.κ0 = polaron.κ0 .|> u"μN/m"
-    polaron.M0 = auconvert.(polaron.M0)
-    polaron.M0a = auconvert.(polaron.M0a)
-    polaron.M0r = auconvert.(polaron.M0r)
+    polaron.v0 = polaron.v0 .|> Unitful.THz2π
+    polaron.w0 = polaron.w0 .|> Unitful.THz2π
+    polaron.κ0 = polaron.κ0 .|> u"N/m"
+    polaron.M0 = polaron.M0 .|> Unitful.kg
+    polaron.M0a = polaron.M0a .|> Unitful.kg
+    polaron.M0r = polaron.M0r .|> Unitful.kg
     polaron.R0 = polaron.R0 .|> Unitful.Å
     polaron.T = polaron.T .|> Unitful.K
     polaron.β = polaron.β .|> u"meV^-1"
@@ -430,12 +286,12 @@ function suconvert!(polaron::FrohlichPolaron)
     polaron.A = polaron.A .|> Unitful.meV
     polaron.B = polaron.B .|> Unitful.meV
     polaron.C = polaron.C .|> Unitful.meV
-    polaron.v = polaron.v .|> Unitful.THz
-    polaron.w = polaron.w .|> Unitful.THz
-    polaron.κ = polaron.κ .|> u"μN/m"
-    polaron.M = auconvert.(polaron.M)
-    polaron.Ma = auconvert.(polaron.Ma)
-    polaron.Mr = auconvert.(polaron.Mr)
+    polaron.v = polaron.v .|> Unitful.THz2π
+    polaron.w = polaron.w .|> Unitful.THz2π
+    polaron.κ = polaron.κ .|> u"N/m"
+    polaron.M = polaron.M .|> Unitful.kg
+    polaron.Ma = polaron.Ma .|> Unitful.kg
+    polaron.Mr = polaron.Mr .|> Unitful.kg
     polaron.R = polaron.R .|> Unitful.Å
     polaron.μ = polaron.μ .|> u"cm^2/V/s"
     polaron.μFHIP = polaron.μFHIP .|> u"cm^2/V/s"
@@ -444,25 +300,27 @@ function suconvert!(polaron::FrohlichPolaron)
     polaron.μH = polaron.μH .|> u"cm^2/V/s"
     polaron.μH0 = polaron.μH0 .|> u"cm^2/V/s"
     polaron.τ = polaron.τ .|> Unitful.ns
-    polaron.Ω = polaron.Ω .|> Unitful.THz
-    polaron.χ = polaron.χ .|> u"kΩ" .* Unitful.THz
+    polaron.Ω = polaron.Ω .|> Unitful.THz2π
+    polaron.χ = polaron.χ .|> u"kΩ" .* Unitful.THz2π
     polaron.z = polaron.z .|> Unitful.kΩ
     polaron.σ = polaron.σ .|> Unitful.mS
 end
 
 function suconvert!(polaron::HolsteinPolaron)
-    polaron.ω = polaron.ω  .|> Unitful.THz
-    polaron.ωeff = polaron.ωeff .|> Unitful.THz
+    polaron.ω = polaron.ω  .|> Unitful.THz2π
+    polaron.ωeff = polaron.ωeff .|> Unitful.THz2π
+    polaron.J = polaron.J .|> Unitful.meV
+    polaron.a = polaron.a .|> Unitful.Å
     polaron.F0 = polaron.F0 .|> Unitful.meV
     polaron.A0 = polaron.A0 .|> Unitful.meV
     polaron.B0 = polaron.B0 .|> Unitful.meV
     polaron.C0 = polaron.C0 .|> Unitful.meV
-    polaron.v0 = polaron.v0 .|> Unitful.THz
-    polaron.w0 = polaron.w0 .|> Unitful.THz
-    polaron.κ0 = polaron.κ0 .|> u"μN/m"
-    # polaron.M0 = auconvert.(polaron.M0)
-    # polaron.M0a = auconvert.(polaron.M0a)
-    # polaron.M0r = auconvert.(polaron.M0r)
+    polaron.v0 = polaron.v0 .|> Unitful.THz2π
+    polaron.w0 = polaron.w0 .|> Unitful.THz2π
+    polaron.κ0 = polaron.κ0 .|> u"N/m"
+    polaron.M0 = polaron.M0 .|> Unitful.kg
+    polaron.M0a = polaron.M0a .|> Unitful.kg
+    polaron.M0r = polaron.M0r .|> Unitful.kg
     polaron.R0 = polaron.R0 .|> Unitful.Å
     polaron.T = polaron.T .|> Unitful.K
     polaron.β = polaron.β .|> u"meV^-1"
@@ -470,16 +328,16 @@ function suconvert!(polaron::HolsteinPolaron)
     polaron.A = polaron.A .|> Unitful.meV
     polaron.B = polaron.B .|> Unitful.meV
     polaron.C = polaron.C .|> Unitful.meV
-    polaron.v = polaron.v .|> Unitful.THz
-    polaron.w = polaron.w .|> Unitful.THz
-    polaron.κ = polaron.κ .|> u"μN/m"
-    # polaron.M = auconvert.(polaron.M)
-    # polaron.Ma = auconvert.(polaron.Ma)
-    # polaron.Mr = auconvert.(polaron.Mr)
+    polaron.v = polaron.v .|> Unitful.THz2π
+    polaron.w = polaron.w .|> Unitful.THz2π
+    polaron.κ = polaron.κ .|> u"N/m"
+    polaron.M = polaron.M .|> Unitful.kg
+    polaron.Ma = polaron.Ma .|> Unitful.kg
+    polaron.Mr = polaron.Mr .|> Unitful.kg
     polaron.R = polaron.R .|> Unitful.Å
     polaron.μ = polaron.μ .|> u"cm^2/V/s"
-    polaron.Ω = polaron.Ω .|> Unitful.THz
-    polaron.χ = polaron.χ .|> u"kΩ" .* Unitful.THz
+    polaron.Ω = polaron.Ω .|> Unitful.THz2π
+    polaron.χ = polaron.χ .|> u"kΩ" .* Unitful.THz2π
     polaron.z = polaron.z .|> Unitful.kΩ
     polaron.σ = polaron.σ .|> Unitful.mS
 end

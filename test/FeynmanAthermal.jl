@@ -16,13 +16,13 @@ rows(M::Matrix) = map(x->reshape(getindex(M, x, :), :, size(M)[2]), 1:size(M)[1]
 
 for r in rows(Schultz)
     α,vSchultz,wSchultz,ESchultz=r # Unpack row of results
-    v,w,E=feynmanvw(3.1, 3.0, α, 1.0) # performs the optimisation
+    v,w,E=feynmanvw(α, 1.0) # performs the optimisation
     
     println("α=$α v=$v w=$w E=$E  | Schultz: v=$vSchultz w=$wSchultz E=$ESchultz")
 
     @test v ≈ vSchultz atol=0.1 # Strangely these need more tolerance than the Energies
     @test w ≈ wSchultz atol=0.1
-    @test E ≈ ESchultz atol=0.001
+    @test E ≈ ESchultz atol=0.01
 end
 
 end

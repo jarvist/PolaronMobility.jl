@@ -11,7 +11,7 @@ module PolaronMobility
 export FrohlichPolaron, frohlichpolaron                                  
 
  # Type to hold material specific data.
-export Material, material             
+export Material, material, save_material, load_material            
 
 # Type to hold Holstein polaron data.
 export HolsteinPolaron, holsteinpolaron
@@ -55,7 +55,7 @@ using LinearAlgebra, Printf, JLD
 #Key numerics used:
 
 # One-dimensional numerical integration in Julia using adaptive Gauss-Kronrod quadrature
-import QuadGK.quadgk
+import QuadGK.quadgk, QuadGK.quadgk_count
 
 # Special function arising from cutoff k-space integrals (c.f. Holstein model).
 import SpecialFunctions.erf, SpecialFunctions.gamma, SpecialFunctions.gamma_inc
@@ -66,7 +66,6 @@ using Optim
 # Import required Unitful units, for mutability (generating new polaron units)
 using Unitful
 using Unitful: @unit, Dimension, Dimensions, NoDims, NoUnits, Units, dimension, uconvert, ustrip
-using UnitfulAtomic: auconvert
 
 # Unitful functions
 export puconvert, punit, pustrip, m0_pu, e_pu, ħ_pu, k_pu, ω0_pu, a0_pu, E0_pu, β0_pu, T0_pu, μ0_pu, t0_pu, addunits!, auconvert!, suconvert!, phuconvert, phunit, phustrip

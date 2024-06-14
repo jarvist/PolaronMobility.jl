@@ -155,18 +155,22 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 dprocess += 1
             end
 
+        # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
+        if j > 1
+            v_guesses = reduce_array(p["v0"][d, j-1, :])
+            w_guesses = reduce_array(p["w0"][d, j-1, :])
+        end
+
         # Extract the ground-state, athermal polaron properties (energy (enthalpy) and variational parameters v and w).
         # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
         # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-        athermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, ω; dims = dims[d]) : holstein_energy_k_space(v, w, α, ω; dims = dims[d])
+        athermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω; a = a, dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω; a = a, dims = dims[d])
         v_gs, w_gs, F_gs, A_gs, B_gs, C_gs = vw_variation(athermal_energy, v_guesses, w_guesses)
  
-        # Update the guesses to keep them close-ish to the true solutions during loops over alphas.
-        v_guesses, w_guesses = v_gs, w_gs
 
         # Store the athermal data.
-        p["v0"][d, j, :] .= v_gs ./ ωeff
-        p["w0"][d, j, :] .= w_gs ./ ωeff
+        p["v0"][d, j, :] .= v_gs 
+        p["w0"][d, j, :] .= w_gs 
         p["F0"][d, j] = F_gs
         p["A0"][d, j] = A_gs
         p["B0"][d, j] = B_gs
@@ -177,8 +181,8 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
             println(io, "\e[K-----------------------------------------------------------------------")
             println(io, "\e[K                   Zero Temperature Information:                       ")
             println(io, "\e[K-----------------------------------------------------------------------")
-            println(io, "\e[KVariational parameter          | v0 = ", v_gs ./ ωeff)
-            println(io, "\e[KVariational parameter          | w0 = ", w_gs ./ ωeff)
+            println(io, "\e[KVariational parameter          | v0 = ", v_gs)
+            println(io, "\e[KVariational parameter          | w0 = ", w_gs)
             println(io, "\e[KEnergy                         | F0 = ", F_gs)
             println(io, "\e[KElectron energy                | A0 = ", A_gs)
             println(io, "\e[KInteraction energy             | B0 = ", B_gs)
@@ -188,7 +192,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
 
         # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
         κ_gs = (v_gs .^ 2 .- w_gs .^ 2) 
-        p["κ0"][d, j, :] .= κ_gs ./ ωeff .^2
+        p["κ0"][d, j, :] .= κ_gs
 
         # Print athermal fictitious spring constant.
         if verbose
@@ -224,7 +228,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
 
         # Calculate and store polaron radii. Approximates the polaron wavefunction as a Gaussian and relates the size to the standard deviation. Eqn. (2.4) in Schultz1959. Athermal.
         R_gs = sqrt.(3 ./ 2 .* M_reduced_gs .* v_gs)
-        p["R0"][d, j, :] .= R_gs ./ ωeff .^(1/2)
+        p["R0"][d, j, :] .= R_gs
 
         # Print athermal polaron radius.
         if verbose
@@ -256,15 +260,15 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 # Calculate thermal polaron properties (energy (Gibbs free energy) and variational parameters v and w).
                 # w is also the frequency of oscillation of the SHM trial system composed of the bare particle and fictitous mass.
                 # A, B, C are components of the total energy: A is the bare electron energy, B the electron-phonon interaction energy, C is the energy of the harmonic trial system.
-                thermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, ω, β; dims = dims[d]) : holstein_energy_k_space(v, w, α, ω, β; dims = dims[d])
+                thermal_energy(v, w) = !kspace ? holstein_energy(v, w, α, J, ω, β; a = a, dims = dims[d]) : holstein_energy_k_space(v, w, α, J, ω, β; a = a, dims = dims[d])
                 v, w, F, A, B, C = vw_variation(thermal_energy, v_guesses, w_guesses)
 
                 # Update the guesses to keep them close-ish to the true solutions during loops over temperatures.
                 v_guesses, w_guesses = v, w
 
                 # Store thermal data.
-                p["v"][i, d, j, :] .= v ./ ωeff
-                p["w"][i, d, j, :] .= w ./ ωeff
+                p["v"][i, d, j, :] .= v
+                p["w"][i, d, j, :] .= w
                 p["F"][i, d, j] = F
                 p["A"][i, d, j] = A
                 p["B"][i, d, j] = B
@@ -272,8 +276,8 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
 
                 # Print thermal data.
                 if verbose
-                    println(io, "\e[KVariational parameter          | v = ", v ./ ωeff)
-                    println(io, "\e[KVariational parameter          | w = ", w ./ ωeff)
+                    println(io, "\e[KVariational parameter          | v = ", v)
+                    println(io, "\e[KVariational parameter          | w = ", w)
                     println(io, "\e[KFree energy                    | F = ", F)
                     println(io, "\e[KElectron energy                | A = ", A)
                     println(io, "\e[KInteraction energy             | B = ", B)
@@ -282,7 +286,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
 
                 # Calculate and store fictitious spring constants. See after Eqn. (18), pg. 1007 of Feynman1962. Thermal
                 κ = (v .^ 2 .- w .^ 2) 
-                p["κ"][i, d, j, :] .= κ ./ ωeff .^2
+                p["κ"][i, d, j, :] .= κ
 
                 # Print spring constants.
                 if verbose
@@ -318,7 +322,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
 
                 # Calculate and store polaron radii.
                 R = sqrt.(3 ./ 2 .* v .* M_reduced) 
-                p["R"][i, d, j, :] .= R ./ ωeff .^(1/2)
+                p["R"][i, d, j, :] .= R
 
                 # Print polaron radius.
                 if verbose
@@ -332,7 +336,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 end
 
                 # Calculate and store the DC mobiliies.
-                μ = !kspace ? holstein_mobility(v, w, α, ω, β; dims = dims[d]) : holstein_mobility_k_space(v, w, α, ω, β; dims = dims[d])
+                μ = !kspace ? holstein_mobility(v, w, α, J, ω, β; a = a, dims = dims[d]) : holstein_mobility_k_space(v, w, α, J, ω, β; a = a, dims = dims[d])
                 p["μ"][i, d, j] = μ 
 
                 # Print DC mobilities.
@@ -344,8 +348,8 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 # If zero temperature.
                 v, w, β = v_gs, w_gs, Inf
                 p["β"][i, :] .= β
-                p["v"][i, d, j, :] .= v_gs ./ ωeff
-                p["w"][i, d, j, :] .= w_gs ./ ωeff
+                p["v"][i, d, j, :] .= v_gs
+                p["w"][i, d, j, :] .= w_gs
                 p["F"][i, d, j] = F_gs
                 p["A"][i, d, j] = A_gs
                 p["B"][i, d, j] = B_gs
@@ -377,7 +381,7 @@ function holsteinpolaron(αrange, Trange, Ωrange; ω=1, ωeff=1, γ=1, mb=1, J=
                 end
 
                 # Calculate and store polaron memory functions (akin to self energy).
-                χ = !kspace ? holstein_memory_function(Ω, v, w, α, ω, β; dims = dims[d]) : holstein_memory_function_k_space(Ω, v, w, α, ω, β; dims = dims[d])
+                χ = !kspace ? holstein_memory_function(Ω, v, w, α, J, ω, β; a = a, dims = dims[d]) : holstein_memory_function_k_space(Ω, v, w, α, J, ω, β; a = a, dims = dims[d])
                 p["χ"][k, i, d, j] = χ
 
                 # Print memory function.
@@ -512,15 +516,15 @@ function holsteinpolaron(material::Material, TΩrange...; v_guesses=3.11, w_gues
     end
     
     # Extract material data from Material type.
-    ω = material.f
-    ωeff = material.feff
-    mb = material.mb
-    J = material.J
+    ω = material.f .* pustrip(1Unitful.THz2π)
+    ωeff = material.feff .* pustrip(1Unitful.THz2π)
+    mb = material.mb .* pustrip(1Unitful.me)
+    J = material.J .* pustrip(1Unitful.meV)
     γ = material.γ
-    a = material.a
+    a = material.a .* pustrip(1Unitful.Å)
     dims = material.z ./ 2
 
-    TΩrange = length(TΩrange) == 1 ? TΩrange .* phustrip(1u"K") : TΩrange .* (phustrip(1u"K"),1)
+    TΩrange = length(TΩrange) == 1 ? TΩrange .* pustrip(1u"K") : TΩrange .* (pustrip(1u"K"),1)
 
     # Generate Holstein polaron data from the arbitrary model constructor.
     p = holsteinpolaron(material.α', TΩrange...; ω=ω, ωeff=ωeff, γ=γ, mb=mb, J=J, a=a, v_guesses=v_guesses, w_guesses=w_guesses, dims=dims, kspace=kspace, verbose=verbose)

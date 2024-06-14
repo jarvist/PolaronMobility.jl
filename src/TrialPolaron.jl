@@ -29,15 +29,7 @@ This example calculates the polaron propagator for given values of τ, v, w, and
 function polaron_propagator(τ, v, w, β)
     c = (v^2 - w^2) / v^3
     result = c * (phonon_propagator(0, v, β) - phonon_propagator(τ, v, β)) + (1 - c * v) * τ * (1 - τ / β)
-    if real(result) <= 0 && iszero(imag(result))
-        return eps(Float64) 
-    else
-        if isnan(result)
-            return phonon_propagator(τ, ω)
-        else
-            return result
-        end
-    end
+    return result + sqrt(eps())
 end
 
 """
@@ -66,11 +58,7 @@ This example calculates the polaron propagator for the given values of τ, v, an
 function polaron_propagator(τ, v, w)
     c = (v^2 - w^2) / v^3
     result = (1 - v * c) * τ + c * (phonon_propagator(0, v) - phonon_propagator(τ, v))
-    if real(result) <= 0 && iszero(imag(result))
-        return eps(Float64) 
-    else
-        return result
-    end
+    return result + sqrt(eps())
 end
 
 """
