@@ -94,15 +94,17 @@ end
 
 # Hellwarth et al. 1999 PRB - Part IV; T-dep of the Feynman variation parameter
 
-# In Julia we have 'Multiple dispatch', so let's just construct the free
-# energies (temperature-dependent) with the same name as before, but with the thermodynamic beta where required.
+# In Julia we have 'Multiple dispatch', so we specify both the athermal (original Feynman)
+# and thermal (Osaka) versions with the  same function name, but with thermodynamic Beta in
+# the thermal versions
 
 # Define Osaka's free-energies (Hellwarth1999 version) as Julia functions.
 
 """
     A(v, w, ω, β)
 
-Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
+Hellwarth's A expression from Eqn. (62b) in Hellwarth et al. 1999 PRB. Part of the overall
+free energy expression.
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
@@ -114,7 +116,8 @@ A(v, w) = -3 * (v - w) / 2
 """
     C(v, w, ω, β)
 
-Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of the overall free energy expression.
+Hellwarth's C expression from Eqn. (62e) in Hellwarth et al. 1999 PRB. Part of the overall
+free energy expression.
 
 See Hellwarth et a. 1999: https://doi.org/10.1103/PhysRevB.60.299.
 """
@@ -122,11 +125,10 @@ C(v, w, β) = 3 / 4 * (v^2 - w^2) / v * (coth(v * β / 2) - 2 / (v * β))
 
 C(v, w) = (3 / (4 * v)) * (v^2 - w^2)
 
+
 # Extending the Feynman theory to multiple phonon branches
 
 #  Extending the Feynman theory to multiple variational parameters
-# Multiple Parameter Polaron Free Energy
-# Calculate the polaron free energy, generalised from Osaka's expression to the case where multiple phonon modes are present in the material.
 
 """
     κ_i(i, v, w)
@@ -151,11 +153,15 @@ end
 """
     h_i(i, v, w)
 
-Calculates the normal-mode (the eigenmodes) frequency of the coupling between the electron and the `ith' fictitious mass that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
+Calculates the normal-mode (the eigenmodes) frequency of the coupling between the electron
+and the `ith' fictitious mass that approximates the exact electron-phonon interaction with
+a harmonic coupling to a massive fictitious particle. 
 
 Required for calculating the polaron free energy.
 
-Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+Note: Not to be confused with the number of physical phonon branches; many phonon branches
+could be approximated with one or two etc. fictitious masses for example. The number of
+    fictitious mass does not necessarily need to match the number of phonon branches.
 
 # Arguments
 - `i::Integer`: enumerates the current fictitious mass.
@@ -171,11 +177,16 @@ end
 """
     C_ij(i, j, v, w)
 
-Calculates the element to the coupling matrix C_ij (a generalisation of Feynman's `C` coupling variational parameter in Feynman 1955) between the electron and the `ith' and `jth' fictitious masses that approximates the exact electron-phonon interaction with a harmonic coupling to a massive fictitious particle. 
+Calculates the element to the coupling matrix C_ij (a generalisation of Feynman's `C`
+coupling variational parameter in Feynman 1955) between the electron and the `ith' and `jth'
+fictitious masses that approximates the exact electron-phonon interaction with a harmonic
+coupling to a massive fictitious particle. 
 
 Required for calculating the polaron free energy.
 
-Note: Not to be confused with the number of physical phonon branches; many phonon branches could be approximated with one or two etc. fictitious masses for example. The number of fictitious mass does not necessarily need to match the number of phonon branches.
+Note: Not to be confused with the number of physical phonon branches; many phonon branches
+could be approximated with one or two etc. fictitious masses for example. The number of
+    fictitious mass does not necessarily need to match the number of phonon branches.
 
 # Arguments
 - `i::Integer, j::Integer`: enumerate the current fictitious masses under focus (also the index of the element in the coupling matrix C)
@@ -191,7 +202,8 @@ end
 """
     C(v, w, β)
 
-Generalisation of the C function from Eqn. (62e) in Hellwarth et al. 1999. This is the expected value of the trial action <S_0> taken w.r.t trial action.
+Generalisation of the C function from Eqn. (62e) in Hellwarth et al. 1999. This is the
+    expected value of the trial action <S_0> taken w.r.t trial action.
 
 Required for calculating the polaron free energy.
 
@@ -295,3 +307,4 @@ function trial_energy(v, w, β...; dims = 3)
     Cr = C(v, w, β...) * dims / 3 
     return Ar, Cr
 end
+
