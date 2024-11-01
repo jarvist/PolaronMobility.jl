@@ -7,7 +7,7 @@
 
 
 [![Build status](https://github.com/jarvist/PolaronMobility.jl/workflows/CI/badge.svg)](https://github.com/jarvist/PolaronMobility.jl/actions)
-[![codecov.io](http://codecov.io/github/jarvist/PolaronMobility.jl/coverage.svg?branch=master)](http://codecov.io/github/jarvist/PolaronMobility.jl?branch=master)
+[![codecov.io](http://codecov.io/github/jarvist/PolaronMobility.jl/coverage.svg?branch=main)](http://codecov.io/github/jarvist/PolaronMobility.jl?branch=main)
 
 `PolaronMobility.jl` is a Julia package which calculates the
 temperature-dependent polaron mobility for a material. 
