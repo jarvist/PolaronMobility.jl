@@ -905,3 +905,4 @@ function load_frohlich_polaron(polaron_file_path)
 
     return polaron
 end
+

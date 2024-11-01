@@ -711,3 +711,4 @@ function load_holstein_polaron(polaron_file_path)
 
     return holstein_polaron
 end
+

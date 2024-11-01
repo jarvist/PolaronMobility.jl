@@ -19,3 +19,4 @@ See also [`F`](@ref).
 feynmanvw(αωβ...) = vw_variation((v,w)->frohlich_energy(v, w, αωβ...))
 
 feynmanvw(α) = feynmanvw(α, 1)
+

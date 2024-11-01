@@ -265,3 +265,4 @@ function spherical_k_integral(coupling, propagator; dims = 3, radius = 1/sqrt(2)
   integral, _ = quadgk(k -> integrand(k), limits[1], limits[2])
   return integral * ball_surface(dims) / (2π)^dims
 end
+

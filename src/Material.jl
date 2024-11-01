@@ -152,3 +152,4 @@ function load_material(material_file_path)
 
     return material
 end
+

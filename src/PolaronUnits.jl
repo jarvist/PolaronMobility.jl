@@ -341,3 +341,4 @@ function suconvert!(polaron::HolsteinPolaron)
     polaron.z = polaron.z .|> Unitful.kΩ
     polaron.σ = polaron.σ .|> Unitful.mS
 end
+
